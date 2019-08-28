@@ -1,4 +1,5 @@
-# TODO: documentation throughout
+# TODO: MODULAR DOCUMENTATION
+
 import discord
 import random
 import secretbord
