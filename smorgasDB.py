@@ -7,7 +7,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import BigInteger, DateTime, SmallInteger, String
-import time
 
 engine = sqlalchemy.create_engine(secretbord.database + '+' +
                                   secretbord.dialect + '://' +
@@ -48,8 +47,9 @@ class Quote(Base):
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), nullable=False)
     quote_id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
     text = Column(String, nullable=False)
-    # created_at = Column(DateTime, default=time.time(), nullable=False)
-    # last_updated_at = Column(DateTime, default=time.time(), nullable=False, onupdate=time.time()
+    created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
+    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
+                             nullable=False, onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
     guild = relationship("Guild", back_populates="quotes")
@@ -68,8 +68,9 @@ class Guild(Base):
     # Attributes:
     guild_id = Column(BigInteger, primary_key=True, nullable=False)
     quotation_channel_id = Column(BigInteger, unique=True, nullable=False)
-    # created_at = Column(DateTime, default=time.time(), nullable=False)
-    # last_updated_at = Column(DateTime, default=time.time(), nullable=False, onupdate=time.time()
+    created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
+    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
+                             nullable=False, onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
     quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild")

@@ -33,7 +33,7 @@ async def on_ready():
                 await smorg.get_channel(valid_channels[0].id).send(on_ready_message)
             elif len(guild.text_channels) > 0:
                 smorgasDB.create_guild_with(guild.id, guild.text_channels[0].id)
-                await smorg.get_channel(guild.text_channels[0].id).send(on_ready_message)
+                # await smorg.get_channel(guild.text_channels[0].id).send(on_ready_message)
             else:
                 # TODO: make the below better...
                 print("Error! There are no text channels.")
