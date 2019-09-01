@@ -4,6 +4,7 @@ import discord
 import random
 import secretbord
 import smorgasDB
+from smorgasDB import Guild, Quote
 from discord.ext import commands
 
 smorg = commands.Bot(command_prefix='.')
@@ -23,17 +24,17 @@ async def on_ready():
     if reset_database:
         smorgasDB.reset_database()
     for guild in smorg.guilds:
-        if smorgasDB.has_assigned_channel_by(guild.id):
-            channel_id = smorgasDB.get_assigned_channel_by(guild.id)
+        if Guild.has_assigned_channel_by(guild.id):
+            channel_id = Guild.get_assigned_channel_by(guild.id)
             await smorg.get_channel(channel_id).send(on_ready_message)
         else:
             valid_channels = [channel for channel in guild.text_channels if channel.name == 'general']
             if valid_channels:
-                smorgasDB.create_guild_with(guild.id, valid_channels[0].id)
+                Guild.create_guild_with(guild.id, valid_channels[0].id)
                 await smorg.get_channel(valid_channels[0].id).send(on_ready_message)
             elif len(guild.text_channels) > 0:
-                smorgasDB.create_guild_with(guild.id, guild.text_channels[0].id)
-                # await smorg.get_channel(guild.text_channels[0].id).send(on_ready_message)
+                Guild.create_guild_with(guild.id, guild.text_channels[0].id)
+                await smorg.get_channel(guild.text_channels[0].id).send(on_ready_message)
             else:
                 # TODO: make the below better...
                 print("Error! There are no text channels.")
@@ -49,7 +50,7 @@ async def quote(ctx, quotation='', author='An Anonymous Intellectual'):
     :param author: the name of the author of the quote (a String).
     :return: None.
     """
-    assigned_channel_id = smorgasDB.get_assigned_channel_by(ctx.message.channel.guild.id)
+    assigned_channel_id = Guild.get_assigned_channel_by(ctx.message.channel.guild.id)
     current_channel = smorg.get_channel(assigned_channel_id)
     quotation = quotation.strip()
     if quotation:
@@ -76,7 +77,7 @@ async def sanctify(ctx, quotation='', author='An Unknowable Demigod'):
     :return: None.
     """
     current_guild_id = ctx.message.channel.guild.id
-    assigned_channel_id = smorgasDB.get_assigned_channel_by(current_guild_id)
+    assigned_channel_id = Guild.get_assigned_channel_by(current_guild_id)
     current_channel = smorg.get_channel(assigned_channel_id)
     quotation = quotation.strip()
     if quotation:
@@ -84,9 +85,9 @@ async def sanctify(ctx, quotation='', author='An Unknowable Demigod'):
                                        description=quotation,
                                        color=0xFDF06F)
         if author == 'An Unknowable Demigod':
-            smorgasDB.create_quote_with(current_guild_id, quotation)
+            Quote.create_quote_with(current_guild_id, quotation)
         else:
-            smorgasDB.create_quote_with(current_guild_id, quotation, author)
+            Quote.create_quote_with(current_guild_id, quotation, author)
         await ctx.message.delete()
     else:
         quote_response = discord.Embed(title='Error (Sanctify): Invalid Quotation',
@@ -104,9 +105,9 @@ async def yoink(ctx):
     :return: None.
     """
     current_guild_id = ctx.message.channel.guild.id
-    maximum = smorgasDB.count_quotes(current_guild_id) - 1
+    maximum = Quote.count_quotes(current_guild_id) - 1
     if maximum >= 0:
-        yoinked_quote = smorgasDB.get_random_quote_by(current_guild_id, random.randint(0, maximum))
+        yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
         author = yoinked_quote[0]
         if not author:
             author = 'A Forgotten Prodigy'
@@ -138,12 +139,12 @@ async def govern(ctx, channel_name='', index=1):
     valid_channels = [channel for channel in current_guild.text_channels if channel.name == channel_name]
     if valid_channels:
         if isinstance(index, int) and len(valid_channels) >= index > 0:
-            smorgasDB.update_assigned_channel(current_guild.id, valid_channels[index - 1].id)
+            Guild.update_assigned_channel(current_guild.id, valid_channels[index - 1].id)
         else:
             govern_message = 'Error: the numerical value given is invalid.'
     else:
         govern_message = 'Error: the channel name given was not found.'
-    assigned_channel_id = smorgasDB.get_assigned_channel_by(current_guild.id)
+    assigned_channel_id = Guild.get_assigned_channel_by(current_guild.id)
     await smorg.get_channel(assigned_channel_id).send(govern_message)
 
 
