@@ -1,4 +1,5 @@
 # TODO: MODULAR DOCUMENTATION
+# TODO: handle deleted channels case
 
 import discord
 import random
@@ -24,8 +25,8 @@ async def on_ready():
     if reset_database:
         smorgasDB.reset_database()
     for guild in smorg.guilds:
-        if Guild.has_assigned_channel_by(guild.id):
-            channel_id = Guild.get_assigned_channel_by(guild.id)
+        if Guild.has_quotation_channel_by(guild.id):
+            channel_id = Guild.get_quotation_channel_by(guild.id)
             await smorg.get_channel(channel_id).send(on_ready_message)
         else:
             valid_channels = [channel for channel in guild.text_channels if channel.name == 'general']
@@ -40,18 +41,29 @@ async def on_ready():
                 print("Error! There are no text channels.")
 
 
+# TODO: documentation
+@smorg.event
+async def on_command_error(ctx, error):
+    if isinstance(error, discord.ext.commands.CommandNotFound):
+        pass
+    else:
+        print(error)
+        # TODO: have some kind of logging?
+
+# TODO: add 'sub-commands' (not using discord.py's functionality because
+# the actions of the sub-commands are too similar.
 @smorg.command(description='This command embeds a quote. It takes a quote (in quotation marks) ' +
                            'and, optionally, an author as arguments.')
 async def quote(ctx, quotation='', author='An Anonymous Intellectual'):
     """
-    This method receives a quotation and embeds it in its assigned chat.
+    This method receives a quotation and embeds it in its quotation chat.
     :param ctx: The context from which the quotation came.
     :param quotation: a quote to be embedded (a String).
     :param author: the name of the author of the quote (a String).
     :return: None.
     """
-    assigned_channel_id = Guild.get_assigned_channel_by(ctx.message.channel.guild.id)
-    current_channel = smorg.get_channel(assigned_channel_id)
+    quotation_channel_id = Guild.get_quotation_channel_by(ctx.message.channel.guild.id)
+    current_channel = smorg.get_channel(quotation_channel_id)
     quotation = quotation.strip()
     if quotation:
         quote_response = discord.Embed(title='The Marvelous Brainchild of ' + author + ':',
@@ -69,16 +81,16 @@ async def quote(ctx, quotation='', author='An Anonymous Intellectual'):
                            'It takes a quote (in quotation marks) and, optionally, an author as arguments.')
 async def sanctify(ctx, quotation='', author='An Unknowable Demigod'):
     """
-    This method receives a quotation and embeds it in its assigned chat.
+    This method receives a quotation and embeds it in its quotation chat.
     It also stores this information in the database.
     :param ctx: The context from which the quotation came.
     :param quotation: a quote to be embedded (a String).
     :param author: the name of the author of the quote (a String).
     :return: None.
     """
-    current_guild_id = ctx.message.channel.guild.id
-    assigned_channel_id = Guild.get_assigned_channel_by(current_guild_id)
-    current_channel = smorg.get_channel(assigned_channel_id)
+    current_guild_id = ctx.guild.id
+    quotation_channel_id = Guild.get_quotation_channel_by(current_guild_id)
+    current_channel = smorg.get_channel(quotation_channel_id)
     quotation = quotation.strip()
     if quotation:
         quote_response = discord.Embed(title='The Holiest Opus of ' + author + ':',
@@ -104,7 +116,7 @@ async def yoink(ctx):
     :param ctx: The context from which the quotation came.
     :return: None.
     """
-    current_guild_id = ctx.message.channel.guild.id
+    current_guild_id = ctx.guild.id
     maximum = Quote.count_quotes(current_guild_id) - 1
     if maximum >= 0:
         yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
@@ -135,17 +147,17 @@ async def govern(ctx, channel_name='', index=1):
     :return: None.
     """
     govern_message = 'Congrats! You have successfully changed where I engrave your greatest sayings.'
-    current_guild = ctx.message.channel.guild
+    current_guild = ctx.guild
     valid_channels = [channel for channel in current_guild.text_channels if channel.name == channel_name]
     if valid_channels:
         if isinstance(index, int) and len(valid_channels) >= index > 0:
-            Guild.update_assigned_channel(current_guild.id, valid_channels[index - 1].id)
+            Guild.update_quotation_channel(current_guild.id, valid_channels[index - 1].id)
         else:
             govern_message = 'Error: the numerical value given is invalid.'
     else:
         govern_message = 'Error: the channel name given was not found.'
-    assigned_channel_id = Guild.get_assigned_channel_by(current_guild.id)
-    await smorg.get_channel(assigned_channel_id).send(govern_message)
+    quotation_channel_id = Guild.get_quotation_channel_by(current_guild.id)
+    await smorg.get_channel(quotation_channel_id).send(govern_message)
 
 
 @smorg.command(description='This command retrieves the menu below shown here.')
@@ -162,5 +174,18 @@ async def support(ctx):
     for command in sorted_commands:
         support_embed.add_field(name='.' + command.name, value=command.description, inline=False)
     await ctx.send(embed=support_embed)
+
+
+# TODO: documentation...
+@smorg.command(description="This command signals a role at a certain time with a certain message. " +
+               "It takes arguments in the order of role, time, and message. " +
+               "Time can be in terms of a twelve-hour or twenty-four-hour clock; " +
+               "however, if it is the former, it must be in quotes with an A.M. or P.M. " +
+               "accompanying it. Roles and messages consisting of multiple words should also be in quotes.")
+async def remind(ctx, role, time, message):
+    current_guild = ctx.guild
+    quotation_channel_id = Guild.get_quotation_channel_by(current_guild.id)
+    current_channel = smorg.get_channel(quotation_channel_id)
+    # TODO: finish this.
 
 smorg.run(secretbord.bot_key)

@@ -68,8 +68,10 @@ class Quote(BaseAddition, Base):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(author: {0}, guild_id: {1}, quote_id: {2}, text: {3}>'\
-            .format(self.author, self.guild_id, self.quote_id, self.text)
+        return '<Guild(author: {0}, guild_id: {1}, quote_id: {2}, text: {3}, ' + \
+               'created_at: {4}, last_updated_at: {5}>'\
+            .format(self.author, self.guild_id, self.quote_id, self.text,
+                    self.created_at, self.last_updated_at)
 
     # Queries:
     @staticmethod
@@ -113,6 +115,29 @@ class Quote(BaseAddition, Base):
         return quote
 
 
+class Reminder(Base, BaseAddition):
+    __tablename__ = 'reminders'
+
+    guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), primary_key=True, nullable=False)
+    tag = Column(String(100), primary_key=True, nullable=False)
+    tag_text = Column(String)
+    time = Column(DateTime, nullable=False)
+    # ^ would this be appropriate??? or what should I use?
+    created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
+    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
+                             nullable=False, onupdate=sqlalchemy.sql.func.now())
+
+    # Relationships:
+    guild = relationship("Guild", back_populates="reminders")
+
+    # Methods:
+    def __repr__(self):
+        return '<Guild(guild_id: {0}, tag: {1}, tag_text: {2}, time: {3},' + \
+            'created_at: {4}, last_updated_at: {5}>'\
+            .format(self.guild_id, self.tag, self.tag_text, self.time,
+                    self.created_at, self.last_updated_at)
+
+
 class Guild(Base, BaseAddition):
     """
     This class represents a Discord server, called a Guild.
@@ -122,43 +147,47 @@ class Guild(Base, BaseAddition):
     # Attributes:
     guild_id = Column(BigInteger, primary_key=True, nullable=False)
     quotation_channel_id = Column(BigInteger, unique=True, nullable=False)
+    reminder_channel_id = Column(BigInteger, unique=True, nullable=False)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
     quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild")
+    reminders = relationship("Reminder", order_by=Reminder.time, back_populates="guild")
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, quotation_channel_id: {1}>'\
-            .format(self.guild_id, self.quotation_channel_id)
+        return '<Guild(guild_id: {0}, quotation_channel_id: {1}, reminder_channel_id: {2}' + \
+            'created_at: {3}, last_updated_at: {4}>'\
+            .format(self.guild_id, self.quotation_channel_id, self.reminder_channel_id,
+                    self.created_at, self.last_updated_at)
 
     # Queries:
     @staticmethod
     @BaseAddition.session_method
-    def get_assigned_channel_by(method_session, g_id):
+    def get_quotation_channel_by(method_session, g_id):
         """
-        This method retrieves the assigned channel for a given Guild.
+        This method retrieves the quotation channel for a given Guild.
         :param method_session: a Session database connection.
         :param g_id: a Discord Guild ID (Integer).
         :return: a channel ID (Integer).
         """
-        assigned_channel = method_session.query(Guild.quotation_channel_id).filter_by(guild_id=g_id).first()
-        return assigned_channel[0]
+        quotation_channel = method_session.query(Guild.quotation_channel_id).filter_by(guild_id=g_id).first()
+        return quotation_channel[0]
 
     @staticmethod
     @BaseAddition.session_method
-    def has_assigned_channel_by(method_session, g_id):
+    def has_quotation_channel_by(method_session, g_id):
         """
-        This method determines whether a Guild has an assigned channel for embedding quotes.
+        This method determines whether a Guild has an quotation channel for embedding quotes.
         :param method_session: a Session database connection.
         :param g_id: a Discord Guild ID (Integer).
-        :return: a Boolean of whether a Guild has a channel assigned to it according to the database.
+        :return: a Boolean of whether a Guild has a channel quotation to it according to the database.
         """
-        assigned_channel = method_session.query(Guild.quotation_channel_id).filter_by(guild_id=g_id).first()
-        has_assigned_channel = assigned_channel is not None
-        return has_assigned_channel
+        quotation_channel = method_session.query(Guild.quotation_channel_id).filter_by(guild_id=g_id).first()
+        has_quotation_channel = quotation_channel is not None
+        return has_quotation_channel
 
     @staticmethod
     @BaseAddition.session_method
@@ -170,15 +199,15 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        new_guild = Guild(guild_id=g_id, quotation_channel_id=c_id)
+        new_guild = Guild(guild_id=g_id, quotation_channel_id=c_id, reminder_channel_id=c_id)
         method_session.add(new_guild)
         method_session.commit()
 
     @staticmethod
     @BaseAddition.session_method
-    def update_assigned_channel(method_session, g_id, c_id):
+    def update_quotation_channel(method_session, g_id, c_id):
         """
-        This method retrieves a Guild and updates its assigned channel.
+        This method retrieves a Guild and updates its quotation channel.
         :param method_session: a Session database connection.
         :param g_id: a Discord Guild ID (Integer).
         :param c_id: a Discord Channel ID (Integer).
