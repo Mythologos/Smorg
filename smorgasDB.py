@@ -178,16 +178,16 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def has_quotation_channel_by(method_session, g_id):
+    def exists_with(method_session, g_id):
         """
-        This method determines whether a Guild has an quotation channel for embedding quotes.
+        This method determines whether a Guild has channels assigned to it.
         :param method_session: a Session database connection.
         :param g_id: a Discord Guild ID (Integer).
         :return: a Boolean of whether a Guild has a channel quotation to it according to the database.
         """
-        quotation_channel = method_session.query(Guild.quotation_channel_id).filter_by(guild_id=g_id).first()
-        has_quotation_channel = quotation_channel is not None
-        return has_quotation_channel
+        guild_id = method_session.query(Guild.guild_id).filter_by(guild_id=g_id).first()
+        guild_existence = guild_id is not None
+        return guild_existence
 
     @staticmethod
     @BaseAddition.session_method
@@ -216,4 +216,31 @@ class Guild(Base, BaseAddition):
         method_session.query(Guild)\
                       .filter_by(guild_id=g_id)\
                       .update({"quotation_channel_id": c_id})
+        method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
+    def get_reminder_channel_by(method_session, g_id):
+        """
+        This method retrieves the reminder channel for a given Guild.
+        :param method_session: a Session database connection.
+        :param g_id: a Discord Guild ID (Integer).
+        :return: a channel ID (Integer).
+        """
+        reminder_channel = method_session.query(Guild.reminder_channel_id).filter_by(guild_id=g_id).first()
+        return reminder_channel[0]
+
+    @staticmethod
+    @BaseAddition.session_method
+    def update_reminder_channel(method_session, g_id, c_id):
+        """
+        This method retrieves a Guild and updates its quotation channel.
+        :param method_session: a Session database connection.
+        :param g_id: a Discord Guild ID (Integer).
+        :param c_id: a Discord Channel ID (Integer).
+        :return: None.
+        """
+        method_session.query(Guild)\
+                      .filter_by(guild_id=g_id)\
+                      .update({"reminder_channel_id": c_id})
         method_session.commit()
