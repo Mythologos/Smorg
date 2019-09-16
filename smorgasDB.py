@@ -21,15 +21,6 @@ Base = declarative_base(bind=engine)
 Session = sessionmaker(bind=engine)
 
 
-def reset_database():
-    """
-    This method resets the database down to the structure based upon the classes described above.
-    :return: None.
-    """
-    Base.metadata.drop_all()
-    Base.metadata.create_all()
-
-
 # TODO: describe this as a mixin.
 class BaseAddition:
     @classmethod
@@ -46,6 +37,16 @@ class BaseAddition:
             method_session.close()
             return session_value
         return session_decorator
+
+    @staticmethod
+    def reset_database():
+        """
+        TODO -- should this be put somewhere else?
+        This method resets the database down to the structure based upon the classes described above.
+        :return: None.
+        """
+        Base.metadata.drop_all()
+        Base.metadata.create_all()
 
 
 class Quote(BaseAddition, Base):
@@ -136,6 +137,13 @@ class Reminder(Base, BaseAddition):
             'created_at: {4}, last_updated_at: {5}>'\
             .format(self.guild_id, self.tag, self.tag_text, self.time,
                     self.created_at, self.last_updated_at)
+
+    @staticmethod
+    @BaseAddition.session_method
+    def create_reminder_with(method_session, g_id, tag, tag_text, time):
+        new_guild = Reminder(guild_id=g_id, tag=tag, tag_text=tag_text, time=time)
+        method_session.add(new_guild)
+        method_session.commit()
 
 
 class Guild(Base, BaseAddition):
