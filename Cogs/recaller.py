@@ -26,15 +26,47 @@ class Recaller(commands.Cog):
         mentionables = [role.name for role in current_guild.roles if role.name == name] + \
                        [member.display_name for member in current_channel.members if member.display_name == name]
         if mentionables:
-            # if len(mentionables) > 1:
-            #    mentionable_index = await select_from(ctx, mentionables)
-            #    mentionables = [mentionables[mentionable_index]]
-            # TODO: finish this with an interactive step to select in the case of ambiguity.
-            tag = mentionables[0]
-            # TODO: separate time handling into separate method(s)?
-            reminder_time = reminder_time.split(',')
-            if len(reminder_time) > 1:
-                if len(reminder_time) > 2:
+            selected_tag = self.select_tag(ctx, mentionables)
+            if reminder_time:
+                selected_time = self.select_time(ctx, reminder_time)
+            else:
+                reminder_response = "Error: that time is invalid. Please try again."
+        else:
+            reminder_response = "Error: that role is invalid. Please try again."
+        await current_channel.send(reminder_response)
+
+    async def select_tag(self, ctx, mentionables):
+        chosen_mentionable: str = mentionables[0]
+        if len(mentionables) > 1:
+            selection_message: str = "Please select an item from the following options via its number: /n"
+            for index, mentionable in enumerate(mentionables):
+                selection_message = selection_message + str(index) + ": " + mentionable + "/n"
+            await ctx.send(selection_message)
+            try:
+                mentionable_index = await self.bot.wait_for('message', timeout=120.0,
+                                                            check=lambda msg:
+                                                            (msg.author == ctx.author) and
+                                                            (0 <= int(msg) < len(mentionables)))
+                chosen_mentionable = mentionables[mentionable_index]
+            except TimeoutError:
+                disambiguation_timeout_embed = discord.Embed(title='Error (Remind): Disambiguation Timeout',
+                                                             description='You didn\'t supply a valid index quickly enough.',
+                                                             color=0xB80000)
+                await ctx.send(embed=disambiguation_timeout_embed)
+        return chosen_mentionable
+
+    async def select_time(self, ctx, reminder_time):
+        time_components = reminder_time.split(',')
+        try:
+            smorg_time: int = int(time_components[0].replace(':', ' '))
+        except ValueError:
+            invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
+                                               description='You didn\'t give a correctly-formatted time.',
+                                               color=0xB80000)
+            await ctx.send(embed=invalid_time_embed)
+        else:
+            if len(time_components) > 1:
+                if len(time_components) > 2:
                     ...
                     # to military time & to a standardized time zone
                 elif reminder_time[1] in self.twelve_hour_signifiers:
@@ -43,13 +75,11 @@ class Recaller(commands.Cog):
                 elif reminder_time[1] in self.time_zones:
                     ...
                     # to a standardized time zone
-            else:
-                ...
-                # TODO: handle time formatting.
-                # "12:00 [P.M.] [EST], 01/04/2019"
-        else:
-            reminder_response = "Error: that role is invalid. Please try again."
-        await current_channel.send(reminder_response)
+                else:
+                    ...
+                    # TODO: handle time formatting.
+                    # "12:00 [P.M.] [EST], 01/04/2019"
+            return smorg_time
 
     # TODO: issue --> fix time from decimal to hourly (e.g. /60).
     async def to_military_time(self, full_time):
@@ -75,12 +105,3 @@ class Recaller(commands.Cog):
                 elif time_components[0] >= 1200:
                     time_components[0] -= time_offset
         return time_components[0]
-
-    # I like this, but I'm not sure how to proceed. I'll come back to it.
-    # async def select_from(ctx, items):
-        # selection_message = "Please select an item from the following options via its number: /n"
-        # for index, item in enumerate(items):
-        #     selection_message = selection_message + index + ": " + item + "/n"
-        # await ctx.send(selection_message)
-        # selected_index = ???
-        # return selected_index
