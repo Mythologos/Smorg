@@ -6,7 +6,7 @@ import sqlalchemy
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy import BigInteger, DateTime, SmallInteger, String
+from sqlalchemy import BigInteger, Date, DateTime, SmallInteger, String, Time
 
 engine = sqlalchemy.create_engine(secretbord.database + '+' +
                                   secretbord.dialect + '://' +
@@ -41,7 +41,7 @@ class BaseAddition:
     @staticmethod
     def reset_database():
         """
-        TODO -- should this be put somewhere else?
+        TODO -- should this be placed somewhere else?
         This method resets the database down to the structure based upon the classes described above.
         :return: None.
         """
@@ -122,8 +122,8 @@ class Reminder(Base, BaseAddition):
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), primary_key=True, nullable=False)
     tag = Column(String(100), primary_key=True, nullable=False)
     tag_text = Column(String)
-    time = Column(DateTime, nullable=False)
-    # ^ would this be appropriate??? or what should I use?
+    reminder_date = Column(Date, nullable=False)
+    reminder_time = Column(Time, nullable=False)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())
@@ -133,15 +133,15 @@ class Reminder(Base, BaseAddition):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, tag: {1}, tag_text: {2}, time: {3},' + \
-            'created_at: {4}, last_updated_at: {5}>'\
-            .format(self.guild_id, self.tag, self.tag_text, self.time,
+        return '<Guild(guild_id: {0}, tag: {1}, tag_text: {2}, reminder_date: {3}, ' + \
+            'reminder_time: {4} created_at: {5}, last_updated_at: {6}>'\
+            .format(self.guild_id, self.tag, self.tag_text, self.reminder_date, self.reminder_time,
                     self.created_at, self.last_updated_at)
 
     @staticmethod
     @BaseAddition.session_method
-    def create_reminder_with(method_session, g_id, tag, tag_text, time):
-        new_guild = Reminder(guild_id=g_id, tag=tag, tag_text=tag_text, time=time)
+    def create_reminder_with(method_session, g_id, tag, tag_text, date, time):
+        new_guild = Reminder(guild_id=g_id, tag=tag, tag_text=tag_text, reminder_date=date, reminder_time=time)
         method_session.add(new_guild)
         method_session.commit()
 

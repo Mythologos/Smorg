@@ -56,17 +56,17 @@ class Recaller(commands.Cog):
         return chosen_mentionable
 
     async def select_time(self, ctx, reminder_time):
-        time_components = reminder_time.split(',')
+        datetime_components = reminder_time.split(',')
         try:
-            smorg_time: int = int(time_components[0].replace(':', ' '))
+            smorg_time: int = int(datetime_components[0].replace(':', ' '))
         except ValueError:
             invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
                                                description='You didn\'t give a correctly-formatted time.',
                                                color=0xB80000)
             await ctx.send(embed=invalid_time_embed)
         else:
-            if len(time_components) > 1:
-                if len(time_components) > 2:
+            if len(datetime_components) > 1:
+                if len(datetime_components) > 2:
                     ...
                     # to military time & to a standardized time zone
                 elif reminder_time[1] in self.twelve_hour_signifiers:
@@ -78,7 +78,8 @@ class Recaller(commands.Cog):
                 else:
                     ...
                     # TODO: handle time formatting.
-                    # "12:00 [P.M.] [EST], 01/04/2019"
+                    # TIME: "12:00 [P.M.] [EST]"
+                    # DATE: "4 January 2019"
             return smorg_time
 
     # TODO: issue --> fix time from decimal to hourly (e.g. /60).
