@@ -162,7 +162,8 @@ class Guild(Base, BaseAddition):
 
     # Relationships:
     quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild")
-    reminders = relationship("Reminder", order_by=Reminder.time, back_populates="guild")
+    reminders = relationship("Reminder", order_by=[Reminder.reminder_date, Reminder.reminder_time],
+                             back_populates="guild")
 
     # Methods:
     def __repr__(self):

@@ -1,13 +1,16 @@
 import discord
 from discord.ext import commands
 from smorgasDB import Guild
+from .Helpers.time_zone import TimeZone
 
 
 class Recaller(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.time_zones: list = []
-        self.twelve_hour_signifiers: list = []
+        for i in range(-12, 14):
+            self.time_zones.append(TimeZone(i))
+        self.twelve_hour_signifiers: tuple = ('a.m.', 'am', 'p.m.', 'pm')
 
     # TODO: documentation...
     @commands.command(description="This command signals a role at a certain time with a certain message. " +
@@ -58,7 +61,9 @@ class Recaller(commands.Cog):
     async def select_time(self, ctx, reminder_time):
         datetime_components = reminder_time.split(',')
         try:
-            smorg_time: int = int(datetime_components[0].replace(':', ' '))
+            full_time: list = datetime_components[0].split(':')
+            hours: int = int(full_time[0])
+            minutes: int = int(full_time[1])
         except ValueError:
             invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
                                                description='You didn\'t give a correctly-formatted time.',
@@ -67,42 +72,45 @@ class Recaller(commands.Cog):
         else:
             if len(datetime_components) > 1:
                 if len(datetime_components) > 2:
-                    ...
+                    period: str = datetime_components[1]
+                    time_zone: str = datetime_components[2]
+                    hours, minutes = self.convert_to_military_time(hours, minutes, period)
+                    hours, minutes = self.convert_to_absolute_time(hours, minutes, time_zone)
                     # to military time & to a standardized time zone
                 elif reminder_time[1] in self.twelve_hour_signifiers:
-                    ...
+                    period: str = datetime_components[1]
+                    hours, minutes = self.convert_to_military_time(hours, minutes, period)
                     # to military time
                 elif reminder_time[1] in self.time_zones:
-                    ...
+                    time_zone: str = datetime_components[1]
+                    hours, minutes = self.convert_to_absolute_time(hours, minutes, time_zone)
                     # to a standardized time zone
                 else:
                     ...
                     # TODO: handle time formatting.
                     # TIME: "12:00 [P.M.] [EST]"
                     # DATE: "4 January 2019"
-            return smorg_time
+            return hours, minutes
 
-    # TODO: issue --> fix time from decimal to hourly (e.g. /60).
-    async def to_military_time(self, full_time):
-        # type: (str) -> int
-        time_offset: int = 1200
-        time_components: list = full_time.split()
-        try:
-            time_components[0] = int(time_components[0].replace(':', ''))
-        except ValueError:
-            ...
-            # call error instead of finishing
-        else:
-            if time_components[1] in ['pm', 'PM', 'p.m.', 'P.M.']:
-                if time_components[0] >= 1300:
-                    ...
-                    # raise error.
-                else:
-                    time_components[0] += (time_components[0] - time_offset)
-            elif time_components[1] in ['am', 'AM', 'a.m.', 'A.M.']:
-                if time_components[0] >= 1300:
-                    ...
-                    # raise error
-                elif time_components[0] >= 1200:
-                    time_components[0] -= time_offset
-        return time_components[0]
+    @staticmethod
+    async def convert_to_military_time(hours, minutes, period):
+        # type: (int, int, str) -> tuple
+        if period in ['pm', 'p.m.']:
+            if ...:     # time is impossible
+                ...
+                # raise error.
+            else:
+                ...
+                # increment time
+        elif period in ['am', 'a.m.']:
+            if ...:     # time is impossible
+                ...
+                # raise error
+            elif ...:   # time is possible, special case
+                ...     # decrement time
+        return hours, minutes
+
+    # TODO: change method name?
+    @staticmethod
+    async def convert_to_absolute_time(hours, minutes, time_zone):
+        ...
