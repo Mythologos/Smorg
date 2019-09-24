@@ -66,7 +66,8 @@ class Recaller(commands.Cog, Disambiguator):
                     try:
                         period: str = full_time[1].lower()
                         time_zone: str = full_time[2].lower()
-                        assert (period in self.twelve_hour_periods and time_zone in self.get_time_zone_aliases()), \
+                        assert (period in self.twelve_hour_periods and
+                                time_zone in self.get_time_zone_aliases()), \
                             'Time period and time zone must be recognizable to the program.'
                     except AssertionError:
                         invalid_time_format_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
@@ -88,6 +89,7 @@ class Recaller(commands.Cog, Disambiguator):
                     # TODO: handle time formatting.
                     # TIME: "12:00 [P.M.] [EST]"
                     # DATE: "4 January 2019"
+                # TODO: handle dates
             return hours, minutes
 
     @staticmethod
@@ -106,10 +108,19 @@ class Recaller(commands.Cog, Disambiguator):
                 hours = 0
             return hours, minutes
 
+    # converts time zone to a standard.
+    # TODO: instead of GMT +/- 0, convert to database time zone?
     async def convert_to_standard_time(self, ctx, hours, minutes, time_zone):
         retrieved_time_zones: list = self.get_time_zones_by_alias(time_zone)
         chosen_time_zone_index: int = await Disambiguator.disambiguate(self.bot, ctx, retrieved_time_zones)
-        # TODO: finish conversion to GMT+0 / GMT-0 time zone, if that's what's desired.
+        time_zone_number = retrieved_time_zones[chosen_time_zone_index].value
+        while time_zone_number != 0:
+            if time_zone_number > 0:
+                hours -= 1
+                time_zone_number -= 1
+            else:
+                hours += 1
+                time_zone_number += 1
         return hours, minutes
 
     def get_time_zone_aliases(self):
