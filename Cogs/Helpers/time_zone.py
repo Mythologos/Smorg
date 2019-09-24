@@ -1,6 +1,7 @@
 from aenum import Enum
 
 
+# note: names dictate military time zone name
 class TimeZone(Enum, init='value aliases'):
     A = (1, ('GMT+1', 'CET', 'WAT', 'BST', 'IST', 'WEDT', 'WEST', 'MEZ'))
     B = (2, ('GMT+2', 'EET', 'USZ1', 'CEDT', 'CEST', 'MEST', 'MESZ'))
@@ -70,6 +71,13 @@ class TimeZone(Enum, init='value aliases'):
         else:
             ne_bool = self.value < other.value
         return ne_bool
+
+    def __str__(self):
+        tz_template: str = 'Time Zone ' + self.name + ': '
+        for alias in self.aliases:
+            tz_template += alias + ', '
+        tz_template = tz_template.rstrip(', ') + '.'
+        return tz_template
 
     @staticmethod
     def get_lowest_zone_value():

@@ -2,15 +2,19 @@ import discord
 from discord.ext import commands
 from smorgasDB import Guild
 from .Helpers.time_zone import TimeZone
+from .Helpers.disambiguator import Disambiguator
+
+# GMT: https://greenwichmeantime.com/time-zone/definition/
+# aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst
 
 
-class Recaller(commands.Cog):
+class Recaller(commands.Cog, Disambiguator):
     def __init__(self, bot):
         self.bot = bot
         self.time_zones: list = []
-        for i in range(-12, 14):
+        for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
             self.time_zones.append(TimeZone(i))
-        self.twelve_hour_signifiers: tuple = ('a.m.', 'am', 'p.m.', 'pm')
+        self.twelve_hour_periods: tuple = ('a.m.', 'am', 'p.m.', 'pm')
 
     # TODO: documentation...
     @commands.command(description="This command signals a role at a certain time with a certain message. " +
@@ -40,51 +44,45 @@ class Recaller(commands.Cog):
 
     async def select_tag(self, ctx, mentionables):
         chosen_mentionable: str = mentionables[0]
-        if len(mentionables) > 1:
-            selection_message: str = "Please select an item from the following options via its number: /n"
-            for index, mentionable in enumerate(mentionables):
-                selection_message = selection_message + str(index) + ": " + mentionable + "/n"
-            await ctx.send(selection_message)
-            try:
-                mentionable_index = await self.bot.wait_for('message', timeout=120.0,
-                                                            check=lambda msg:
-                                                            (msg.author == ctx.author) and
-                                                            (0 <= int(msg) < len(mentionables)))
-                chosen_mentionable = mentionables[mentionable_index]
-            except TimeoutError:
-                disambiguation_timeout_embed = discord.Embed(title='Error (Remind): Disambiguation Timeout',
-                                                             description='You didn\'t supply a valid index quickly enough.',
-                                                             color=0xB80000)
-                await ctx.send(embed=disambiguation_timeout_embed)
-        return chosen_mentionable
+        chosen_mentionable_index: int = await Disambiguator.disambiguate(self.bot, ctx, mentionables)
+        return chosen_mentionable[chosen_mentionable_index]
 
     async def select_time(self, ctx, reminder_time):
         datetime_components = reminder_time.split(',')
         try:
-            full_time: list = datetime_components[0].split(':')
-            hours: int = int(full_time[0])
-            minutes: int = int(full_time[1])
+            full_time: list = datetime_components[0].split(' ')
+            numerical_time: list = full_time[0].split(':')
+            hours: int = int(numerical_time[0])
+            minutes: int = int(numerical_time[1])
         except ValueError:
             invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
-                                               description='You didn\'t give a correctly-formatted time.',
+                                               description='You didn\'t give a time with correctly-formatted, ' +
+                                                           'numerical hours and minutes.',
                                                color=0xB80000)
             await ctx.send(embed=invalid_time_embed)
         else:
-            if len(datetime_components) > 1:
-                if len(datetime_components) > 2:
-                    period: str = datetime_components[1]
-                    time_zone: str = datetime_components[2]
-                    hours, minutes = self.convert_to_military_time(hours, minutes, period)
-                    hours, minutes = self.convert_to_absolute_time(hours, minutes, time_zone)
-                    # to military time & to a standardized time zone
-                elif reminder_time[1] in self.twelve_hour_signifiers:
-                    period: str = datetime_components[1]
-                    hours, minutes = self.convert_to_military_time(hours, minutes, period)
-                    # to military time
+            if len(full_time) > 1:
+                if len(full_time) > 2:
+                    try:
+                        period: str = full_time[1].lower()
+                        time_zone: str = full_time[2].lower()
+                        assert (period in self.twelve_hour_periods and time_zone in self.get_time_zone_aliases()), \
+                            'Time period and time zone must be recognizable to the program.'
+                    except AssertionError:
+                        invalid_time_format_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
+                                                                  description='You didn\'t give a time with a valid time zone ' +
+                                                                  ' or time period.',
+                                                                  color=0xB80000)
+                        await ctx.send(embed=invalid_time_format_embed)
+                    else:
+                        hours, minutes = await self.convert_to_military_time(ctx, hours, minutes, period)
+                        hours, minutes = await self.convert_to_standard_time(ctx, hours, minutes, time_zone)
+                elif reminder_time[1] in self.twelve_hour_periods:
+                    period: str = full_time[1].lower()
+                    hours, minutes = self.convert_to_military_time(ctx, hours, minutes, period)
                 elif reminder_time[1] in self.time_zones:
-                    time_zone: str = datetime_components[1]
-                    hours, minutes = self.convert_to_absolute_time(hours, minutes, time_zone)
-                    # to a standardized time zone
+                    time_zone: str = full_time[1].lower()
+                    hours, minutes = self.convert_to_standard_time(ctx, hours, minutes, time_zone)
                 else:
                     ...
                     # TODO: handle time formatting.
@@ -93,24 +91,31 @@ class Recaller(commands.Cog):
             return hours, minutes
 
     @staticmethod
-    async def convert_to_military_time(hours, minutes, period):
-        # type: (int, int, str) -> tuple
-        if period in ['pm', 'p.m.']:
-            if ...:     # time is impossible
-                ...
-                # raise error.
-            else:
-                ...
-                # increment time
-        elif period in ['am', 'a.m.']:
-            if ...:     # time is impossible
-                ...
-                # raise error
-            elif ...:   # time is possible, special case
-                ...     # decrement time
+    async def convert_to_military_time(ctx: commands.Context, hours: int, minutes: int, period: str) -> tuple:
+        try:
+            assert (0 < hours <= 12 and 0 <= minutes <= 59), 'Function only accepts valid twelve-hour times.'
+        except AssertionError:
+            invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time',
+                                               description='You didn\'t give a valid numerical time.',
+                                               color=0xB80000)
+            await ctx.send(embed=invalid_time_embed)
+        else:
+            if period in ['pm', 'p.m'] and hours != 12:
+                hours += 12
+            elif period in ['am', 'a.m.'] and hours == 12:
+                hours = 0
+            return hours, minutes
+
+    async def convert_to_standard_time(self, ctx, hours, minutes, time_zone):
+        retrieved_time_zones: list = self.get_time_zones_by_alias(time_zone)
+        chosen_time_zone_index: int = await Disambiguator.disambiguate(self.bot, ctx, retrieved_time_zones)
+        # TODO: finish conversion to GMT+0 / GMT-0 time zone, if that's what's desired.
         return hours, minutes
 
-    # TODO: change method name?
-    @staticmethod
-    async def convert_to_absolute_time(hours, minutes, time_zone):
-        ...
+    def get_time_zone_aliases(self):
+        time_zone_aliases = set(alias for gmt_zone in self.time_zones for alias in gmt_zone.aliases)
+        return time_zone_aliases
+
+    def get_time_zones_by_alias(self, given_alias):
+        selected_time_zones: list = [gmt_zone for gmt_zone in self.time_zones if given_alias in gmt_zone]
+        return selected_time_zones
