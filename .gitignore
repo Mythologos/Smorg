@@ -1,0 +1,7 @@
+# General:
+__pycache__/
+venv/
+.idea/
+
+# My Files:
+/secretbord.py
