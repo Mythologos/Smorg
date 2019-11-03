@@ -72,8 +72,8 @@ class Recaller(commands.Cog, Disambiguator):
                             'Time period and time zone must be recognizable to the program.'
                     except AssertionError:
                         invalid_time_format_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
-                                                                  description='You didn\'t give a time with a valid time zone ' +
-                                                                  ' or time period.',
+                                                                  description='You didn\'t give a time with ' +
+                                                                              'a valid time zone or time period.',
                                                                   color=0xB80000)
                         await ctx.send(embed=invalid_time_format_embed)
                     else:

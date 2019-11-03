@@ -19,7 +19,8 @@ class Disambiguator:
                 option_index: int = int(option_index) - 1
             except TimeoutError:
                 disambiguation_timeout_embed = discord.Embed(title='Error: Disambiguation Timeout',
-                                                             description='You didn\'t supply a valid index quickly enough.',
+                                                             description='You didn\'t supply a valid ' +
+                                                                         'index quickly enough.',
                                                              color=0xB80000)
                 await ctx.send(embed=disambiguation_timeout_embed)
         return option_index

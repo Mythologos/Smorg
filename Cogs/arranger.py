@@ -86,5 +86,5 @@ class Arranger(commands.Cog):
                 govern_message = 'Error: the numerical value given is invalid.'
         else:
             govern_message = 'Error: the channel name given was not found.'
-        reminder_channel_id = Guild.get_gamble_channel_by(current_guild.id)
-        await self.bot.get_channel(reminder_channel_id).send(govern_message)
+        gamble_channel_id = Guild.get_gamble_channel_by(current_guild.id)
+        await self.bot.get_channel(gamble_channel_id).send(govern_message)
