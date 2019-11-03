@@ -21,7 +21,8 @@ class Recaller(commands.Cog, Disambiguator):
                                   "It takes arguments in the order of role, time, and an optional message. " +
                                   "Time can be in terms of a twelve-hour or twenty-four-hour clock; " +
                                   "however, if it is the former, it must be in quotes with an A.M. or P.M. " +
-                                  "accompanying it. Roles and messages consisting of multiple words should also be in quotes.")
+                                  "accompanying it. Roles and messages consisting of multiple words " +
+                                  "should also be in quotes.")
     async def remind(self, ctx, name, reminder_time, message=''):
         reminder_response = "Your reminder has been successfully processed! " + \
                             "It will be sent at the specified time."

@@ -164,6 +164,7 @@ class Guild(Base, BaseAddition):
 
     # Attributes:
     guild_id = Column(BigInteger, primary_key=True, nullable=False)
+    gamble_channel_id = Column(BigInteger, unique=True, nullable=True)
     quotation_channel_id = Column(BigInteger, unique=True, nullable=False)
     reminder_channel_id = Column(BigInteger, unique=True, nullable=False)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
@@ -177,9 +178,9 @@ class Guild(Base, BaseAddition):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, quotation_channel_id: {1}, reminder_channel_id: {2}' + \
-            'created_at: {3}, last_updated_at: {4}>'\
-            .format(self.guild_id, self.quotation_channel_id, self.reminder_channel_id,
+        return '<Guild(guild_id: {0}, gamble_channel_id: {1}, quotation_channel_id: {2}, ' \
+               'reminder_channel_id: {3}' + 'created_at: {4}, last_updated_at: {5}>' \
+            .format(self.guild_id, self.gamble_channel_id, self.quotation_channel_id, self.reminder_channel_id,
                     self.created_at, self.last_updated_at)
 
     # Queries:
@@ -232,8 +233,8 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        method_session.query(Guild)\
-                      .filter_by(guild_id=g_id)\
+        method_session.query(Guild) \
+                      .filter_by(guild_id=g_id) \
                       .update({"quotation_channel_id": c_id})
         method_session.commit()
 
@@ -259,7 +260,34 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        method_session.query(Guild)\
-                      .filter_by(guild_id=g_id)\
+        method_session.query(Guild) \
+                      .filter_by(guild_id=g_id) \
                       .update({"reminder_channel_id": c_id})
+        method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
+    def get_gamble_channel_by(method_session, g_id):
+        """
+        This method retrieves the gamble channel for a given Guild.
+        :param method_session: a Session database connection.
+        :param g_id: a Discord Guild ID (Integer).
+        :return: a channel ID (Integer).
+        """
+        reminder_channel = method_session.query(Guild.gamble_channel_id).filter_by(guild_id=g_id).first()
+        return reminder_channel[0]
+
+    @staticmethod
+    @BaseAddition.session_method
+    def update_gamble_channel(method_session, g_id, c_id):
+        """
+        This method retrieves a Guild and updates its gamble channel.
+        :param method_session: a Session database connection.
+        :param g_id: a Discord Guild ID (Integer).
+        :param c_id: a Discord Channel ID (Integer).
+        :return: None.
+        """
+        method_session.query(Guild) \
+                      .filter_by(guild_id=g_id) \
+                      .update({"gamble_channel_id": c_id})
         method_session.commit()
