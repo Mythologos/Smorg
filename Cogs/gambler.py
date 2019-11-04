@@ -76,7 +76,7 @@ class Gambler(commands.Cog, Disambiguator):
             roll_result: tuple = self.evaluate_roll(roll_parse_result)
             raw_result_message: str = self.format_roll_result(roll_result[1])
             end_result_message: str = self.format_roll_result(roll_result[2])
-            modifier_message: str = " + " + str(roll_parse_result[3]) if roll_parse_result[3] != 0 else ""
+            modifier_message: str = " + " + str(roll_parse_result[-1]) if roll_parse_result[-1] != 0 else ""
             chance_message = ctx.message.author.mention + "\n" + \
                 "Roll: " + roll + "\n" + \
                 "Reason: " + description + "\n" + \
@@ -86,7 +86,7 @@ class Gambler(commands.Cog, Disambiguator):
             await destination_channel.send(chance_message)
 
     def parse_roll(self, roll: str) -> list:
-        roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([+-]\d+)?')
+        roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-]\d+)?')
         regex_result = roll_regex.match(roll)
         roll_components: list = []
         roll_list: list = []
@@ -107,13 +107,18 @@ class Gambler(commands.Cog, Disambiguator):
             die_count_modifier = self.check_basic_roll_component(number_rolls, roll_components[2], 1)
             if roll_components[2] and die_count_modifier <= number_rolls:
                 if roll_components[2][0:1] in ['d', 'D']:
-                    die_count_modifier -= number_rolls
+                    die_count_modifier = number_rolls - die_count_modifier
             elif roll_components[2]:
                 die_count_modifier = die_size_error_message
+            drop_keep_boolean: bool = bool(roll_components[2])
             roll_list.append(die_count_modifier)
+            roll_list.append(drop_keep_boolean)
 
-            die_roll_modifier = self.check_basic_roll_component(0, roll_components[3], 1)
-            if roll_components[3] and roll_components[3][0:1] == '-':
+            die_explosion: bool = (roll_components[3] == '!')
+            roll_list.append(die_explosion)
+
+            die_roll_modifier = self.check_basic_roll_component(0, roll_components[-1], 1)
+            if roll_components[-1] and roll_components[-1][0:1] == '-':
                 die_roll_modifier *= -1
             roll_list.append(die_roll_modifier)
         finally:
@@ -122,15 +127,28 @@ class Gambler(commands.Cog, Disambiguator):
     @staticmethod
     def evaluate_roll(roll_parse_result):
         individual_results: list = []
-        for i in range(0, roll_parse_result[0]):
+        roll_index: int = 0
+        explosion_count: int = 0
+        while roll_index < roll_parse_result[0]:
             individual_results.append(randint(1, roll_parse_result[1]))
-        unsorted_results: list = deepcopy(individual_results)
+            if roll_parse_result[4]:
+                if individual_results[-1] != roll_parse_result[1]:
+                    roll_index += 1
+                else:
+                    explosion_count += 1
+            else:
+                roll_index += 1
 
+        unsorted_results: list = deepcopy(individual_results)
         individual_results.sort(reverse=True)
-        del individual_results[roll_parse_result[2]:]
-        roll_result: int = roll_parse_result[3]
+        if roll_parse_result[3]:
+            del individual_results[roll_parse_result[2]:]
+        else:
+            del individual_results[(roll_parse_result[2] + explosion_count):]
+
+        roll_result: int = roll_parse_result[-1]
         for result in individual_results:
-            roll_result = roll_result + result
+            roll_result += result
         roll_evaluation: tuple = (roll_result, unsorted_results, individual_results)
         return roll_evaluation
 
@@ -151,5 +169,4 @@ class Gambler(commands.Cog, Disambiguator):
             roll_component_value = int(item[character_range_start:character_range_end])
         return roll_component_value
 
-    # Add explosions later?
-    # Add deck of cards?
+    # TODO: deck of cards; challenge dice; gmroll dice.
