@@ -38,6 +38,8 @@ class RollResult(Enum):
     INDIVIDUAL_RESULTS = 2
 
 
+# Note: challenge dice systems use > and < but mean >= and <= generally,
+# So I use the below in that way.
 class ComparisonIndicator(Enum):
     LESS_THAN = -1
     NO_COMPARISON = 0
@@ -199,10 +201,10 @@ class Gambler(commands.Cog, Disambiguator):
         if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
             if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value] == ComparisonIndicator.GREATER_THAN.value:
                 for result in individual_results:
-                    roll_result += (result > roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
+                    roll_result += (result >= roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
             else:
                 for result in individual_results:
-                    roll_result += (result < roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
+                    roll_result += (result <= roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
         else:
             for result in individual_results:
                 roll_result += result
@@ -230,3 +232,4 @@ class Gambler(commands.Cog, Disambiguator):
     # TODO: deck of cards; gmroll dice; n-recipient dice rolls; order of operations in modifiers.
     # TODO: warnings / safeguards against generating a message longer than 2000 characters.
     # TODO: handle case of vs. negative challenge dice.
+    # TODO: divide up some of these functions; some are getting decently long.
