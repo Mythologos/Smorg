@@ -1,8 +1,8 @@
 import discord
 from discord.ext import commands
 from smorgasDB import Guild
-from .Helpers.time_zone import TimeZone
-from .Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.Enumerators.timekeeper import TimeZone
+from Cogs.Helpers.disambiguator import Disambiguator
 
 # GMT: https://greenwichmeantime.com/time-zone/definition/
 # aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst

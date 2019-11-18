@@ -3,12 +3,12 @@
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: handle case of vs. negative challenge dice.
 # TODO: divide up some of these functions; some are getting decently long.
+# TODO: allow and pre-remove spaces in roll syntax
 
-import discord
 from discord.ext import commands
 from smorgasDB import Guild
-from .Helpers.disambiguator import Disambiguator
-from .Helpers.croupier import RollComponent, RollParseResult, RollResult, ComparisonIndicator
+from Cogs.Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, ComparisonIndicator
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
