@@ -15,33 +15,38 @@ class YardShunter:
         self.grouping_operators: tuple = ('(', ')')
         self.signs: tuple = ('+', '-')
 
-    async def shunt_yard(self, complete_tokens: str):
+    async def shunt_yard(self, ctx, complete_tokens: str):
+        await self.flush_stacks()
         tokenized_input = re.findall("([\d]*)([\+\-]?)([\*\/\^\(\)]?)([?:floor]*[?:abs]*[?:ceiling]*[?:sqrt]*)",
                                      complete_tokens)
         flat_tokens: list = [item for match in tokenized_input for item in match if item]
-        complete_tokens: list = await self.consolidate_tokens(flat_tokens)
-        await self.process_input(complete_tokens)
-        final_result = await self.evaluate_input()
-        await self.flush_stacks()
+        complete_tokens: list = await self.consolidate_tokens(ctx, flat_tokens)
+        await self.process_input(ctx, complete_tokens)
+        final_result = await self.evaluate_input(ctx)
         return final_result
 
     async def flush_stacks(self):
         self.operator_stack.clear()
         self.output_queue.clear()
 
-    async def consolidate_tokens(self, flattened_tokens: list):
+    async def consolidate_tokens(self, ctx, flattened_tokens: list):
         operator_bool: bool = False
         index: int = 0
-        print(flattened_tokens)
         while index < len(flattened_tokens):
-            if operator_bool and flattened_tokens[index] in self.signs:
+            if (operator_bool or index == 0) and flattened_tokens[index] in self.signs:
                 if (index + 1) < len(flattened_tokens) and flattened_tokens[index + 1].isdigit():
                     flattened_tokens[index] = int(flattened_tokens[index] + flattened_tokens[index + 1])
                     del flattened_tokens[index + 1]
                     operator_bool = False
-                else:
-                    ...
-                    print("Error! Error! Error!")
+                elif operator_bool:
+                    await ctx.send("Error: Invalid sign duplication in roll modifier. Please try again!")
+                elif index == 0 and (index + 1) < len(flattened_tokens) and \
+                        flattened_tokens[index + 1] in self.grouping_operators:
+                    if flattened_tokens[index] == '+':
+                        flattened_tokens[index] = 1
+                    else:
+                        flattened_tokens[index] = -1
+                    flattened_tokens.insert(1, '*')
             elif flattened_tokens[index] in self.current_operators:
                 operator_bool = True
             elif flattened_tokens[index].isdigit():
@@ -50,7 +55,7 @@ class YardShunter:
             index += 1
         return flattened_tokens
 
-    async def process_input(self, complete_tokens: list):
+    async def process_input(self, ctx, complete_tokens: list):
         index: int = 0
         while index < len(complete_tokens):
             if isinstance(complete_tokens[index], int):
@@ -60,12 +65,12 @@ class YardShunter:
             elif complete_tokens[index] in self.current_operators:
                 while self.operator_stack and self.operator_stack[0] != '(' and \
                         (self.operator_stack[0] in self.current_functions or
-                         ShuntOperator.compare_precedence(self.operator_stack[0], complete_tokens[index],
-                                                          ShuntComparison.GREATER_THAN) or
-                         (ShuntOperator.compare_precedence(self.operator_stack[0], complete_tokens[index],
-                                                           ShuntComparison.EQUAL_TO) and
-                          ShuntOperator.compare_associativity(self.operator_stack[0],
-                                                              ShuntAssociativity.LEFT.direction))):
+                         await ShuntOperator.compare_precedence(ctx, self.operator_stack[0], complete_tokens[index],
+                                                                ShuntComparison.GREATER_THAN) or
+                         (await ShuntOperator.compare_precedence(ctx, self.operator_stack[0], complete_tokens[index],
+                                                                 ShuntComparison.EQUAL_TO) and
+                          await ShuntOperator.compare_associativity(ctx, self.operator_stack[0],
+                                                                    ShuntAssociativity.LEFT.direction))):
                     self.output_queue.append(self.operator_stack.pop(0))
                 self.operator_stack.insert(0, complete_tokens[index])
             elif complete_tokens[index] == '(':
@@ -76,32 +81,30 @@ class YardShunter:
                 if self.operator_stack[0] == '(':
                     self.operator_stack.pop(0)
                 else:
-                    ...
-                    print("Error3!")
-                    # throw error, mismatched parentheses
+                    await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
             index += 1
         else:
             while self.operator_stack:
                 if self.operator_stack[0] in ['(', ')']:
-                    ...
-                    print("Error2!")
-                    # throw error, mismatched parentheses
+                    await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
 
-    async def evaluate_input(self):
+    async def evaluate_input(self, ctx):
         output_stack: list = []
         for output in self.output_queue:
             if output in self.current_operators:
                 second_operand: int = output_stack.pop(0)
                 first_operand: int = output_stack.pop(0)
-                operation_result = ShuntOperator.function_evaluator(ShuntOperator.get_by_symbol(output).value,
-                                                                    first_operand, second_operand)
+                relevant_operator = await ShuntOperator.get_by_symbol(ctx, output)
+                operation_result = await ShuntOperator.function_evaluator(relevant_operator.value,
+                                                                          first_operand, second_operand)
                 output_stack.insert(0, operation_result)
             elif output in self.current_functions:
                 first_operand: int = output_stack.pop(0)
-                operation_result = ShuntFunction.function_evaluator(ShuntFunction.get_by_name(output).value,
-                                                                    first_operand)
+                relevant_function = await ShuntFunction.get_by_name(ctx, output)
+                operation_result = await ShuntFunction.function_evaluator(relevant_function.value,
+                                                                          first_operand)
                 output_stack.insert(0, operation_result)
             else:
                 output_stack.insert(0, output)

@@ -98,15 +98,9 @@ class Gambler(commands.Cog, Disambiguator):
 
     async def handle_roll(self, ctx, roll: str):
         roll: str = roll.strip()
-        roll_parse_result: list = self.parse_roll(roll)
-        result_errors: str = ''
-        for result in roll_parse_result:
-            if isinstance(result, str):
-                result_errors = result_errors + result + "\n"
-        if result_errors:
-            await ctx.send(result_errors)
-        else:
-            return roll_parse_result, self.evaluate_roll(roll_parse_result)
+        roll_parse_result: list = await self.parse_roll(ctx, roll)
+        roll_result: tuple = await self.evaluate_roll(roll_parse_result)
+        return roll_parse_result, roll_result
 
     async def send_roll(self, ctx, roll, roll_parse_result, roll_result, destination_channel, description):
         description: str = description.strip()
@@ -115,17 +109,16 @@ class Gambler(commands.Cog, Disambiguator):
         modifier_message: str = " + " + str(roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]) \
             if roll_parse_result[RollParseResult.OVERALL_MODIFIER.value] != 0 else ""
         gamble_message = ctx.message.author.mention + "\n" + \
-                         "Roll: " + roll + "\n" + \
-                         "Reason: " + description + "\n" + \
-                         "Raw Result: " + "(" + raw_result_message + ")" + modifier_message + "\n" + \
-                         "End Result: " + "(" + end_result_message + ")" + modifier_message + \
-                         " = " + str(roll_result[RollResult.FINAL_RESULT.value])
+            "Roll: " + roll + "\n" + \
+            "Reason: " + description + "\n" + \
+            "Raw Result: " + "(" + raw_result_message + ")" + modifier_message + "\n" + \
+            "End Result: " + "(" + end_result_message + ")" + modifier_message + \
+            " = " + str(roll_result[RollResult.FINAL_RESULT.value])
         if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
             gamble_message += " Successes"
         await destination_channel.send(gamble_message)
 
-    # TODO: now that the new modifiers would (presumably) be accepted, integrate yard_shunter fully.
-    def parse_roll(self, roll: str) -> list:
+    async def parse_roll(self, ctx, roll: str) -> list:
         roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-/\*\^\(\)' +
                                 '(?:abs)(?:floor)(?:ceiling)(?:sqrt)\d]+)?([><]\d+)?')
         regex_result = roll_regex.match(roll)
@@ -136,53 +129,61 @@ class Gambler(commands.Cog, Disambiguator):
             for i in range(1, 1 + len(regex_result.groups())):
                 roll_components.append(regex_result.group(i))
         except AssertionError:
-            roll_list.append("Error: the syntax for the roll was invalid.")
+            await ctx.send("Error: the syntax for the roll was invalid. Please try again.")
         else:
             number_rolls = await self.check_basic_roll_component(1, roll_components[RollComponent.NUMBER_OF_DICE.value])
             roll_list.append(number_rolls)
             die_size = await self.check_basic_roll_component(6, roll_components[RollComponent.DIE_SIZE.value])
             roll_list.append(die_size)
 
-            die_size_error_message: str = "Error: The quantity given for the drop or keep roll number " + \
-                                          "was not valid. Please try again."
             die_count_modifier = await \
                 self.check_basic_roll_component(number_rolls,
-                                                roll_components[RollComponent.DROP_KEEP_VALUE.value], 1)
-            if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls:
-                if roll_components[RollComponent.DROP_KEEP_VALUE.value][0:1] in ['d', 'D']:
-                    die_count_modifier = number_rolls - die_count_modifier
-            elif roll_components[RollComponent.DROP_KEEP_VALUE.value]:
-                die_count_modifier = die_size_error_message
-            drop_keep_boolean: bool = bool(roll_components[RollComponent.DROP_KEEP_VALUE.value])
+                                                roll_components[RollComponent.DROP_KEEP_VALUE.value],
+                                                1)
+            die_count_modifier = await self.parse_die_count_modifier(ctx, roll_components,
+                                                                     die_count_modifier, number_rolls)
             roll_list.append(die_count_modifier)
+
+            drop_keep_boolean: bool = bool(roll_components[RollComponent.DROP_KEEP_VALUE.value])
             roll_list.append(drop_keep_boolean)
 
             die_explosion: bool = (roll_components[RollComponent.
                                    EXPLOSION_VALUE.value] == '!')
             roll_list.append(die_explosion)
 
-            die_roll_modifier = await self.yard_shunter.shunt_yard(roll_components[RollComponent.OVERALL_MODIFIER.value]) \
+            die_roll_modifier = await self.yard_shunter.shunt_yard(ctx, roll_components[RollComponent.
+                                                                   OVERALL_MODIFIER.value]) \
                 if roll_components[RollComponent.OVERALL_MODIFIER.value] else 0
-            if roll_components[RollComponent.OVERALL_MODIFIER.value] and \
-                    roll_components[RollComponent.OVERALL_MODIFIER.value][0:1] == '-':
-                die_roll_modifier *= -1
             roll_list.append(die_roll_modifier)
 
             die_challenge_value = await self.check_basic_roll_component(0, roll_components[RollComponent.
-                                                                  CHALLENGE_VALUE.value], 1)
+                                                                        CHALLENGE_VALUE.value], 1)
             roll_list.append(die_challenge_value)
             if roll_components[RollComponent.CHALLENGE_VALUE.value]:
                 if roll_components[RollComponent.CHALLENGE_VALUE.value][0:1] == '>':
-                    roll_list.append(1)
+                    roll_list.append(ComparisonIndicator.GREATER_THAN.value)
                 else:
-                    roll_list.append(-1)
+                    roll_list.append(ComparisonIndicator.LESS_THAN.value)
             else:
                 roll_list.append(0)
         finally:
             return roll_list
 
     @staticmethod
-    def evaluate_roll(roll_parse_result: list) -> tuple:
+    async def parse_die_count_modifier(ctx, roll_components, die_count_modifier, number_rolls):
+        try:
+            assert (roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls) or \
+                    not roll_components[RollComponent.DROP_KEEP_VALUE.value]
+        except AssertionError:
+            await ctx.send("Error: The quantity given for the drop-keep roll number was not valid. Please try again.")
+        else:
+            if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls and \
+                    roll_components[RollComponent.DROP_KEEP_VALUE.value][0:1] in ['d', 'D']:
+                die_count_modifier = number_rolls - die_count_modifier
+        return die_count_modifier
+
+    @staticmethod
+    async def evaluate_roll(roll_parse_result: list) -> tuple:
         individual_results: list = []
         roll_index: int = 0
         explosion_count: int = 0
@@ -204,7 +205,6 @@ class Gambler(commands.Cog, Disambiguator):
             del individual_results[(roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value] + explosion_count):]
 
         roll_result: int = roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]
-
         if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
             if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value] == ComparisonIndicator.GREATER_THAN.value:
                 for result in individual_results:

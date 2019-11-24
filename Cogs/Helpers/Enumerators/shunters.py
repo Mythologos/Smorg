@@ -10,7 +10,7 @@ class ShuntComparison(Enum):
     GREATER_THAN = 2
 
     @staticmethod
-    def compare_by_value(comparison_value, item_a, item_b):
+    async def compare_by_value(ctx, comparison_value, item_a, item_b):
         comparison_boolean: bool = False
         if comparison_value == ShuntComparison.LESS_THAN.value:
             comparison_boolean = item_a < item_b
@@ -23,9 +23,7 @@ class ShuntComparison(Enum):
         elif comparison_value == ShuntComparison.GREATER_THAN.value:
             comparison_boolean = item_a > item_b
         else:
-            ...
-            print("Error6")
-            # throw error
+            await ctx.send("Error: unknown comparison value. Please try again!")
         return comparison_boolean
 
 
@@ -43,35 +41,38 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
     EXPONENTIATION = (4, '^', 3, ShuntAssociativity.RIGHT)
 
     @staticmethod
-    def get_by_symbol(given_symbol):
+    async def get_by_symbol(ctx, given_symbol):
         desired_operator = None
         for operation in ShuntOperator:
             if operation.symbol == given_symbol:
                 desired_operator = operation
                 break
         if not desired_operator:
-            ...
-            print("Error0!")
-            # throw error!
+            await ctx.send("Error: Corresponding operation for operator " + given_symbol +
+                           " not found. Please try again!")
         else:
             return desired_operator
 
     @staticmethod
-    def compare_precedence(symbol_one: str, symbol_two: str, comparison_value: ShuntComparison) -> bool:
-        return ShuntComparison.compare_by_value(comparison_value.value,
-                                                ShuntOperator.get_by_symbol(symbol_one).precedence,
-                                                ShuntOperator.get_by_symbol(symbol_two).precedence)
+    async def compare_precedence(ctx, symbol_one: str, symbol_two: str, comparison_value: ShuntComparison) -> bool:
+        first_operator = await ShuntOperator.get_by_symbol(ctx, symbol_one)
+        second_operator = await ShuntOperator.get_by_symbol(ctx, symbol_two)
+        precedence_boolean: bool = await ShuntComparison.compare_by_value(ctx, comparison_value.value,
+                                                                          first_operator.precedence,
+                                                                          second_operator.precedence)
+        return precedence_boolean
 
     @staticmethod
-    def compare_associativity(symbol, associativity):
+    async def compare_associativity(ctx, symbol, associativity):
         associativity_indicator: bool = False
-        if ShuntOperator.get_by_symbol(symbol).associativity == associativity:
+        relevant_operator = await ShuntOperator.get_by_symbol(ctx, symbol)
+        if relevant_operator.associativity == associativity:
             associativity_indicator = True
         return associativity_indicator
 
     @staticmethod
-    def function_evaluator(associated_value, first_operand, second_operand):
-        evaluated_value: float = 0
+    async def function_evaluator(associated_value, first_operand, second_operand):
+        evaluated_value = 0
         if associated_value == ShuntOperator.ADDITION.value:
             evaluated_value = first_operand + second_operand
         elif associated_value == ShuntOperator.SUBTRACTION.value:
@@ -92,21 +93,20 @@ class ShuntFunction(Enum, init='value representation'):
     ABSOLUTE_VALUE = (3, 'abs')
 
     @staticmethod
-    def get_by_name(given_name):
+    async def get_by_name(ctx, given_name):
         desired_function = None
         for function in ShuntFunction:
             if function.representation == given_name:
                 desired_function = function
                 break
         if not desired_function:
-            ...
-            print("Error1!")
-            # throw error!
+            await ctx.send("Error: Corresponding functionality for function " + given_name +
+                           " not found. Please try again!")
         else:
             return desired_function
 
     @staticmethod
-    def function_evaluator(associated_value, first_operand):
+    async def function_evaluator(associated_value, first_operand):
         evaluated_value: float = 0
         if associated_value == ShuntFunction.SQUARE_ROOT.value:
             evaluated_value = math.sqrt(first_operand)
