@@ -1,5 +1,5 @@
 # TODO: overall documentation
-# TODO: deck of cards; order of operations in modifiers.
+# TODO: deck of cards.
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: handle case of vs. negative challenge dice.
 # TODO: divide up some of these functions; some are getting decently long.
@@ -9,6 +9,7 @@ from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, ComparisonIndicator
+from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
@@ -18,6 +19,7 @@ import re
 class Gambler(commands.Cog, Disambiguator):
     def __init__(self, bot):
         self.bot = bot
+        self.yard_shunter = YardShunter()
 
     @commands.command(description='This command gets Smorg to roll one die or multiple dice. ' +
                                   'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)b, '
@@ -108,8 +110,8 @@ class Gambler(commands.Cog, Disambiguator):
 
     async def send_roll(self, ctx, roll, roll_parse_result, roll_result, destination_channel, description):
         description: str = description.strip()
-        raw_result_message: str = self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value])
-        end_result_message: str = self.format_roll_result(roll_result[RollResult.INDIVIDUAL_RESULTS.value])
+        raw_result_message: str = await self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value])
+        end_result_message: str = await self.format_roll_result(roll_result[RollResult.INDIVIDUAL_RESULTS.value])
         modifier_message: str = " + " + str(roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]) \
             if roll_parse_result[RollParseResult.OVERALL_MODIFIER.value] != 0 else ""
         gamble_message = ctx.message.author.mention + "\n" + \
@@ -122,8 +124,10 @@ class Gambler(commands.Cog, Disambiguator):
             gamble_message += " Successes"
         await destination_channel.send(gamble_message)
 
+    # TODO: now that the new modifiers would (presumably) be accepted, integrate yard_shunter fully.
     def parse_roll(self, roll: str) -> list:
-        roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-]\d+)?([><]\d+)?')
+        roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-/\*\^\(\)' +
+                                '(?:abs)(?:floor)(?:ceiling)(?:sqrt)\d]+)?([><]\d+)?')
         regex_result = roll_regex.match(roll)
         roll_components: list = []
         roll_list: list = []
@@ -134,14 +138,14 @@ class Gambler(commands.Cog, Disambiguator):
         except AssertionError:
             roll_list.append("Error: the syntax for the roll was invalid.")
         else:
-            number_rolls = self.check_basic_roll_component(1, roll_components[RollComponent.NUMBER_OF_DICE.value])
+            number_rolls = await self.check_basic_roll_component(1, roll_components[RollComponent.NUMBER_OF_DICE.value])
             roll_list.append(number_rolls)
-            die_size = self.check_basic_roll_component(6, roll_components[RollComponent.DIE_SIZE.value])
+            die_size = await self.check_basic_roll_component(6, roll_components[RollComponent.DIE_SIZE.value])
             roll_list.append(die_size)
 
             die_size_error_message: str = "Error: The quantity given for the drop or keep roll number " + \
                                           "was not valid. Please try again."
-            die_count_modifier = \
+            die_count_modifier = await \
                 self.check_basic_roll_component(number_rolls,
                                                 roll_components[RollComponent.DROP_KEEP_VALUE.value], 1)
             if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls:
@@ -157,14 +161,14 @@ class Gambler(commands.Cog, Disambiguator):
                                    EXPLOSION_VALUE.value] == '!')
             roll_list.append(die_explosion)
 
-            die_roll_modifier = self.check_basic_roll_component(0, roll_components[RollComponent.
-                                                                OVERALL_MODIFIER.value], 1)
+            die_roll_modifier = await self.yard_shunter.shunt_yard(roll_components[RollComponent.OVERALL_MODIFIER.value]) \
+                if roll_components[RollComponent.OVERALL_MODIFIER.value] else 0
             if roll_components[RollComponent.OVERALL_MODIFIER.value] and \
                     roll_components[RollComponent.OVERALL_MODIFIER.value][0:1] == '-':
                 die_roll_modifier *= -1
             roll_list.append(die_roll_modifier)
 
-            die_challenge_value = self.check_basic_roll_component(0, roll_components[RollComponent.
+            die_challenge_value = await self.check_basic_roll_component(0, roll_components[RollComponent.
                                                                   CHALLENGE_VALUE.value], 1)
             roll_list.append(die_challenge_value)
             if roll_components[RollComponent.CHALLENGE_VALUE.value]:
@@ -216,7 +220,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_evaluation
 
     @staticmethod
-    def format_roll_result(roll_sequence: list):
+    async def format_roll_result(roll_sequence: list):
         result_message: str = ''
         for result in roll_sequence:
             if result_message:
@@ -226,9 +230,9 @@ class Gambler(commands.Cog, Disambiguator):
         return result_message
 
     @staticmethod
-    def check_basic_roll_component(default_quantity: int, item: str, character_range_start: int = 0,
-                                   character_range_end: int = None):
+    async def check_basic_roll_component(default_quantity: int, item: str, character_range_start: int = 0,
+                                         character_range_end: int = None):
         roll_component_value: int = default_quantity
-        if item and item[character_range_start:character_range_end].isalnum():
+        if item and item[character_range_start:character_range_end].isdigit():
             roll_component_value = int(item[character_range_start:character_range_end])
         return roll_component_value

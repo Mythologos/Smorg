@@ -95,7 +95,7 @@ class ShuntFunction(Enum, init='value representation'):
     def get_by_name(given_name):
         desired_function = None
         for function in ShuntFunction:
-            if function.name == given_name:
+            if function.representation == given_name:
                 desired_function = function
                 break
         if not desired_function:
