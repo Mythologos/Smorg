@@ -1,14 +1,15 @@
 # TODO: overall documentation
 # TODO: deck of cards.
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
-# TODO: handle case of vs. negative challenge dice.
+# TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
 
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
-from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, ComparisonIndicator
+from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, \
+    ComparisonIndicator, DropKeepIndicator
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
@@ -120,7 +121,7 @@ class Gambler(commands.Cog, Disambiguator):
 
     async def parse_roll(self, ctx, roll: str) -> list:
         roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-/\*\^\(\)' +
-                                '(?:abs)(?:floor)(?:ceiling)(?:sqrt)\d]+)?([><]\d+)?')
+                                '(?:abs)(?:floor)(?:ceiling)(?:sqrt)\d]+)?([><][-]?\d+)?')
         regex_result = roll_regex.match(roll)
         roll_components: list = []
         roll_list: list = []
@@ -136,29 +137,28 @@ class Gambler(commands.Cog, Disambiguator):
             die_size = await self.check_basic_roll_component(6, roll_components[RollComponent.DIE_SIZE.value])
             roll_list.append(die_size)
 
-            die_count_modifier = await \
-                self.check_basic_roll_component(number_rolls,
-                                                roll_components[RollComponent.DROP_KEEP_VALUE.value],
-                                                1)
-            die_count_modifier = await self.parse_die_count_modifier(ctx, roll_components,
-                                                                     die_count_modifier, number_rolls)
+            die_count_modifier = await self.check_basic_roll_component(number_rolls, roll_components[
+                RollComponent.DROP_KEEP_VALUE.value], 1)
+            die_count_modifier, drop_keep_indicator = await self.parse_die_count_modifier(ctx, roll_components,
+                                                                                          die_count_modifier,
+                                                                                          number_rolls)
             roll_list.append(die_count_modifier)
+            roll_list.append(drop_keep_indicator)
 
-            drop_keep_boolean: bool = bool(roll_components[RollComponent.DROP_KEEP_VALUE.value])
-            roll_list.append(drop_keep_boolean)
-
-            die_explosion: bool = (roll_components[RollComponent.
-                                   EXPLOSION_VALUE.value] == '!')
+            die_explosion: bool = (roll_components[RollComponent.EXPLOSION_VALUE.value] == '!')
             roll_list.append(die_explosion)
 
-            die_roll_modifier = await self.yard_shunter.shunt_yard(ctx, roll_components[RollComponent.
-                                                                   OVERALL_MODIFIER.value]) \
-                if roll_components[RollComponent.OVERALL_MODIFIER.value] else 0
+            die_roll_modifier = await self.yard_shunter.shunt_yard(ctx, roll_components[
+                RollComponent.OVERALL_MODIFIER.value]) if roll_components[
+                RollComponent.OVERALL_MODIFIER.value] else 0
             roll_list.append(die_roll_modifier)
 
-            die_challenge_value = await self.check_basic_roll_component(0, roll_components[RollComponent.
-                                                                        CHALLENGE_VALUE.value], 1)
+            die_challenge_value = int(roll_components[RollComponent.CHALLENGE_VALUE.value][1:]) \
+                if roll_components[RollComponent.CHALLENGE_VALUE.value] and \
+                await self.validate_integer(roll_components[RollComponent.CHALLENGE_VALUE.value][1:]) \
+                else 0
             roll_list.append(die_challenge_value)
+
             if roll_components[RollComponent.CHALLENGE_VALUE.value]:
                 if roll_components[RollComponent.CHALLENGE_VALUE.value][0:1] == '>':
                     roll_list.append(ComparisonIndicator.GREATER_THAN.value)
@@ -171,16 +171,20 @@ class Gambler(commands.Cog, Disambiguator):
 
     @staticmethod
     async def parse_die_count_modifier(ctx, roll_components, die_count_modifier, number_rolls):
+        drop_keep_indicator = DropKeepIndicator.NONE.value
         try:
             assert (roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls) or \
                     not roll_components[RollComponent.DROP_KEEP_VALUE.value]
         except AssertionError:
             await ctx.send("Error: The quantity given for the drop-keep roll number was not valid. Please try again.")
         else:
-            if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls and \
-                    roll_components[RollComponent.DROP_KEEP_VALUE.value][0:1] in ['d', 'D']:
-                die_count_modifier = number_rolls - die_count_modifier
-        return die_count_modifier
+            if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls:
+                if roll_components[RollComponent.DROP_KEEP_VALUE.value][0:1] in ['d', 'D']:
+                    die_count_modifier = number_rolls - die_count_modifier
+                    drop_keep_indicator = DropKeepIndicator.DROP.value
+                else:
+                    drop_keep_indicator = DropKeepIndicator.KEEP.value
+        return die_count_modifier, drop_keep_indicator
 
     @staticmethod
     async def evaluate_roll(roll_parse_result: list) -> tuple:
@@ -199,10 +203,10 @@ class Gambler(commands.Cog, Disambiguator):
 
         unsorted_results: list = deepcopy(individual_results)
         individual_results.sort(reverse=True)
-        if roll_parse_result[RollParseResult.DROP_KEEP_BOOLEAN.value]:
-            del individual_results[roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value]:]
-        else:
+        if roll_parse_result[RollParseResult.DROP_KEEP_INDICATOR.value] == DropKeepIndicator.DROP.value:
             del individual_results[(roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value] + explosion_count):]
+        else:
+            del individual_results[roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value]:]
 
         roll_result: int = roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]
         if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
@@ -215,9 +219,7 @@ class Gambler(commands.Cog, Disambiguator):
         else:
             for result in individual_results:
                 roll_result += result
-
-        roll_evaluation: tuple = (roll_result, unsorted_results, individual_results)
-        return roll_evaluation
+        return roll_result, unsorted_results, individual_results
 
     @staticmethod
     async def format_roll_result(roll_sequence: list):
@@ -236,3 +238,10 @@ class Gambler(commands.Cog, Disambiguator):
         if item and item[character_range_start:character_range_end].isdigit():
             roll_component_value = int(item[character_range_start:character_range_end])
         return roll_component_value
+
+    @staticmethod
+    async def validate_integer(value: str):
+        validation_boolean: bool = False
+        if value.isdecimal() or (value[0:1] == '-' and value[1:].isdecimal()):
+            validation_boolean = True
+        return validation_boolean
