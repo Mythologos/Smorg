@@ -1,8 +1,6 @@
 # Smorg
-**Last Updated:** 11/23/2019
+**Last Updated:** 03/01/2020 (MM/DD/YYYY)
 
-Hello! Welcome to Smorg, a Discord bot with a variety of 
-useful functions.
+Hello! Welcome to Smorg, a Discord bot with a variety of useful functions.
 
-This description is a work-in-progress! 
-Thank you for visiting this repository.
+This description is a work-in-progress! Thank you for visiting this repository.
