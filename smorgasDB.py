@@ -89,7 +89,7 @@ class Quote(BaseAddition, Base):
 
     @staticmethod
     @BaseAddition.session_method
-    def create_quote_with(method_session, g_id, quote, auth=None):
+    def create_quote_with(method_session, g_id, quote, auth):
         """
         This method creates and stores a Quote in the database.
         :param method_session: a Session database connection.

@@ -80,8 +80,8 @@ class Gambler(commands.Cog, Disambiguator):
                     found_recipients.append(reduced_member)
             else:
                 if len(found_recipients) == 0:
-                    await ctx.send("Error: no individual matches the recipient name or nickname given for " +
-                                   recipient + "." + "Please try again.")
+                    await ctx.send(f"Error: no individual matches the recipient name or nickname given for {recipient}."
+                                   f" Please try again.")
                 else:
                     chosen_recipient_index: int = await Disambiguator.disambiguate(self.bot, ctx, found_recipients)
                     chosen_recipient = self.bot.get_user(found_recipients[chosen_recipient_index].id)

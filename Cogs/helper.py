@@ -18,5 +18,5 @@ class Helper(commands.Cog):
                                       color=0x20409A)
         sorted_commands = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
         for command in sorted_commands:
-            support_embed.add_field(name='.' + command.name, value=command.description, inline=False)
+            support_embed.add_field(name=f".{command.name}", value=command.description, inline=False)
         await ctx.send(embed=support_embed)

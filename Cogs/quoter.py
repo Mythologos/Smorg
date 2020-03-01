@@ -22,7 +22,7 @@ class Quoter(commands.Cog):
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
         if text:
-            quote_response = discord.Embed(title='The Marvelous Brainchild of ' + author + ':',
+            quote_response = discord.Embed(title=f'The Marvelous Brainchild of {author}:',
                                            description=text,
                                            color=0x20409A)
             await ctx.message.delete()
@@ -34,7 +34,7 @@ class Quoter(commands.Cog):
 
     @commands.command(description='This command embeds a quote and stores it for posterity\'s sake. ' +
                                   'It takes a quote (in quotation marks) and, optionally, an author as arguments.')
-    async def sanctify(self, ctx, text='', author='An Unknowable Demigod'):
+    async def sanctify(self, ctx, text='', author=None):
         """
         This method receives a quotation and embeds it in its quotation chat.
         It also stores this information in the database.
@@ -48,13 +48,9 @@ class Quoter(commands.Cog):
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
         if text:
-            quote_response = discord.Embed(title='The Holiest Opus of ' + author + ':',
-                                           description=text,
-                                           color=0xFDF06F)
-            if author == 'An Unknowable Demigod':
-                Quote.create_quote_with(current_guild_id, text)
-            else:
-                Quote.create_quote_with(current_guild_id, text, author)
+            quote_response = discord.Embed(title=f'The Holiest Opus of {author if author else "An Unknowable Deity"}:',
+                                           description=text, color=0xFDF06F)
+            Quote.create_quote_with(current_guild_id, text, author)
             await ctx.message.delete()
         else:
             quote_response = discord.Embed(title='Error (Sanctify): Invalid Quotation',
@@ -74,10 +70,8 @@ class Quoter(commands.Cog):
         maximum = Quote.count_quotes(current_guild_id) - 1
         if maximum >= 0:
             yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
-            author = yoinked_quote[0]
-            if not author:
-                author = 'A Forgotten Prodigy'
-            yoink_response = discord.Embed(title='The Legendary Words of ' + author,
+            author = yoinked_quote[0] if yoinked_quote[0] else 'A Forgotten Prodigy'
+            yoink_response = discord.Embed(title=f'The Legendary Words of {author}',
                                            description=yoinked_quote[1],
                                            color=0xEE104E)
         else:
