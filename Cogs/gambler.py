@@ -110,7 +110,7 @@ class Gambler(commands.Cog, Disambiguator):
                                                                 MessageConstants.DISCORD_MSG_LENGTH - message_length)
         message_length += len(end_result_message)
         raw_result_message: str = await self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value],
-                                                                1000 - message_length)
+                                                                MessageConstants.DISCORD_MSG_LENGTH - message_length)
         modifier_message: str = f" + {roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]}" \
             if roll_parse_result[RollParseResult.OVERALL_MODIFIER.value] != 0 else ""
         gamble_message = f"{ctx.message.author.mention}\n" \

@@ -17,7 +17,7 @@ class YardShunter:
 
     async def shunt_yard(self, ctx, complete_tokens: str):
         await self.flush_stacks()
-        tokenized_input = re.findall("([\d]*)([\+\-]?)([\*\/\^\(\)]?)([?:floor]*[?:abs]*[?:ceiling]*[?:sqrt]*)",
+        tokenized_input = re.findall(r"([\d]*)([+-]?)([*/^()]?)(floor|abs|ceiling|sqrt)?",
                                      complete_tokens)
         flat_tokens: list = [item for match in tokenized_input for item in match if item]
         complete_tokens: list = await self.consolidate_tokens(ctx, flat_tokens)
@@ -41,7 +41,7 @@ class YardShunter:
                 elif operator_bool:
                     await ctx.send("Error: Invalid sign duplication in roll modifier. Please try again!")
                 elif index == 0 and (index + 1) < len(flattened_tokens) and \
-                        flattened_tokens[index + 1] in self.grouping_operators:
+                        not flattened_tokens[index + 1].isdecimal():
                     if flattened_tokens[index] == '+':
                         flattened_tokens[index] = 1
                     else:
