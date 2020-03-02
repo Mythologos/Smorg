@@ -9,7 +9,7 @@ from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, \
-    ComparisonIndicator, DropKeepIndicator
+    ComparisonIndicator, DropKeepIndicator, MessageConstants
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
@@ -94,8 +94,7 @@ class Gambler(commands.Cog, Disambiguator):
             if not chosen_recipient.dm_channel:
                 await self.bot.get_user(chosen_recipient.id).create_dm()
             recipient_dm_channel = chosen_recipient.dm_channel
-            await self.send_roll(ctx, roll, roll_results[0], roll_results[1],
-                                 recipient_dm_channel, description)
+            await self.send_roll(ctx, roll, roll_results[0], roll_results[1], recipient_dm_channel, description)
 
     async def handle_roll(self, ctx, roll: str):
         roll: str = roll.strip()
@@ -105,16 +104,21 @@ class Gambler(commands.Cog, Disambiguator):
 
     async def send_roll(self, ctx, roll, roll_parse_result, roll_result, destination_channel, description):
         description: str = description.strip()
-        raw_result_message: str = await self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value])
-        end_result_message: str = await self.format_roll_result(roll_result[RollResult.INDIVIDUAL_RESULTS.value])
-        modifier_message: str = " + " + str(roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]) \
+        message_length = len(ctx.message.author.mention) + len(roll) + len(description) + \
+            MessageConstants.DEFAULT_MSG_CHARACTERS
+        end_result_message: str = await self.format_roll_result(roll_result[RollResult.INDIVIDUAL_RESULTS.value],
+                                                                MessageConstants.DISCORD_MSG_LENGTH - message_length)
+        message_length += len(end_result_message)
+        raw_result_message: str = await self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value],
+                                                                1000 - message_length)
+        modifier_message: str = f" + {roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]}" \
             if roll_parse_result[RollParseResult.OVERALL_MODIFIER.value] != 0 else ""
-        gamble_message = ctx.message.author.mention + "\n" + \
-            "Roll: " + roll + "\n" + \
-            "Reason: " + description + "\n" + \
-            "Raw Result: " + "(" + raw_result_message + ")" + modifier_message + "\n" + \
-            "End Result: " + "(" + end_result_message + ")" + modifier_message + \
-            " = " + str(roll_result[RollResult.FINAL_RESULT.value])
+        gamble_message = f"{ctx.message.author.mention}\n" \
+                         f"Roll: {roll}\n" \
+                         f"Reason: {description}\n" \
+                         f"Raw Result: ({raw_result_message}){modifier_message}\n" \
+                         f"End Result: ({end_result_message}){modifier_message} = " \
+                         f"{roll_result[RollResult.FINAL_RESULT.value]}"
         if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
             gamble_message += " Successes"
         await destination_channel.send(gamble_message)
@@ -222,13 +226,16 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_result, unsorted_results, individual_results
 
     @staticmethod
-    async def format_roll_result(roll_sequence: list):
+    async def format_roll_result(roll_sequence: list, length_limit: int = 2000):
         result_message: str = ''
         for result in roll_sequence:
             if result_message:
                 result_message = result_message + ' + ' + str(result)
             else:
                 result_message = str(result)
+        else:
+            if len(result_message) > length_limit:
+                result_message = '...truncated due to length...'
         return result_message
 
     @staticmethod

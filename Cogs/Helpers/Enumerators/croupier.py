@@ -1,4 +1,4 @@
-from aenum import Enum
+from aenum import Enum, NamedConstant
 
 
 class RollComponent(Enum):
@@ -41,3 +41,8 @@ class DropKeepIndicator(Enum):
     NONE = 0
     DROP = 1
     KEEP = 2
+
+
+class MessageConstants(NamedConstant):
+    DEFAULT_MSG_CHARACTERS = 47
+    DISCORD_MSG_LENGTH = 2000
