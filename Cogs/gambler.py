@@ -2,14 +2,14 @@
 # TODO: deck of cards.
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
+
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
 
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
-from Cogs.Helpers.Enumerators.croupier import RollComponent, RollParseResult, RollResult, \
-    ComparisonIndicator, DropKeepIndicator, MessageConstants
+from Cogs.Helpers.Enumerators.croupier import MessageConstants
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
@@ -35,8 +35,8 @@ class Gambler(commands.Cog, Disambiguator):
         gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
         current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
             else ctx.message.channel
-        roll_results: tuple = await self.handle_roll(ctx, roll)
-        await self.send_roll(ctx, roll, roll_results[0], roll_results[1], current_channel, description)
+        flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
+        await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, current_channel, description)
 
     @commands.command(description='This command gets Smorg to roll one die or multiple dice and ' +
                                   'to send the result to one or more recipients. ' +
@@ -89,166 +89,138 @@ class Gambler(commands.Cog, Disambiguator):
         return chosen_recipients
 
     async def inform_recipients(self, ctx, roll: str, chosen_recipients: list, description: str):
-        roll_results: tuple = await self.handle_roll(ctx, roll)
+        flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
         for chosen_recipient in chosen_recipients:
             if not chosen_recipient.dm_channel:
                 await self.bot.get_user(chosen_recipient.id).create_dm()
             recipient_dm_channel = chosen_recipient.dm_channel
-            await self.send_roll(ctx, roll, roll_results[0], roll_results[1], recipient_dm_channel, description)
+            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, recipient_dm_channel,
+                                 description)
 
     async def handle_roll(self, ctx, roll: str):
-        roll: str = roll.strip()
-        roll_parse_result: list = await self.parse_roll(ctx, roll)
-        roll_result: tuple = await self.evaluate_roll(roll_parse_result)
-        return roll_parse_result, roll_result
+        raw_roll: str = roll.replace(' ', '')
+        parsed_roll: list = await self.parse_roll(raw_roll)
+        verbose_dice: list = []
+        for match_index, match in enumerate(parsed_roll):
+            # TODO: add enum for readability
+            if match[0]:
+                parsed_dice = await self.parse_dice(match[0])
+                processed_dice: dict = await self.process_dice(parsed_dice)
+                dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
+                verbose_die: tuple = (match[0], unsorted_results, sorted_results, dice_result)
+                verbose_dice.append(verbose_die)
+                parsed_roll[match_index] = (str(dice_result))
+        flat_matches: list = [item for match in parsed_roll for item in match if item]
+        roll_result = await self.yard_shunter.shunt_yard(ctx, flat_matches)
+        return flat_matches, verbose_dice, roll_result
 
-    async def send_roll(self, ctx, roll, roll_parse_result, roll_result, destination_channel, description):
+    @staticmethod
+    async def send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, destination_channel, description):
         description: str = description.strip()
-        message_length = len(ctx.message.author.mention) + len(roll) + len(description) + \
-            MessageConstants.DEFAULT_MSG_CHARACTERS
-        end_result_message: str = await self.format_roll_result(roll_result[RollResult.INDIVIDUAL_RESULTS.value],
-                                                                MessageConstants.DISCORD_MSG_LENGTH - message_length)
-        message_length += len(end_result_message)
-        raw_result_message: str = await self.format_roll_result(roll_result[RollResult.UNSORTED_RESULTS.value],
-                                                                MessageConstants.DISCORD_MSG_LENGTH - message_length)
-        modifier_message: str = f" + {roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]}" \
-            if roll_parse_result[RollParseResult.OVERALL_MODIFIER.value] != 0 else ""
-        gamble_message = f"{ctx.message.author.mention}\n" \
-                         f"Roll: {roll}\n" \
-                         f"Reason: {description}\n" \
-                         f"Raw Result: ({raw_result_message}){modifier_message}\n" \
-                         f"End Result: ({end_result_message}){modifier_message} = " \
-                         f"{roll_result[RollResult.FINAL_RESULT.value]}"
-        if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
-            gamble_message += " Successes"
-        await destination_channel.send(gamble_message)
+        # TODO: re-implement message length handling
+        # message_length = len(ctx.message.author.mention) + len(roll) + len(description) + \
+        #     MessageConstants.DEFAULT_MSG_CHARACTERS
 
-    async def parse_roll(self, ctx, roll: str) -> list:
-        roll_regex = re.compile('(\d*)[dD](\d*)([dkDK][\d]+)?([!])?([+-/\*\^\(\)' +
-                                '(?:abs)(?:floor)(?:ceiling)(?:sqrt)\d]+)?([><][-]?\d+)?')
-        regex_result = roll_regex.match(roll)
-        roll_components: list = []
+        introductory_message: str = f"{ctx.message.author.mention}\n" \
+                                    f"Roll: {roll}\n" \
+                                    f"Reason: {description}"
+        await destination_channel.send(introductory_message)
+
+        if verbose_dice:
+            roll_result_message = f"The results of the individual roll(s) inside the overall roll are as follows:"
+            await destination_channel.send(roll_result_message)
+            for (raw_roll, unsorted_result, sorted_result, dice_result) in verbose_dice:
+                verbose_roll_message = f"\nThe roll {raw_roll} resulted in: \n**Raw Dice Result:** {unsorted_result} \n" \
+                                       f"**Final Dice Result:** {sorted_result} \n**Sum:** {dice_result}"
+                await destination_channel.send(verbose_roll_message)
+
+        evaluated_roll: str = ""
+        for token in flat_tokens:
+            evaluated_roll += str(token)
+        concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
+                             f"The final result of this roll is: {roll_result}"
+        await destination_channel.send(concluding_message)
+
+    @staticmethod
+    async def parse_roll(raw_roll):
+        roll_pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
+                                  r'(?P<regular_operator>[+\-*/^])|'
+                                  r'(?P<grouping_operator>[()])|'
+                                  r'(?P<function>abs|floor|ceiling|sqrt)|'
+                                  r'(?P<constant>[+-]?[\d]+))')
+        return re.findall(roll_pattern, raw_roll)
+
+    @staticmethod
+    async def parse_dice(raw_dice):
+        dice_pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
+                                  r'(?P<die_size>[\d]+)'
+                                  r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
+                                  r'(?(drop_keep_sign)(?P<drop_keep_value>[\d]+))?'
+                                  r'(?P<explosion_sign>!)?'
+                                  r'(?P<challenge_sign>[><])?'
+                                  r'(?(challenge_sign)(?P<challenge_value>[+-]?[\d]+))')
+        return re.match(dice_pattern, raw_dice)
+
+    @staticmethod
+    async def process_dice(matched_dice):
+        number_of_dice: int = int(matched_dice.group('number_of_dice'))
+        die_size: int = int(matched_dice.group('die_size'))
+        drop_keep_value: int = int(matched_dice.group('drop_keep_value')) if matched_dice.group(
+            'drop_keep_value') else None
+        challenge_value: int = int(matched_dice.group('challenge_value')) if matched_dice.group(
+            'challenge_value') else None
+        return {
+            'number_of_dice': number_of_dice,
+            'die_size': die_size,
+            'drop_sign': matched_dice.group('drop_sign'),
+            'keep_sign': matched_dice.group('keep_sign'),
+            'drop_keep_value': drop_keep_value,
+            'explosion_sign': matched_dice.group('explosion_sign'),
+            'challenge_sign': matched_dice.group('challenge_sign'),
+            'challenge_value': challenge_value,
+        }
+
+    async def evaluate_roll(self, processed_roll):
+        roll_results: list = await self.roll_dice(processed_roll['number_of_dice'], processed_roll['die_size'],
+                                                  processed_roll['explosion_sign'])
+        unsorted_results: list = deepcopy(roll_results)
+        roll_results.sort(reverse=True)
+        roll_results = await self.select_dice(roll_results, processed_roll['drop_sign'], processed_roll['keep_sign'],
+                                              processed_roll['drop_keep_value'])
+        roll_result: int = await self.analyze_roll(roll_results, processed_roll['challenge_sign'],
+                                                   processed_roll['challenge_value'])
+        return roll_result, unsorted_results, roll_results
+
+    @staticmethod
+    async def roll_dice(number_of_dice, die_size, explosion_sign):
         roll_list: list = []
-        try:
-            assert regex_result
-            for i in range(1, 1 + len(regex_result.groups())):
-                roll_components.append(regex_result.group(i))
-        except AssertionError:
-            await ctx.send("Error: the syntax for the roll was invalid. Please try again.")
-        else:
-            number_rolls = await self.check_basic_roll_component(1, roll_components[RollComponent.NUMBER_OF_DICE.value])
-            roll_list.append(number_rolls)
-            die_size = await self.check_basic_roll_component(6, roll_components[RollComponent.DIE_SIZE.value])
-            roll_list.append(die_size)
-
-            die_count_modifier = await self.check_basic_roll_component(number_rolls, roll_components[
-                RollComponent.DROP_KEEP_VALUE.value], 1)
-            die_count_modifier, drop_keep_indicator = await self.parse_die_count_modifier(ctx, roll_components,
-                                                                                          die_count_modifier,
-                                                                                          number_rolls)
-            roll_list.append(die_count_modifier)
-            roll_list.append(drop_keep_indicator)
-
-            die_explosion: bool = (roll_components[RollComponent.EXPLOSION_VALUE.value] == '!')
-            roll_list.append(die_explosion)
-
-            die_roll_modifier = await self.yard_shunter.shunt_yard(ctx, roll_components[
-                RollComponent.OVERALL_MODIFIER.value]) if roll_components[
-                RollComponent.OVERALL_MODIFIER.value] else 0
-            roll_list.append(die_roll_modifier)
-
-            die_challenge_value = int(roll_components[RollComponent.CHALLENGE_VALUE.value][1:]) \
-                if roll_components[RollComponent.CHALLENGE_VALUE.value] and \
-                await self.validate_integer(roll_components[RollComponent.CHALLENGE_VALUE.value][1:]) \
-                else 0
-            roll_list.append(die_challenge_value)
-
-            if roll_components[RollComponent.CHALLENGE_VALUE.value]:
-                if roll_components[RollComponent.CHALLENGE_VALUE.value][0:1] == '>':
-                    roll_list.append(ComparisonIndicator.GREATER_THAN.value)
-                else:
-                    roll_list.append(ComparisonIndicator.LESS_THAN.value)
-            else:
-                roll_list.append(0)
-        finally:
-            return roll_list
-
-    @staticmethod
-    async def parse_die_count_modifier(ctx, roll_components, die_count_modifier, number_rolls):
-        drop_keep_indicator = DropKeepIndicator.NONE.value
-        try:
-            assert (roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls) or \
-                    not roll_components[RollComponent.DROP_KEEP_VALUE.value]
-        except AssertionError:
-            await ctx.send("Error: The quantity given for the drop-keep roll number was not valid. Please try again.")
-        else:
-            if roll_components[RollComponent.DROP_KEEP_VALUE.value] and die_count_modifier <= number_rolls:
-                if roll_components[RollComponent.DROP_KEEP_VALUE.value][0:1] in ['d', 'D']:
-                    die_count_modifier = number_rolls - die_count_modifier
-                    drop_keep_indicator = DropKeepIndicator.DROP.value
-                else:
-                    drop_keep_indicator = DropKeepIndicator.KEEP.value
-        return die_count_modifier, drop_keep_indicator
-
-    @staticmethod
-    async def evaluate_roll(roll_parse_result: list) -> tuple:
-        individual_results: list = []
         roll_index: int = 0
-        explosion_count: int = 0
-        while roll_index < roll_parse_result[RollParseResult.NUMBER_OF_DICE.value]:
-            individual_results.append(randint(1, roll_parse_result[RollParseResult.DIE_SIZE.value]))
-            if roll_parse_result[RollParseResult.EXPLOSION_BOOLEAN.value]:
-                if individual_results[-1] != roll_parse_result[RollParseResult.DIE_SIZE.value]:
-                    roll_index += 1
-                else:
-                    explosion_count += 1
-            else:
+        while roll_index < number_of_dice:
+            single_roll = randint(1, die_size)
+            roll_list.append(single_roll)
+            if not (explosion_sign and single_roll == die_size):
                 roll_index += 1
-
-        unsorted_results: list = deepcopy(individual_results)
-        individual_results.sort(reverse=True)
-        if roll_parse_result[RollParseResult.DROP_KEEP_INDICATOR.value] == DropKeepIndicator.DROP.value:
-            del individual_results[(roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value] + explosion_count):]
-        else:
-            del individual_results[roll_parse_result[RollParseResult.DROP_KEEP_VALUE.value]:]
-
-        roll_result: int = roll_parse_result[RollParseResult.OVERALL_MODIFIER.value]
-        if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value]:
-            if roll_parse_result[RollParseResult.CHALLENGE_INDICATOR.value] == ComparisonIndicator.GREATER_THAN.value:
-                for result in individual_results:
-                    roll_result += (result >= roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
-            else:
-                for result in individual_results:
-                    roll_result += (result <= roll_parse_result[RollParseResult.CHALLENGE_VALUE.value])
-        else:
-            for result in individual_results:
-                roll_result += result
-        return roll_result, unsorted_results, individual_results
+        return roll_list
 
     @staticmethod
-    async def format_roll_result(roll_sequence: list, length_limit: int = 2000):
-        result_message: str = ''
-        for result in roll_sequence:
-            if result_message:
-                result_message = result_message + ' + ' + str(result)
-            else:
-                result_message = str(result)
+    async def select_dice(roll_list, drop_sign, keep_sign, drop_keep_value):
+        if drop_sign:
+            del roll_list[(len(roll_list) - drop_keep_value):]
+        elif keep_sign:
+            del roll_list[drop_keep_value:]
+        return roll_list
+
+    @staticmethod
+    async def analyze_roll(roll_list, challenge_sign, challenge_value):
+        roll_result: int = 0
+        if challenge_sign:
+            if challenge_sign == '>':
+                for result in roll_list:
+                    roll_result += (result >= challenge_value)
+            elif challenge_sign == '<':
+                for result in roll_list:
+                    roll_result += (result <= challenge_value)
         else:
-            if len(result_message) > length_limit:
-                result_message = '...truncated due to length...'
-        return result_message
-
-    @staticmethod
-    async def check_basic_roll_component(default_quantity: int, item: str, character_range_start: int = 0,
-                                         character_range_end: int = None):
-        roll_component_value: int = default_quantity
-        if item and item[character_range_start:character_range_end].isdigit():
-            roll_component_value = int(item[character_range_start:character_range_end])
-        return roll_component_value
-
-    @staticmethod
-    async def validate_integer(value: str):
-        validation_boolean: bool = False
-        if value.isdecimal() or (value[0:1] == '-' and value[1:].isdecimal()):
-            validation_boolean = True
-        return validation_boolean
+            for roll in roll_list:
+                roll_result += roll
+        return roll_result

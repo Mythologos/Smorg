@@ -15,11 +15,8 @@ class YardShunter:
         self.grouping_operators: tuple = ('(', ')')
         self.signs: tuple = ('+', '-')
 
-    async def shunt_yard(self, ctx, complete_tokens: str):
+    async def shunt_yard(self, ctx, flat_tokens: list):
         await self.flush_stacks()
-        tokenized_input = re.findall(r"([\d]*)([+-]?)([*/^()]?)(floor|abs|ceiling|sqrt)?",
-                                     complete_tokens)
-        flat_tokens: list = [item for match in tokenized_input for item in match if item]
         complete_tokens: list = await self.consolidate_tokens(ctx, flat_tokens)
         await self.process_input(ctx, complete_tokens)
         final_result = await self.evaluate_input(ctx)
@@ -29,6 +26,7 @@ class YardShunter:
         self.operator_stack.clear()
         self.output_queue.clear()
 
+    # TODO: simplify this / improve readability? feels clunky.
     async def consolidate_tokens(self, ctx, flattened_tokens: list):
         operator_bool: bool = False
         index: int = 0
@@ -39,6 +37,7 @@ class YardShunter:
                     del flattened_tokens[index + 1]
                     operator_bool = False
                 elif operator_bool:
+                    # TODO: actually raise an error?
                     await ctx.send("Error: Invalid sign duplication in roll modifier. Please try again!")
                 elif index == 0 and (index + 1) < len(flattened_tokens) and \
                         not flattened_tokens[index + 1].isdecimal():
@@ -81,11 +80,13 @@ class YardShunter:
                 if self.operator_stack[0] == '(':
                     self.operator_stack.pop(0)
                 else:
+                    # TODO: actually raise error?
                     await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
             index += 1
         else:
             while self.operator_stack:
                 if self.operator_stack[0] in ['(', ')']:
+                    # TODO: actually raise error?
                     await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
