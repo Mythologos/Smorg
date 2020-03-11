@@ -1,10 +1,12 @@
 # TODO: overall documentation
 # TODO: deck of cards.
+
+# Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
-
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
+# TODO: update roll presentation to be in embeds?
 
 from discord.ext import commands
 from smorgasDB import Guild
@@ -94,8 +96,7 @@ class Gambler(commands.Cog, Disambiguator):
             if not chosen_recipient.dm_channel:
                 await self.bot.get_user(chosen_recipient.id).create_dm()
             recipient_dm_channel = chosen_recipient.dm_channel
-            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, recipient_dm_channel,
-                                 description)
+            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, recipient_dm_channel, description)
 
     async def handle_roll(self, ctx, roll: str):
         raw_roll: str = roll.replace(' ', '')
@@ -109,7 +110,7 @@ class Gambler(commands.Cog, Disambiguator):
                 dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
                 verbose_die: tuple = (match[0], unsorted_results, sorted_results, dice_result)
                 verbose_dice.append(verbose_die)
-                parsed_roll[match_index] = (str(dice_result))
+                parsed_roll[match_index] = (str(dice_result),)
         flat_matches: list = [item for match in parsed_roll for item in match if item]
         roll_result = await self.yard_shunter.shunt_yard(ctx, flat_matches)
         return flat_matches, verbose_dice, roll_result
