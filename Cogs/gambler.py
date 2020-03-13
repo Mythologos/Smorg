@@ -4,6 +4,7 @@
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
+# https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html?highlight=error%20handling#error-handling
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
 # TODO: update roll presentation to be in embeds?
@@ -11,7 +12,7 @@
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
-from Cogs.Helpers.Enumerators.croupier import MessageConstants
+from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
@@ -24,14 +25,14 @@ class Gambler(commands.Cog, Disambiguator):
         self.bot = bot
         self.yard_shunter = YardShunter()
 
-    @commands.command(description='This command gets Smorg to roll one die or multiple dice. ' +
-                                  'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)b, '
-                                  'where x, y, z, and b are nonnegative integers, ' +
-                                  'and where a is an integer. Regular dice, drop-keep syntax, ' +
+    @commands.command(description='This command rolls dice. ' +
+                                  'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)(+/-)b, '
+                                  'where x, y, and z are nonnegative integers, ' +
+                                  'and where a and b are integers. Regular dice, drop-keep syntax, ' +
                                   'exploding dice, challenge dice, and combinations of these are all supported. ' +
-                                  'Only the the first "d" is required to perform a roll. ' +
-                                  'The default x value is 1. The default y value is 6. The others default to 0. ' +
-                                  'Quoted, a description of what the roll was for may be included afterward. ' +
+                                  'Mathematical modifiers using + (addition), - (subtraction), * (multiplication), / ' +
+                                  '(division), ^ (exponentiation), parentheses, floor(), ceiling(), abs(), and sqrt()' +
+                                  'are allowed. Quoted, a description of what the roll was for may be included next. ' +
                                   'The result is posted either in a set gamble channel or where the die was rolled.')
     async def chance(self, ctx, roll: str, description: str = 'To Contend with Lady Luck'):
         gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
@@ -45,7 +46,7 @@ class Gambler(commands.Cog, Disambiguator):
                                   'These recipients are the second item to be typed in the command, ' +
                                   'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
                                   'The user is automatically listed as a recipient. ' +
-                                  'See the documentation for "chance" for a description of the remaining syntax.')
+                                  'See the documentation for "chance" for a description of roll syntax.')
     async def hazard(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
         starting_chosen_recipients: list = [ctx.message.author]
         chosen_recipients: list = await self.get_recipients(ctx, recipients, starting_chosen_recipients) if recipients \
@@ -58,7 +59,7 @@ class Gambler(commands.Cog, Disambiguator):
                                   'to send the result to one or more recipients that do not include the user. ' +
                                   'These recipients are the second item to be typed in the command, ' +
                                   'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
-                                  'See the documentation for "chance" for a description of the remaining syntax.')
+                                  'See the documentation for "chance" for a description of roll syntax.')
     async def imperil(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
         chosen_recipients: list = await self.get_recipients(ctx, recipients) if recipients \
             else await ctx.send("Error: no recipients were given for this roll.")
@@ -103,12 +104,12 @@ class Gambler(commands.Cog, Disambiguator):
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
         for match_index, match in enumerate(parsed_roll):
-            # TODO: add enum for readability
-            if match[0]:
-                parsed_dice = await self.parse_dice(match[0])
+            die_roll: str = match[MatchContents.CONSTANT.value]
+            if die_roll:
+                parsed_dice = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
                 dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
-                verbose_die: tuple = (match[0], unsorted_results, sorted_results, dice_result)
+                verbose_die: tuple = (die_roll, unsorted_results, sorted_results, dice_result)
                 verbose_dice.append(verbose_die)
                 parsed_roll[match_index] = (str(dice_result),)
         flat_matches: list = [item for match in parsed_roll for item in match if item]
@@ -212,7 +213,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_list
 
     @staticmethod
-    async def analyze_roll(roll_list, challenge_sign, challenge_value):
+    async def analyze_roll(roll_list, challenge_sign, challenge_value) -> int:
         roll_result: int = 0
         if challenge_sign:
             if challenge_sign == '>':
