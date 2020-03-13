@@ -1,7 +1,9 @@
+# TODO: documentation...
+# describe as Cog mixin
+
 import discord
 
 
-# describe as Cog mixin
 class Disambiguator:
     @staticmethod
     async def disambiguate(bot, ctx, options):
@@ -24,3 +26,8 @@ class Disambiguator:
                                                              color=0xB80000)
                 await ctx.send(embed=disambiguation_timeout_embed)
         return option_index
+
+    # Should I make this a fully-fledged Cog? Or is there a way that I can access the caller from here?
+    # @disambiguate.error
+    # async def disambiguate_error():
+    #     ...

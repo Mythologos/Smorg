@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 import random
 from smorgasDB import Guild, Quote
+from Cogs.Helpers.checker import Checker
 
 
 class Quoter(commands.Cog):
@@ -10,7 +11,7 @@ class Quoter(commands.Cog):
 
     @commands.command(description='This command embeds a quote. It takes a quote (in quotation marks) ' +
                                   'and, optionally, an author as arguments.')
-    async def quote(self, ctx, text='', author='An Anonymous Intellectual'):
+    async def quote(self, ctx, text, author='An Anonymous Intellectual'):
         """
         This method receives a quotation and embeds it in its quotation chat.
         :param ctx: The context from which the quotation came.
@@ -21,16 +22,35 @@ class Quoter(commands.Cog):
         quotation_channel_id = Guild.get_quotation_channel_by(ctx.guild.id)
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
-        if text:
-            quote_response = discord.Embed(title=f'The Marvelous Brainchild of {author}:',
-                                           description=text,
-                                           color=0x20409A)
-            await ctx.message.delete()
-        else:
-            quote_response = discord.Embed(title='Error (Quote): Invalid Quotation',
-                                           description='You didn\'t supply a valid quote.',
-                                           color=0xB80000)
+        quote_response = discord.Embed(
+            title=f'The Marvelous Brainchild of {author}:',
+            description=text,
+            color=0x20409A
+        )
+        await ctx.message.delete()
         await current_channel.send(embed=quote_response)
+
+    @quote.error
+    async def quote_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            error_embed = discord.Embed(
+                title='Error (Quote): Missing Quotation',
+                description='You didn\'t supply a valid quote.',
+                color=0xB80000
+            )
+        elif isinstance(error, commands.ExpectedClosingQuoteError):
+            error_embed = discord.Embed(
+                title='Error (Quote): Unfinished Quotation',
+                description='You forgot a closing quotation mark on your quote or author name.',
+                color=0xB80000
+            )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Quote)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=0xB80000
+            )
+        await ctx.send(embed=error_embed)
 
     @commands.command(description='This command embeds a quote and stores it for posterity\'s sake. ' +
                                   'It takes a quote (in quotation marks) and, optionally, an author as arguments.')
@@ -47,18 +67,41 @@ class Quoter(commands.Cog):
         quotation_channel_id = Guild.get_quotation_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
-        if text:
-            quote_response = discord.Embed(title=f'The Holiest Opus of {author if author else "An Unknowable Deity"}:',
-                                           description=text, color=0xFDF06F)
-            Quote.create_quote_with(current_guild_id, text, author)
-            await ctx.message.delete()
-        else:
-            quote_response = discord.Embed(title='Error (Sanctify): Invalid Quotation',
-                                           description='You didn\'t supply a valid quote.',
-                                           color=0xB80000)
+        quote_response = discord.Embed(
+            title=f'The Holiest Opus of {author if author else "An Unknowable Deity"}:',
+            description=text,
+            color=0xFDF06F
+        )
+        Quote.create_quote_with(current_guild_id, text, author)
+        await ctx.message.delete()
         await current_channel.send(embed=quote_response)
 
+    @sanctify.error
+    async def sanctify_error(self, ctx, error):
+        # TODO: add more errors related to sanctify's other behavior with the database?
+        if isinstance(error, commands.MissingRequiredArgument):
+            error_embed = discord.Embed(
+                title='Error (Sanctify): Missing Quotation',
+                description='You didn\'t supply a valid quote.',
+                color=0xB80000
+            )
+        elif isinstance(error, commands.ExpectedClosingQuoteError):
+            error_embed = discord.Embed(
+                title='Error (Sanctify): Unfinished Quotation',
+                description='You forgot a closing quotation mark on your quote or author name.',
+                color=0xB80000
+            )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Sanctify)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=0xB80000
+            )
+        await ctx.send(embed=error_embed)
+
+    # TODO: add Enum for list access values
     @commands.command(description='This command retrieves and displays a random stored quote.')
+    @commands.check(Checker.is_yoinkable)
     async def yoink(self, ctx):
         """
         This method retrieves a random Quote formed by the calling Guild in the database.
@@ -68,14 +111,27 @@ class Quoter(commands.Cog):
         """
         current_guild_id = ctx.guild.id
         maximum = Quote.count_quotes(current_guild_id) - 1
-        if maximum >= 0:
-            yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
-            author = yoinked_quote[0] if yoinked_quote[0] else 'A Forgotten Prodigy'
-            yoink_response = discord.Embed(title=f'The Legendary Words of {author}',
-                                           description=yoinked_quote[1],
-                                           color=0xEE104E)
-        else:
-            yoink_response = discord.Embed(title='Error (Yoink): Invalid Request',
-                                           description='Your server has no quotes.',
-                                           color=0xB80000)
+        yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
+        author = yoinked_quote[0] if yoinked_quote[0] else 'A Forgotten Prodigy'
+        yoink_response = discord.Embed(
+            title=f'The Legendary Words of {author}',
+            description=yoinked_quote[1],
+            color=0xEE104E
+        )
         await ctx.send(embed=yoink_response)
+
+    @yoink.error
+    async def yoink_error(self, ctx, error):
+        if isinstance(error, commands.CheckFailure):
+            error_embed = discord.Embed(
+                title='Error (Yoink): Invalid Request',
+                description='Your server has no quotes.',
+                color=0xB80000
+            )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Yoink)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=0xB80000
+            )
+        await ctx.send(embed=error_embed)
