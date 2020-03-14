@@ -72,7 +72,6 @@ class Arranger(commands.Cog, Disambiguator):
     @reminder.error
     @gamble.error
     async def domain_error(self, ctx, error):
-        error_embed = discord.Embed()
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Govern): Missing Channel',

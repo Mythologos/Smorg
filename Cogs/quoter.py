@@ -1,5 +1,5 @@
 # TODO: documentation
-# TODO: add enumerator for embed colors
+# TODO: finish enumerator for embed colors
 
 import discord
 from discord.ext import commands
@@ -36,7 +36,6 @@ class Quoter(commands.Cog):
 
     @quote.error
     async def quote_error(self, ctx, error):
-        error_embed = discord.Embed()
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Quote): Missing Quotation',
@@ -83,7 +82,6 @@ class Quoter(commands.Cog):
 
     @sanctify.error
     async def sanctify_error(self, ctx, error):
-        error_embed = discord.Embed()
         # TODO: add more errors related to sanctify's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
@@ -128,7 +126,6 @@ class Quoter(commands.Cog):
 
     @yoink.error
     async def yoink_error(self, ctx, error):
-        error_embed = discord.Embed()
         if isinstance(error, commands.CheckFailure):
             error_embed = discord.Embed(
                 title='Error (Yoink): Invalid Request',
