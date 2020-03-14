@@ -1,6 +1,9 @@
+# TODO: documentation
+# TODO: add enumerator for embed colors
+
 import discord
 from discord.ext import commands
-import random
+from random import randint
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
 
@@ -111,7 +114,7 @@ class Quoter(commands.Cog):
         """
         current_guild_id = ctx.guild.id
         maximum = Quote.count_quotes(current_guild_id) - 1
-        yoinked_quote = Quote.get_random_quote_by(current_guild_id, random.randint(0, maximum))
+        yoinked_quote = Quote.get_random_quote_by(current_guild_id, randint(0, maximum))
         author = yoinked_quote[0] if yoinked_quote[0] else 'A Forgotten Prodigy'
         yoink_response = discord.Embed(
             title=f'The Legendary Words of {author}',
