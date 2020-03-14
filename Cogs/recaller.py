@@ -1,12 +1,14 @@
+# GMT: https://greenwichmeantime.com/time-zone/definition/
+# aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst
+# TODO: be sure to add Disambiguator TimeoutError handling
+
+
 import discord
 from discord.ext import commands
 from Cogs.Helpers.Enumerators.universalist import ColorConstants
 from smorgasDB import Guild
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.disambiguator import Disambiguator
-
-# GMT: https://greenwichmeantime.com/time-zone/definition/
-# aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst
 
 
 class Recaller(commands.Cog, Disambiguator):

@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord.ext import commands
 from Cogs.Helpers.Enumerators.universalist import ColorConstants
 from smorgasDB import Guild
@@ -90,6 +91,19 @@ class Arranger(commands.Cog, Disambiguator):
                 description='The channel name given was not found.',
                 color=ColorConstants.ERROR_RED
             )
+        elif isinstance(error, commands.CommandInvokeError):
+            if isinstance(error.original, asyncio.TimeoutError):
+                error_embed = discord.Embed(
+                    title='Error (Govern): Disambiguation Timeout',
+                    description='You didn\'t supply a valid integer quickly enough.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Govern): Command Invoke Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
         else:
             error_embed = discord.Embed(
                 title='Error (Govern)',

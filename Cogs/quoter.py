@@ -29,7 +29,7 @@ class Quoter(commands.Cog):
         quote_response = discord.Embed(
             title=f'The Marvelous Brainchild of {author}:',
             description=text,
-            color=0x20409A
+            color=ColorConstants.DEEP_BLUE
         )
         await ctx.message.delete()
         await current_channel.send(embed=quote_response)
@@ -74,7 +74,7 @@ class Quoter(commands.Cog):
         quote_response = discord.Embed(
             title=f'The Holiest Opus of {author if author else "An Unknowable Deity"}:',
             description=text,
-            color=0xFDF06F
+            color=ColorConstants.HEAVENLY_YELLOW
         )
         Quote.create_quote_with(current_guild_id, text, author)
         await ctx.message.delete()
@@ -120,7 +120,7 @@ class Quoter(commands.Cog):
         yoink_response = discord.Embed(
             title=f'The Legendary Words of {author}',
             description=yoinked_quote[1],
-            color=0xEE104E
+            color=ColorConstants.HOT_PINK
         )
         await ctx.send(embed=yoink_response)
 

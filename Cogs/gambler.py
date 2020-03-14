@@ -4,6 +4,7 @@
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
+# TODO: be sure to add Disambiguator TimeoutError handling.
 # https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html?highlight=error%20handling#error-handling
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
