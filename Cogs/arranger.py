@@ -91,4 +91,10 @@ class Arranger(commands.Cog, Disambiguator):
                 description='The channel name given was not found.',
                 color=ColorConstants.ERROR_RED
             )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Govern)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=ColorConstants.ERROR_RED
+            )
         await ctx.send(embed=error_embed)
