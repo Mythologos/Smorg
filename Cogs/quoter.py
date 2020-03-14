@@ -6,6 +6,7 @@ from discord.ext import commands
 from random import randint
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
+from Cogs.Helpers.Enumerators.universalist import ColorConstants
 
 
 class Quoter(commands.Cog):
@@ -35,23 +36,24 @@ class Quoter(commands.Cog):
 
     @quote.error
     async def quote_error(self, ctx, error):
+        error_embed = discord.Embed()
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Quote): Missing Quotation',
-                description='You didn\'t supply a valid quote.',
-                color=0xB80000
+                description='You didn\'t supply a quote.',
+                color=ColorConstants.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Quote): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Quote)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)
 
@@ -81,24 +83,25 @@ class Quoter(commands.Cog):
 
     @sanctify.error
     async def sanctify_error(self, ctx, error):
+        error_embed = discord.Embed()
         # TODO: add more errors related to sanctify's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Sanctify): Missing Quotation',
                 description='You didn\'t supply a valid quote.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Sanctify): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Sanctify)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)
 
@@ -125,16 +128,17 @@ class Quoter(commands.Cog):
 
     @yoink.error
     async def yoink_error(self, ctx, error):
+        error_embed = discord.Embed()
         if isinstance(error, commands.CheckFailure):
             error_embed = discord.Embed(
                 title='Error (Yoink): Invalid Request',
                 description='Your server has no quotes.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Yoink)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=0xB80000
+                color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)

@@ -13,6 +13,7 @@ from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
+from Cogs.Helpers.Enumerators.universalist import DiscordConstants
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy

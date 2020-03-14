@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from Cogs.Helpers.Enumerators.universalist import ColorConstants
 from smorgasDB import Guild
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.disambiguator import Disambiguator
@@ -59,7 +60,7 @@ class Recaller(commands.Cog, Disambiguator):
             invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
                                                description='You didn\'t give a time with correctly-formatted, ' +
                                                            'numerical hours and minutes.',
-                                               color=0xB80000)
+                                               color=ColorConstants.ERROR_RED)
             await ctx.send(embed=invalid_time_embed)
         else:
             if len(full_time) > 1:
@@ -74,7 +75,7 @@ class Recaller(commands.Cog, Disambiguator):
                         invalid_time_format_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
                                                                   description='You didn\'t give a time with ' +
                                                                               'a valid time zone or time period.',
-                                                                  color=0xB80000)
+                                                                  color=ColorConstants.ERROR_RED)
                         await ctx.send(embed=invalid_time_format_embed)
                     else:
                         hours, minutes = await self.convert_to_military_time(ctx, hours, minutes, period)
@@ -100,7 +101,7 @@ class Recaller(commands.Cog, Disambiguator):
         except AssertionError:
             invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time',
                                                description='You didn\'t give a valid numerical time.',
-                                               color=0xB80000)
+                                               color=ColorConstants.ERROR_RED)
             await ctx.send(embed=invalid_time_embed)
         else:
             if period in ['pm', 'p.m'] and hours != 12:

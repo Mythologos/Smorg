@@ -1,8 +1,8 @@
 # TODO: MODULAR DOCUMENTATION
 
-import functools
 import secretbord
 import sqlalchemy
+from functools import wraps
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, ForeignKey
@@ -30,7 +30,7 @@ class BaseAddition:
         :param decorated_function: a function that requires a session.
         :return: a function with the built-in capability of opening and closing a session.
         """
-        @functools.wraps(decorated_function)
+        @wraps(decorated_function)
         def session_decorator(*args, **kwargs):
             method_session = Session()
             session_value = decorated_function(method_session, *args, **kwargs)
