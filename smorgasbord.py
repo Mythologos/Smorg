@@ -1,5 +1,5 @@
 # TODO: MODULAR DOCUMENTATION
-# TODO: handle deleted channels case
+# Add: flush/purge command for messages, a command to change the bot's prefix.
 
 import discord
 from discord.ext import commands

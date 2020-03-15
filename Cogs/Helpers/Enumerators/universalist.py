@@ -10,3 +10,4 @@ class ColorConstants(NamedConstant):
     HEAVENLY_YELLOW = 0xFFE066
     DEEP_BLUE = 0x001A66
     HOT_PINK = 0xFF3385
+    NEUTRAL_ORANGE = 0xFF6600

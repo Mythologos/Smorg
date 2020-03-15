@@ -1,5 +1,7 @@
 # TODO: overall documentation
 # TODO: more rigorous handling of parentheses in morse_to_alphabet
+# TODO: add easier way to write morse-like code with period and dash characters
+# TODO: add better error-handling
 # The morse code is based on: http://ascii-table.com/morse-code.php
 
 from discord.ext import commands

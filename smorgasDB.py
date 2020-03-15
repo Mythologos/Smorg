@@ -1,4 +1,7 @@
 # TODO: MODULAR DOCUMENTATION
+# TODO: handle deleted channels case for various tables here
+# TODO: add DB field to control the prefix of the bot.
+
 
 import secretbord
 import sqlalchemy

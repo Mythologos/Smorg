@@ -3,22 +3,25 @@
 
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
-# TODO: exceptions for incorrect roll syntax. (e.g.: challenge rolls that end up using characters.)
+# TODO: exceptions for incorrect roll syntax.
+# TODO: test exceptions already added in.
 # TODO: be sure to add Disambiguator TimeoutError handling.
 # https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html?highlight=error%20handling#error-handling
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
 # TODO: update roll presentation to be in embeds?
 
+import discord
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
-from Cogs.Helpers.Enumerators.universalist import DiscordConstants
+from Cogs.Helpers.Enumerators.universalist import DiscordConstants, ColorConstants
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
+from inspect import signature
 import re
 
 
@@ -28,13 +31,14 @@ class Gambler(commands.Cog, Disambiguator):
         self.yard_shunter = YardShunter()
 
     @commands.command(description='This command rolls dice. ' +
-                                  'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)(+/-)b, '
-                                  'where x, y, and z are nonnegative integers, ' +
-                                  'and where a and b are integers. Regular dice, drop-keep syntax, ' +
-                                  'exploding dice, challenge dice, and combinations of these are all supported. ' +
-                                  'Mathematical modifiers using + (addition), - (subtraction), * (multiplication), / ' +
-                                  '(division), ^ (exponentiation), parentheses, floor(), ceiling(), abs(), and sqrt()' +
-                                  'are allowed. Quoted, a description of what the roll was for may be included next. ' +
+                                  'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)(+/-)b, ' +
+                                  'where x, y, and z are nonnegative integers, and where a and b are integers. ' +
+                                  'Regular dice, drop-keep syntax, exploding dice, challenge dice, ' +
+                                  'and combinations of these are all supported. ' +
+                                  'Mathematical modifiers using + (addition), - (subtraction), * (multiplication), ' +
+                                  '/ (division), ^ (exponentiation), parentheses, floor(), ceiling(), abs(), and ' +
+                                  'sqrt() are allowed. ' +
+                                  'Quoted, a description of what the roll was for may be included next. ' +
                                   'The result is posted either in a set gamble channel or where the die was rolled.')
     async def chance(self, ctx, roll: str, description: str = 'To Contend with Lady Luck'):
         gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
@@ -62,13 +66,15 @@ class Gambler(commands.Cog, Disambiguator):
                                   'These recipients are the second item to be typed in the command, ' +
                                   'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
                                   'See the documentation for "chance" for a description of roll syntax.')
-    async def imperil(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
-        chosen_recipients: list = await self.get_recipients(ctx, recipients) if recipients \
-            else await ctx.send("Error: no recipients were given for this roll.")
-        if ctx.message.author in chosen_recipients:
-            await ctx.send("Error: the sender is not allowed to be a recipient for this roll.")
+    async def imperil(self, ctx, roll: str, recipients: str, description: str = 'To Contend with Lady Luck'):
+        if recipients:
+            chosen_recipients = await self.get_recipients(ctx, recipients)
+            if ctx.message.author in chosen_recipients:
+                raise commands.UserInputError
+            else:
+                await self.inform_recipients(ctx, roll, chosen_recipients, description)
         else:
-            await self.inform_recipients(ctx, roll, chosen_recipients, description)
+            raise commands.MissingRequiredArgument(recipients)
 
     async def get_recipients(self, ctx, recipients: str, chosen_recipients: list = None) -> list:
         if chosen_recipients is None:
@@ -106,7 +112,7 @@ class Gambler(commands.Cog, Disambiguator):
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
         for match_index, match in enumerate(parsed_roll):
-            die_roll: str = match[MatchContents.CONSTANT.value]
+            die_roll: str = match[MatchContents.DIE_ROLL.value]
             if die_roll:
                 parsed_dice = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
@@ -126,21 +132,24 @@ class Gambler(commands.Cog, Disambiguator):
         #     MessageConstants.DEFAULT_MSG_CHARACTERS
 
         introductory_message: str = f"{ctx.message.author.mention}\n" \
-                                    f"Roll: {roll}\n" \
+                                    f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
         await destination_channel.send(introductory_message)
 
         if verbose_dice:
             roll_result_message = f"The results of the individual roll(s) inside the overall roll are as follows:"
             await destination_channel.send(roll_result_message)
-            for (raw_roll, unsorted_result, sorted_result, dice_result) in verbose_dice:
-                verbose_roll_message = f"\nThe roll {raw_roll} resulted in: \n**Raw Dice Result:** {unsorted_result} \n" \
-                                       f"**Final Dice Result:** {sorted_result} \n**Sum:** {dice_result}"
-                await destination_channel.send(verbose_roll_message)
+            for index, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerate(verbose_dice, start=1):
+                verbose_roll_embed = discord.Embed(
+                    title=f"Dice Roll {index}: {raw_roll}",
+                    description=f"**Raw Dice Result:** {unsorted_result}\n"
+                                f"**Final Dice Result:** {sorted_result}\n"
+                                f"**Sum:** {dice_result}",
+                    color=ColorConstants.NEUTRAL_ORANGE
+                )
+                await destination_channel.send(embed=verbose_roll_embed)
 
-        evaluated_roll: str = ""
-        for token in flat_tokens:
-            evaluated_roll += str(token)
+        evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
                              f"The final result of this roll is: {roll_result}"
         await destination_channel.send(concluding_message)
@@ -228,3 +237,55 @@ class Gambler(commands.Cog, Disambiguator):
             for roll in roll_list:
                 roll_result += roll
         return roll_result
+
+    # TODO: improve error handling here
+    @chance.error
+    async def chance_error(self, ctx, error):
+        error_embed = discord.Embed(
+            title='Error (Chance)',
+            description=f'The error type is: {error}. A better error message will be supplied soon.',
+            color=ColorConstants.ERROR_RED
+        )
+        await ctx.send(embed=error_embed)
+
+    # TODO: improve error handling here
+    @hazard.error
+    async def hazard_error(self, ctx, error):
+        error_embed = discord.Embed(
+            title='Error (Hazard)',
+            description=f'The error type is: {error}. A better error message will be supplied soon.',
+            color=ColorConstants.ERROR_RED
+        )
+        await ctx.send(embed=error_embed)
+
+    # TODO: improve error handling here, be sure to check whether other errors aren't accidentally caught
+    # by ones that are already established.
+    @imperil.error
+    async def imperil_error(self, ctx, error):
+        if isinstance(error, commands.MissingRequiredArgument):
+            if error.param is signature(self.imperil)['recipients']:
+                error_embed = discord.Embed(
+                    title='Error (Imperil): Missing Recipients',
+                    description='You didn\'t supply any recipients.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Imperil): Missing Argument',
+                    description='You didn\'t supply something other than recipients.' +
+                                ' Better error-handling will specify this soon.',
+                    color=ColorConstants.ERROR_RED
+                )
+        elif isinstance(error, commands.UserInputError):
+            error_embed = discord.Embed(
+                title='Error (Imperil): Invalid Recipient',
+                description='The user is not allowed to be a recipient for this roll type.',
+                color=ColorConstants.ERROR_RED
+            )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Imperil)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=ColorConstants.ERROR_RED
+            )
+        await ctx.send(embed=error_embed)

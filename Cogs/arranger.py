@@ -26,10 +26,7 @@ class Arranger(commands.Cog, Disambiguator):
     async def quotation(self, ctx, channel_name):
         """
         This method allows users to alter the chat in which Smorg embeds its quotes.
-        :param ctx: The context from which the request came.
-        :param channel_name: The name of the channel which the user wants to designate as Smorg's quotation domain.
-        If channels have the same name, Disambiguator derives order from counting Discord channels from top to bottom.
-        :return: None.
+        See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where I engrave your greatest sayings.'
         await self.handle_domain(ctx, Guild.update_quotation_channel, govern_message, channel_name)
@@ -38,10 +35,7 @@ class Arranger(commands.Cog, Disambiguator):
     async def reminder(self, ctx, channel_name):
         """
         This method allows users to alter the chat in which Smorg posts its reminders.
-        :param ctx: The context from which the request came.
-        :param channel_name: The name of the channel which the user wants to designate as Smorg's reminder domain.
-        If channels have the same name, Disambiguator derives order from counting Discord channels from top to bottom.
-        :return: None.
+        See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where I blare your noisiest pings.'
         await self.handle_domain(ctx, Guild.update_reminder_channel, govern_message, channel_name)
@@ -50,16 +44,21 @@ class Arranger(commands.Cog, Disambiguator):
     async def gamble(self, ctx, channel_name):
         """
         This method allows users to alter the chat in which Smorg posts its public gambles.
-        :param ctx: The context from which the request came.
-        :param channel_name: The name of the channel which the user wants to designate as Smorg's gamble domain.
-        If channels have the same name, Disambiguator derives order from counting Discord channels from top to bottom.
-        :return: None.
+        See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where you let the cards and dice fly.'
         await self.handle_domain(ctx, Guild.update_gamble_channel, govern_message, channel_name)
 
-    # TODO: figure out documentation situation between this and the three methods above.
     async def handle_domain(self, ctx, table_update_method, govern_message, channel_name):
+        """
+        This method allows users to alter the chats in which Smorg posts information.
+        :param ctx: The context from which the request came.
+        :param table_update_method: The SmorgDB method which will update the relevant domain channel for Smorg.
+        :param govern_message: The message which Smorg reports back after updating the relevant domain channel.
+        :param channel_name: The name of the channel which the user wants to designate as a domain for Smorg's messages.
+        If channels have the same name, Disambiguator derives order from counting Discord channels from top to bottom.
+        :return: None.
+        """
         current_guild = ctx.guild
         valid_channels: list = [channel for channel in current_guild.text_channels if channel.name == channel_name]
         if not valid_channels:

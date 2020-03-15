@@ -1,5 +1,5 @@
 # TODO: documentation
-# TODO: finish enumerator for embed colors
+# TODO: make quote descriptions less pretentious
 
 import discord
 from discord.ext import commands
