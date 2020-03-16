@@ -168,6 +168,7 @@ class Guild(Base, BaseAddition):
     # Attributes:
     guild_id = Column(BigInteger, primary_key=True, nullable=False)
     gamble_channel_id = Column(BigInteger, unique=True, nullable=True)
+    guild_prefix = Column(String, default='.', nullable=False)
     quotation_channel_id = Column(BigInteger, unique=True, nullable=False)
     reminder_channel_id = Column(BigInteger, unique=True, nullable=False)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
@@ -181,10 +182,10 @@ class Guild(Base, BaseAddition):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, gamble_channel_id: {1}, quotation_channel_id: {2}, ' \
+        return '<Guild(guild_id: {0}, gamble_channel_id: {1}, guild_prefix: {2}, quotation_channel_id: {3}, ' \
                'reminder_channel_id: {3}' + 'created_at: {4}, last_updated_at: {5}>' \
-            .format(self.guild_id, self.gamble_channel_id, self.quotation_channel_id, self.reminder_channel_id,
-                    self.created_at, self.last_updated_at)
+            .format(self.guild_id,self.gamble_channel_id, self.guild_prefix, self.quotation_channel_id,
+                    self.reminder_channel_id, self.created_at, self.last_updated_at)
 
     # Queries:
     @staticmethod
@@ -293,4 +294,18 @@ class Guild(Base, BaseAddition):
         method_session.query(Guild) \
                       .filter_by(guild_id=g_id) \
                       .update({"gamble_channel_id": c_id})
+        method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
+    def get_guild_prefix(method_session, g_id):
+        guild_prefix = method_session.query(Guild.guild_prefix).filter_by(guild_id=g_id).first()
+        return guild_prefix[0]
+
+    @staticmethod
+    @BaseAddition.session_method
+    def update_guild_prefix(method_session, g_id, new_prefix):
+        method_session.query(Guild) \
+                      .filter_by(guild_id=g_id) \
+                      .update({"guild_prefix": new_prefix})
         method_session.commit()
