@@ -1,5 +1,6 @@
 # TODO: documentation
-# TODO: make quote descriptions less pretentious
+# TODO: possibly synthesize quote and engrave portions to reduce code duplication?
+# TODO: maybe change yoink's name to 'fetch'? add other things to it?
 
 import discord
 from discord.ext import commands
@@ -27,7 +28,7 @@ class Quoter(commands.Cog):
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
         quote_response = discord.Embed(
-            title=f'The Marvelous Brainchild of {author}:',
+            title=f'The Words of {author}:',
             description=text,
             color=ColorConstants.DEEP_BLUE
         )
@@ -58,7 +59,7 @@ class Quoter(commands.Cog):
 
     @commands.command(description='This command embeds a quote and stores it for posterity\'s sake. ' +
                                   'It takes a quote (in quotation marks) and, optionally, an author as arguments.')
-    async def sanctify(self, ctx, text='', author=None):
+    async def engrave(self, ctx, text, author="A True Legend"):
         """
         This method receives a quotation and embeds it in its quotation chat.
         It also stores this information in the database.
@@ -72,7 +73,7 @@ class Quoter(commands.Cog):
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
         quote_response = discord.Embed(
-            title=f'The Holiest Opus of {author if author else "An Unknowable Deity"}:',
+            title=f'The Masterpiece of {author}:',
             description=text,
             color=ColorConstants.HEAVENLY_YELLOW
         )
@@ -80,24 +81,24 @@ class Quoter(commands.Cog):
         await ctx.message.delete()
         await current_channel.send(embed=quote_response)
 
-    @sanctify.error
-    async def sanctify_error(self, ctx, error):
-        # TODO: add more errors related to sanctify's other behavior with the database?
+    @engrave.error
+    async def engrave_error(self, ctx, error):
+        # TODO: add more errors related to engrave's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
-                title='Error (Sanctify): Missing Quotation',
+                title='Error (Engrave): Missing Quotation',
                 description='You didn\'t supply a valid quote.',
                 color=ColorConstants.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
-                title='Error (Sanctify): Unfinished Quotation',
+                title='Error (Engrave): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
                 color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
-                title='Error (Sanctify)',
+                title='Error (Engrave)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
                 color=ColorConstants.ERROR_RED
             )
