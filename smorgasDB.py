@@ -298,13 +298,14 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_guild_prefix(method_session, g_id):
+    def get_prefix(method_session, bot, message):
+        g_id: int = message.channel.guild.id
         guild_prefix = method_session.query(Guild.guild_prefix).filter_by(guild_id=g_id).first()
         return guild_prefix[0]
 
     @staticmethod
     @BaseAddition.session_method
-    def update_guild_prefix(method_session, g_id, new_prefix):
+    def update_prefix(method_session, g_id, new_prefix):
         method_session.query(Guild) \
                       .filter_by(guild_id=g_id) \
                       .update({"guild_prefix": new_prefix})

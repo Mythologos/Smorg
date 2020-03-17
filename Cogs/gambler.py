@@ -40,7 +40,7 @@ class Gambler(commands.Cog, Disambiguator):
                                   'sqrt() are allowed. ' +
                                   'Quoted, a description of what the roll was for may be included next. ' +
                                   'The result is posted either in a set gamble channel or where the die was rolled.')
-    async def chance(self, ctx, roll: str, description: str = 'To Contend with Lady Luck'):
+    async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck'):
         gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
         current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
             else ctx.message.channel
@@ -53,7 +53,7 @@ class Gambler(commands.Cog, Disambiguator):
                                   'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
                                   'The user is automatically listed as a recipient. ' +
                                   'See the documentation for "chance" for a description of roll syntax.')
-    async def hazard(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
+    async def chance(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
         starting_chosen_recipients: list = [ctx.message.author]
         chosen_recipients: list = await self.get_recipients(ctx, recipients, starting_chosen_recipients) if recipients \
             else starting_chosen_recipients
@@ -66,7 +66,7 @@ class Gambler(commands.Cog, Disambiguator):
                                   'These recipients are the second item to be typed in the command, ' +
                                   'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
                                   'See the documentation for "chance" for a description of roll syntax.')
-    async def imperil(self, ctx, roll: str, recipients: str, description: str = 'To Contend with Lady Luck'):
+    async def hazard(self, ctx, roll: str, recipients: str, description: str = 'To Contend with Lady Luck'):
         if recipients:
             chosen_recipients = await self.get_recipients(ctx, recipients)
             if ctx.message.author in chosen_recipients:
@@ -239,6 +239,16 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_result
 
     # TODO: improve error handling here
+    @roll.error
+    async def roll_error(self, ctx, error):
+        error_embed = discord.Embed(
+            title='Error (Roll)',
+            description=f'The error type is: {error}. A better error message will be supplied soon.',
+            color=ColorConstants.ERROR_RED
+        )
+        await ctx.send(embed=error_embed)
+
+    # TODO: improve error handling here
     @chance.error
     async def chance_error(self, ctx, error):
         error_embed = discord.Embed(
@@ -248,43 +258,33 @@ class Gambler(commands.Cog, Disambiguator):
         )
         await ctx.send(embed=error_embed)
 
-    # TODO: improve error handling here
-    @hazard.error
-    async def hazard_error(self, ctx, error):
-        error_embed = discord.Embed(
-            title='Error (Hazard)',
-            description=f'The error type is: {error}. A better error message will be supplied soon.',
-            color=ColorConstants.ERROR_RED
-        )
-        await ctx.send(embed=error_embed)
-
     # TODO: improve error handling here, be sure to check whether other errors aren't accidentally caught
     # by ones that are already established.
-    @imperil.error
-    async def imperil_error(self, ctx, error):
+    @hazard.error
+    async def hazard_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):
-            if error.param is signature(self.imperil)['recipients']:
+            if error.param is signature(self.hazard)['recipients']:
                 error_embed = discord.Embed(
-                    title='Error (Imperil): Missing Recipients',
+                    title='Error (Hazard): Missing Recipients',
                     description='You didn\'t supply any recipients.',
                     color=ColorConstants.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
-                    title='Error (Imperil): Missing Argument',
+                    title='Error (Hazard): Missing Argument',
                     description='You didn\'t supply something other than recipients.' +
                                 ' Better error-handling will specify this soon.',
                     color=ColorConstants.ERROR_RED
                 )
         elif isinstance(error, commands.UserInputError):
             error_embed = discord.Embed(
-                title='Error (Imperil): Invalid Recipient',
+                title='Error (Hazard): Invalid Recipient',
                 description='The user is not allowed to be a recipient for this roll type.',
                 color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
-                title='Error (Imperil)',
+                title='Error (Hazard)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
                 color=ColorConstants.ERROR_RED
             )

@@ -1,8 +1,8 @@
 # TODO: MODULAR DOCUMENTATION
 # Add: flush/purge command for messages, a command to change the bot's prefix.
 
-import discord
 from discord.ext import commands
+from smorgasDB import Guild
 import secretbord
 
 from Cogs.arranger import Arranger
@@ -13,7 +13,7 @@ from Cogs.recaller import Recaller
 from Cogs.gambler import Gambler
 from Cogs.encoder import Encoder
 
-smorg = commands.AutoShardedBot(command_prefix='.')
+smorg = commands.AutoShardedBot(command_prefix=Guild.get_prefix)
 smorg.remove_command('help')
 smorg.add_cog(Arranger(smorg))
 smorg.add_cog(Hearer(smorg))
