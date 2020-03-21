@@ -7,15 +7,14 @@ from discord.ext import commands
 from random import randint
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
-from Cogs.Helpers.Enumerators.universalist import ColorConstants
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
 class Quoter(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(description='This command embeds a quote. It takes a quote (in quotation marks) ' +
-                                  'and, optionally, an author as arguments.')
+    @commands.command(description=HelpDescriptions.QUOTE)
     async def quote(self, ctx, text, author='An Anonymous Intellectual'):
         """
         This method receives a quotation and embeds it in its quotation chat.
@@ -57,9 +56,8 @@ class Quoter(commands.Cog):
             )
         await ctx.send(embed=error_embed)
 
-    @commands.command(description='This command embeds a quote and stores it for posterity\'s sake. ' +
-                                  'It takes a quote (in quotation marks) and, optionally, an author as arguments.')
-    async def engrave(self, ctx, text, author="A True Legend"):
+    @commands.command(description=HelpDescriptions.IMMORTALIZE)
+    async def immortalize(self, ctx, text, author="A True Legend"):
         """
         This method receives a quotation and embeds it in its quotation chat.
         It also stores this information in the database.
@@ -81,31 +79,31 @@ class Quoter(commands.Cog):
         await ctx.message.delete()
         await current_channel.send(embed=quote_response)
 
-    @engrave.error
-    async def engrave_error(self, ctx, error):
+    @immortalize.error
+    async def immortalize_error(self, ctx, error):
         # TODO: add more errors related to engrave's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
-                title='Error (Engrave): Missing Quotation',
+                title='Error (Immortalize): Missing Quotation',
                 description='You didn\'t supply a valid quote.',
                 color=ColorConstants.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
-                title='Error (Engrave): Unfinished Quotation',
+                title='Error (Immortalize): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
                 color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
-                title='Error (Engrave)',
+                title='Error (Immortalize)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
                 color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)
 
     # TODO: add Enum for list access values
-    @commands.command(description='This command retrieves and displays a random stored quote.')
+    @commands.command(description=HelpDescriptions.YOINK)
     @commands.check(Checker.is_yoinkable)
     async def yoink(self, ctx):
         """

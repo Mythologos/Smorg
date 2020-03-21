@@ -1,14 +1,14 @@
 import discord
 from discord.ext import commands
 from smorgasDB import Guild
-from Cogs.Helpers.Enumerators.universalist import ColorConstants
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
 class Helper(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='help', description='This command retrieves the menu below shown here.')
+    @commands.command(name='help', description=HelpDescriptions.SUPPORT)
     async def support(self, ctx):
         """
         This method displays Smorg's help menu.
@@ -23,7 +23,7 @@ class Helper(commands.Cog):
             support_embed.add_field(name=f".{command.name}", value=command.description, inline=False)
         await ctx.send(embed=support_embed)
 
-    @commands.command(description='This command allows a Guild to change the prefix that the bot will respond to.')
+    @commands.command(description=HelpDescriptions.OBSERVE)
     async def observe(self, ctx, new_prefix):
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")

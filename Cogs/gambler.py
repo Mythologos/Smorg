@@ -4,24 +4,21 @@
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax.
-# TODO: test exceptions already added in.
 # TODO: be sure to add Disambiguator TimeoutError handling.
 # https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html?highlight=error%20handling#error-handling
 # TODO: divide up some of these functions; some are getting decently long.
 # TODO: allow and pre-remove spaces in roll syntax
-# TODO: update roll presentation to be in embeds?
 
 import discord
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
-from Cogs.Helpers.Enumerators.universalist import DiscordConstants, ColorConstants
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
-from inspect import signature
 import re
 
 
@@ -30,51 +27,17 @@ class Gambler(commands.Cog, Disambiguator):
         self.bot = bot
         self.yard_shunter = YardShunter()
 
-    @commands.command(description='This command rolls dice. ' +
-                                  'It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)(+/-)b, ' +
-                                  'where x, y, and z are nonnegative integers, and where a and b are integers. ' +
-                                  'Regular dice, drop-keep syntax, exploding dice, challenge dice, ' +
-                                  'and combinations of these are all supported. ' +
-                                  'Mathematical modifiers using + (addition), - (subtraction), * (multiplication), ' +
-                                  '/ (division), ^ (exponentiation), parentheses, floor(), ceiling(), abs(), and ' +
-                                  'sqrt() are allowed. ' +
-                                  'Quoted, a description of what the roll was for may be included next. ' +
-                                  'The result is posted either in a set gamble channel or where the die was rolled.')
-    async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck'):
-        gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
-        current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
-            else ctx.message.channel
-        flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
-        await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, current_channel, description)
-
-    @commands.command(description='This command gets Smorg to roll one die or multiple dice and ' +
-                                  'to send the result to one or more recipients. ' +
-                                  'These recipients are the second item to be typed in the command, ' +
-                                  'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
-                                  'The user is automatically listed as a recipient. ' +
-                                  'See the documentation for "chance" for a description of roll syntax.')
-    async def chance(self, ctx, roll: str, recipients: str = None, description: str = 'To Contend with Lady Luck'):
-        starting_chosen_recipients: list = [ctx.message.author]
-        chosen_recipients: list = await self.get_recipients(ctx, recipients, starting_chosen_recipients) if recipients \
-            else starting_chosen_recipients
-        while chosen_recipients.count(ctx.message.author) > 1:
-            chosen_recipients.remove(ctx.message.author)
-        await self.inform_recipients(ctx, roll, chosen_recipients, description)
-
-    @commands.command(description='This command gets Smorg to roll one die or multiple dice and ' +
-                                  'to send the result to one or more recipients that do not include the user. ' +
-                                  'These recipients are the second item to be typed in the command, ' +
-                                  'presented in quotes as usernames or server nicknames and delimited by semicolons. ' +
-                                  'See the documentation for "chance" for a description of roll syntax.')
-    async def hazard(self, ctx, roll: str, recipients: str, description: str = 'To Contend with Lady Luck'):
+    @commands.command(description=HelpDescriptions.ROLL)
+    async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck', recipients: str = None):
         if recipients:
             chosen_recipients = await self.get_recipients(ctx, recipients)
-            if ctx.message.author in chosen_recipients:
-                raise commands.UserInputError
-            else:
-                await self.inform_recipients(ctx, roll, chosen_recipients, description)
+            await self.inform_recipients(ctx, roll, chosen_recipients, description)
         else:
-            raise commands.MissingRequiredArgument(recipients)
+            gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
+            current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
+                else ctx.message.channel
+            flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
+            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, current_channel, description)
 
     async def get_recipients(self, ctx, recipients: str, chosen_recipients: list = None) -> list:
         if chosen_recipients is None:
@@ -91,12 +54,12 @@ class Gambler(commands.Cog, Disambiguator):
                     found_recipients.append(reduced_member)
             else:
                 if len(found_recipients) == 0:
-                    await ctx.send(f"Error: no individual matches the recipient name or nickname given for {recipient}."
-                                   f" Please try again.")
+                    raise commands.UserInputError(message=recipient)
                 else:
                     chosen_recipient_index: int = await Disambiguator.disambiguate(self.bot, ctx, found_recipients)
                     chosen_recipient = self.bot.get_user(found_recipients[chosen_recipient_index].id)
-                    chosen_recipients.append(chosen_recipient)
+                    if chosen_recipient not in chosen_recipients:
+                        chosen_recipients.append(chosen_recipient)
         return chosen_recipients
 
     async def inform_recipients(self, ctx, roll: str, chosen_recipients: list, description: str):
@@ -238,53 +201,23 @@ class Gambler(commands.Cog, Disambiguator):
                 roll_result += roll
         return roll_result
 
-    # TODO: improve error handling here
     @roll.error
     async def roll_error(self, ctx, error):
-        error_embed = discord.Embed(
-            title='Error (Roll)',
-            description=f'The error type is: {error}. A better error message will be supplied soon.',
-            color=ColorConstants.ERROR_RED
-        )
-        await ctx.send(embed=error_embed)
-
-    # TODO: improve error handling here
-    @chance.error
-    async def chance_error(self, ctx, error):
-        error_embed = discord.Embed(
-            title='Error (Chance)',
-            description=f'The error type is: {error}. A better error message will be supplied soon.',
-            color=ColorConstants.ERROR_RED
-        )
-        await ctx.send(embed=error_embed)
-
-    # TODO: improve error handling here, be sure to check whether other errors aren't accidentally caught
-    # by ones that are already established.
-    @hazard.error
-    async def hazard_error(self, ctx, error):
-        if isinstance(error, commands.MissingRequiredArgument):
-            if error.param is signature(self.hazard)['recipients']:
-                error_embed = discord.Embed(
-                    title='Error (Hazard): Missing Recipients',
-                    description='You didn\'t supply any recipients.',
-                    color=ColorConstants.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Hazard): Missing Argument',
-                    description='You didn\'t supply something other than recipients.' +
-                                ' Better error-handling will specify this soon.',
-                    color=ColorConstants.ERROR_RED
-                )
+        if isinstance(error, commands.ExpectedClosingQuoteError):
+            error_embed = discord.Embed(
+                title='Error (Roll)',
+                description=f'You forgot to close the quotation on one of your arguments.',
+                color=ColorConstants.ERROR_RED
+            )
         elif isinstance(error, commands.UserInputError):
             error_embed = discord.Embed(
-                title='Error (Hazard): Invalid Recipient',
-                description='The user is not allowed to be a recipient for this roll type.',
+                title='Error (Roll)',
+                description=f'No individual matches the recipient name {error}.',
                 color=ColorConstants.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
-                title='Error (Hazard)',
+                title='Error (Roll)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
                 color=ColorConstants.ERROR_RED
             )

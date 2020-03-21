@@ -5,6 +5,7 @@
 # The morse code is based on: http://ascii-table.com/morse-code.php
 
 from discord.ext import commands
+from Cogs.Helpers.Enumerators.universalist import HelpDescriptions
 
 
 class Encoder(commands.Cog):
@@ -118,7 +119,7 @@ class Encoder(commands.Cog):
             ' ': '  /  '
         }
 
-    @commands.group(description="WIP")
+    @commands.group(description=HelpDescriptions.TRANSLATE)
     async def translate(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send("An argument for the starting language was not found. Please try again.")

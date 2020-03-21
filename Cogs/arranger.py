@@ -1,7 +1,7 @@
 import discord
 import asyncio
 from discord.ext import commands
-from Cogs.Helpers.Enumerators.universalist import ColorConstants
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 
@@ -10,10 +10,7 @@ class Arranger(commands.Cog, Disambiguator):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group(description='This command tells Smorg what channel in which it should perform some task. ' +
-                                'It takes a the type of channel (e.g. quotation, reminder), the channel\'s name, ' +
-                                'and, if the channel has the same name as other channels, ' +
-                                'the number of the instance of the channel as an argument.')
+    @commands.group(description=HelpDescriptions.GOVERN)
     async def govern(self, ctx):
         if ctx.invoked_subcommand is None:
             await ctx.send(embed=discord.Embed(

@@ -5,7 +5,7 @@
 
 import discord
 from discord.ext import commands
-from Cogs.Helpers.Enumerators.universalist import ColorConstants
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 from smorgasDB import Guild
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.disambiguator import Disambiguator
@@ -20,12 +20,7 @@ class Recaller(commands.Cog, Disambiguator):
         self.twelve_hour_periods: tuple = ('a.m.', 'am', 'p.m.', 'pm')
 
     # TODO: documentation...
-    @commands.command(description="This command signals a role at a certain time with a certain message. " +
-                                  "It takes arguments in the order of role, time, and an optional message. " +
-                                  "Time can be in terms of a twelve-hour or twenty-four-hour clock; " +
-                                  "however, if it is the former, it must be in quotes with an A.M. or P.M. " +
-                                  "accompanying it. Roles and messages consisting of multiple words " +
-                                  "should also be in quotes.")
+    @commands.command(description=HelpDescriptions.REMIND)
     async def remind(self, ctx, name, reminder_time, message=''):
         reminder_response = "Your reminder has been successfully processed! " + \
                             "It will be sent at the specified time."
