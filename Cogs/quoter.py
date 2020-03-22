@@ -5,6 +5,7 @@
 import discord
 from discord.ext import commands
 from random import randint
+
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions

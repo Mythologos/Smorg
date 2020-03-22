@@ -1,9 +1,12 @@
+# TODO: documentation
+
 import discord
 import asyncio
 from discord.ext import commands
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
 class Arranger(commands.Cog, Disambiguator):

@@ -2,9 +2,9 @@
 # Add: flush/purge command for messages, a command to change the bot's prefix.
 
 from discord.ext import commands
-from smorgasDB import Guild
-import secretbord
 
+import secretbord
+from smorgasDB import Guild
 from Cogs.arranger import Arranger
 from Cogs.hearer import Hearer
 from Cogs.helper import Helper

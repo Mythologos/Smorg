@@ -5,6 +5,7 @@
 # The morse code is based on: http://ascii-table.com/morse-code.php
 
 from discord.ext import commands
+
 from Cogs.Helpers.Enumerators.universalist import HelpDescriptions
 
 

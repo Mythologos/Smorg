@@ -1,5 +1,8 @@
+# TODO: documentation
+
 import discord
 from discord.ext import commands
+
 from smorgasDB import BaseAddition, Guild
 
 

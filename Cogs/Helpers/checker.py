@@ -2,6 +2,7 @@
 # describe as Cog mixin
 
 import discord
+
 from smorgasDB import Quote
 
 

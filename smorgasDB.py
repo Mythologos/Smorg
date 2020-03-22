@@ -1,9 +1,6 @@
 # TODO: MODULAR DOCUMENTATION
 # TODO: handle deleted channels case for various tables here
-# TODO: add DB field to control the prefix of the bot.
 
-
-import secretbord
 import sqlalchemy
 from functools import wraps
 from sqlalchemy.ext.declarative import declarative_base
@@ -11,15 +8,14 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import BigInteger, Date, DateTime, SmallInteger, String, Time
 
-engine = sqlalchemy.create_engine(secretbord.database + '+' +
-                                  secretbord.dialect + '://' +
-                                  secretbord.username + ':' +
-                                  secretbord.password + '@' +
-                                  secretbord.host + ':' +
-                                  secretbord.port + '/' +
-                                  secretbord.database_name,
-                                  connect_args=secretbord.options, echo=True)
+import secretbord
 
+
+engine = sqlalchemy.create_engine(
+    f"{secretbord.database}+{secretbord.dialect}://{secretbord.username}:{secretbord.password}@"
+    f"{secretbord.host}:{secretbord.port}/{secretbord.database_name}",
+    connect_args=secretbord.options, echo=True
+)
 Base = declarative_base(bind=engine)
 Session = sessionmaker(bind=engine)
 
@@ -72,10 +68,8 @@ class Quote(BaseAddition, Base):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(author: {0}, guild_id: {1}, quote_id: {2}, text: {3}, ' + \
-               'created_at: {4}, last_updated_at: {5}>'\
-            .format(self.author, self.guild_id, self.quote_id, self.text,
-                    self.created_at, self.last_updated_at)
+        return f'<Guild(author: {self.author}, guild_id: {self.guild_id}, quote_id: {self.quote_id}, ' \
+               f'text: {self.text}, created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     # Queries:
     @staticmethod
@@ -136,10 +130,9 @@ class Reminder(Base, BaseAddition):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, tag: {1}, tag_text: {2}, reminder_date: {3}, ' + \
-            'reminder_time: {4} created_at: {5}, last_updated_at: {6}>'\
-            .format(self.guild_id, self.tag, self.tag_text, self.reminder_date, self.reminder_time,
-                    self.created_at, self.last_updated_at)
+        return f'<Guild(guild_id: {self.guild_id}, tag: {self.tag}, tag_text: {self.tag_text}, ' \
+               f'reminder_date: {self.reminder_date}, reminder_time: {self.reminder_time}, ' \
+               f'created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     @staticmethod
     @BaseAddition.session_method
@@ -182,10 +175,10 @@ class Guild(Base, BaseAddition):
 
     # Methods:
     def __repr__(self):
-        return '<Guild(guild_id: {0}, gamble_channel_id: {1}, guild_prefix: {2}, quotation_channel_id: {3}, ' \
-               'reminder_channel_id: {3}' + 'created_at: {4}, last_updated_at: {5}>' \
-            .format(self.guild_id,self.gamble_channel_id, self.guild_prefix, self.quotation_channel_id,
-                    self.reminder_channel_id, self.created_at, self.last_updated_at)
+        return f'<Guild(guild_id: {self.guild_id}, gamble_channel_id: {self.gamble_channel_id}, ' \
+               f'guild_prefix: {self.guild_prefix}, quotation_channel_id: {self.quotation_channel_id}, ' \
+               f'reminder_channel_id: {self.reminder_channel_id}, created_at: {self.created_at}, ' \
+               f'last_updated_at: {self.last_updated_at})>'
 
     # Queries:
     @staticmethod

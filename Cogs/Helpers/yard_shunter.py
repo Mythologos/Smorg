@@ -1,5 +1,4 @@
 from Cogs.Helpers.Enumerators.shunters import ShuntAssociativity, ShuntFunction, ShuntOperator, ShuntComparison
-import re
 
 
 class YardShunter:
@@ -26,31 +25,39 @@ class YardShunter:
         self.operator_stack.clear()
         self.output_queue.clear()
 
-    # TODO: simplify this / improve readability? feels clunky.
+    # Cases:
+    # Negative at beginning of roll, e.g.:
+    # -1+5 = -(1 * 1) + 5; -5d3 = -(5d3);
+    # Negative in middle of roll, e.g.:
+    # 5+-3 = 5 + (-1 * 3); 3d6+-floor(5/2) = 3d6 + (-1 * floor(5/2))
     async def consolidate_tokens(self, ctx, flattened_tokens: list):
-        operator_bool: bool = False
         index: int = 0
+        previous_is_operator: bool = False
         while index < len(flattened_tokens):
-            if (operator_bool or index == 0) and flattened_tokens[index] in self.signs:
-                if (index + 1) < len(flattened_tokens) and flattened_tokens[index + 1].isdigit():
-                    flattened_tokens[index] = int(flattened_tokens[index] + flattened_tokens[index + 1])
-                    del flattened_tokens[index + 1]
-                    operator_bool = False
-                elif operator_bool:
-                    # TODO: actually raise an error?
-                    await ctx.send("Error: Invalid sign duplication in roll modifier. Please try again!")
-                elif index == 0 and (index + 1) < len(flattened_tokens) and \
-                        not flattened_tokens[index + 1].isdecimal():
-                    if flattened_tokens[index] == '+':
-                        flattened_tokens[index] = 1
-                    else:
-                        flattened_tokens[index] = -1
-                    flattened_tokens.insert(1, '*')
-            elif flattened_tokens[index] in self.current_operators:
-                operator_bool = True
-            elif flattened_tokens[index].isdigit():
+            current_token = flattened_tokens[index]
+            next_token = flattened_tokens[index + 1] if (index + 1 < len(flattened_tokens)) else None
+            if current_token.isdigit():
                 flattened_tokens[index] = int(flattened_tokens[index])
-                operator_bool = False
+                previous_is_operator = False
+            elif current_token in self.current_operators:
+                if current_token == '-' and next_token:
+                    if next_token.isdigit():
+                        flattened_tokens[index] = int(current_token + next_token)
+                        del flattened_tokens[index + 1], next_token
+                    elif next_token not in self.current_operators:
+                        flattened_tokens[index] = -1
+                        flattened_tokens.insert(1, '*')
+                elif not previous_is_operator:
+                    previous_is_operator = True
+                else:
+                    raise NotImplementedError
+                    # raise error, multiple operators in a row
+            elif current_token in self.current_functions:
+                if next_token and next_token in self.grouping_operators:
+                    index += 1
+                else:
+                    raise NotImplementedError
+                    # raise error, multiple operators in a row
             index += 1
         return flattened_tokens
 
@@ -80,14 +87,16 @@ class YardShunter:
                 if self.operator_stack[0] == '(':
                     self.operator_stack.pop(0)
                 else:
-                    # TODO: actually raise error?
-                    await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
+                    # TODO: actually raise relevant error?
+                    raise NotImplementedError
+                    # await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
             index += 1
         else:
             while self.operator_stack:
-                if self.operator_stack[0] in ['(', ')']:
-                    # TODO: actually raise error?
-                    await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
+                if self.operator_stack[0] in self.grouping_operators:
+                    # TODO: actually raise relevant error?
+                    raise NotImplementedError
+                    # await ctx.send("Error: mismatched parentheses in roll modifier. Please try again!")
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
 

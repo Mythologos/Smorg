@@ -2,13 +2,13 @@
 # aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst
 # TODO: be sure to add Disambiguator TimeoutError handling
 
-
 import discord
 from discord.ext import commands
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+
 from smorgasDB import Guild
-from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.Enumerators.timekeeper import TimeZone
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
 class Recaller(commands.Cog, Disambiguator):

@@ -7,17 +7,18 @@
 # TODO: divide up some of these functions; some are getting decently long.
 
 import discord
+from discord.ext import commands
 import asyncio
 import re
-from discord.ext import commands
+from random import randint
+from copy import deepcopy
+from collections import namedtuple
+
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from Cogs.Helpers.yard_shunter import YardShunter
-from random import randint
-from copy import deepcopy
-from collections import namedtuple
 
 
 class Gambler(commands.Cog, Disambiguator):
@@ -27,6 +28,16 @@ class Gambler(commands.Cog, Disambiguator):
 
     @commands.command(description=HelpDescriptions.ROLL)
     async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck', recipients: str = None):
+        """
+        The main method for the roll command.
+        :param ctx: The context from which the request came.
+        :param roll: The roll which the user gives for the bot to simulate.
+        See HelpDescriptions.ROLL for a description of a dice roll's format.
+        :param description: A string description of what the roll is meant for.
+        :param recipients: A list of names or nicknames of individuals from a Guild that
+        the requester wants to which the requester wants to send results.
+        :return: None.
+        """
         if recipients:
             chosen_recipients = await self.get_recipients(ctx, recipients)
             await self.inform_recipients(ctx, roll, description, chosen_recipients)
