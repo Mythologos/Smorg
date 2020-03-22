@@ -4,12 +4,11 @@
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax.
-# TODO: be sure to add Disambiguator TimeoutError handling.
-# https://discordpy.readthedocs.io/en/latest/ext/commands/commands.html?highlight=error%20handling#error-handling
 # TODO: divide up some of these functions; some are getting decently long.
-# TODO: allow and pre-remove spaces in roll syntax
 
 import discord
+import asyncio
+import re
 from discord.ext import commands
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
@@ -19,7 +18,6 @@ from Cogs.Helpers.yard_shunter import YardShunter
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
-import re
 
 
 class Gambler(commands.Cog, Disambiguator):
@@ -31,18 +29,16 @@ class Gambler(commands.Cog, Disambiguator):
     async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck', recipients: str = None):
         if recipients:
             chosen_recipients = await self.get_recipients(ctx, recipients)
-            await self.inform_recipients(ctx, roll, chosen_recipients, description)
+            await self.inform_recipients(ctx, roll, description, chosen_recipients)
         else:
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
             current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
                 else ctx.message.channel
             flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
-            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, current_channel, description)
+            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
-    async def get_recipients(self, ctx, recipients: str, chosen_recipients: list = None) -> list:
-        if chosen_recipients is None:
-            chosen_recipients = []
-
+    async def get_recipients(self, ctx, recipients: str) -> list:
+        chosen_recipients: list = []
         ReducedMember = namedtuple('ReducedMember', 'nickname username id')
         guild_members: list = list(map(lambda member: ReducedMember(member.nick, member.name, member.id),
                                        ctx.guild.members))
@@ -52,23 +48,22 @@ class Gambler(commands.Cog, Disambiguator):
             for reduced_member in guild_members:
                 if recipient in [reduced_member.nickname, reduced_member.username]:
                     found_recipients.append(reduced_member)
+            if len(found_recipients) > 0:
+                chosen_recipient_index: int = await Disambiguator.disambiguate(self.bot, ctx, found_recipients)
+                chosen_recipient = self.bot.get_user(found_recipients[chosen_recipient_index].id)
+                if chosen_recipient not in chosen_recipients:
+                    chosen_recipients.append(chosen_recipient)
             else:
-                if len(found_recipients) == 0:
-                    raise commands.UserInputError(message=recipient)
-                else:
-                    chosen_recipient_index: int = await Disambiguator.disambiguate(self.bot, ctx, found_recipients)
-                    chosen_recipient = self.bot.get_user(found_recipients[chosen_recipient_index].id)
-                    if chosen_recipient not in chosen_recipients:
-                        chosen_recipients.append(chosen_recipient)
+                raise commands.UserInputError(message=recipient)
         return chosen_recipients
 
-    async def inform_recipients(self, ctx, roll: str, chosen_recipients: list, description: str):
+    async def inform_recipients(self, ctx, roll: str, description: str, chosen_recipients: list):
         flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
         for chosen_recipient in chosen_recipients:
             if not chosen_recipient.dm_channel:
                 await self.bot.get_user(chosen_recipient.id).create_dm()
             recipient_dm_channel = chosen_recipient.dm_channel
-            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, recipient_dm_channel, description)
+            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, recipient_dm_channel)
 
     async def handle_roll(self, ctx, roll: str):
         raw_roll: str = roll.replace(' ', '')
@@ -80,30 +75,31 @@ class Gambler(commands.Cog, Disambiguator):
                 parsed_dice = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
                 dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
-                verbose_die: tuple = (die_roll, unsorted_results, sorted_results, dice_result)
-                verbose_dice.append(verbose_die)
+                verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
                 parsed_roll[match_index] = (str(dice_result),)
         flat_matches: list = [item for match in parsed_roll for item in match if item]
         roll_result = await self.yard_shunter.shunt_yard(ctx, flat_matches)
         return flat_matches, verbose_dice, roll_result
 
-    @staticmethod
-    async def send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, destination_channel, description):
+    async def send_roll(self, ctx, roll, flat_tokens, verbose_dice, roll_result, description, destination_channel):
         description: str = description.strip()
-        # TODO: re-implement message length handling
-        # message_length = len(ctx.message.author.mention) + len(roll) + len(description) + \
-        #     MessageConstants.DEFAULT_MSG_CHARACTERS
-
         introductory_message: str = f"{ctx.message.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
         await destination_channel.send(introductory_message)
+        await self.send_dice(verbose_dice, destination_channel)
+        evaluated_roll: str = "".join([str(token) for token in flat_tokens])
+        concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
+                             f"The final result of this roll is: {roll_result}"
+        await destination_channel.send(concluding_message)
 
+    @staticmethod
+    async def send_dice(verbose_dice, destination_channel):
         enumerated_dice = enumerate(verbose_dice, 1)
-        for embed_field_index in range(0, len(verbose_dice), 25):
+        for embed_field_index in range(0, len(verbose_dice), DiscordConstants.MAX_EMBED_FIELDS):
             verbose_roll_embed = discord.Embed(
-                title=f"Individual Dice Results {1 + (embed_field_index // 25)}",
-                description="The results of the individual roll(s) inside the overall roll are as follows:",
+                title=f"Individual Dice Results {1 + (embed_field_index // DiscordConstants.MAX_EMBED_FIELDS)}",
+                description="The results of the individual roll(s) is/are as follows:",
                 color=ColorConstants.NEUTRAL_ORANGE
             )
             for index, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerated_dice:
@@ -117,11 +113,6 @@ class Gambler(commands.Cog, Disambiguator):
                 if len(verbose_roll_embed.fields) == DiscordConstants.MAX_EMBED_FIELDS:
                     break
             await destination_channel.send(embed=verbose_roll_embed)
-
-        evaluated_roll: str = "".join([str(token) for token in flat_tokens])
-        concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
-                             f"The final result of this roll is: {roll_result}"
-        await destination_channel.send(concluding_message)
 
     @staticmethod
     async def parse_roll(raw_roll):
@@ -221,6 +212,19 @@ class Gambler(commands.Cog, Disambiguator):
                 description=f'No individual matches the recipient name {error}.',
                 color=ColorConstants.ERROR_RED
             )
+        elif isinstance(error, commands.CommandInvokeError):
+            if isinstance(error.original, asyncio.TimeoutError):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Disambiguation Timeout',
+                    description='You didn\'t supply a valid integer quickly enough.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Roll): Command Invoke Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
         else:
             error_embed = discord.Embed(
                 title='Error (Roll)',
