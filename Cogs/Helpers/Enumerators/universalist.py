@@ -3,6 +3,13 @@ from aenum import NamedConstant
 
 class DiscordConstants(NamedConstant):
     MAX_MESSAGE_LENGTH = 2000
+    MAX_EMBED_TITLE = 256
+    MAX_EMBED_DESCRIPTION = 2048
+    MAX_EMBED_FIELDS = 25
+    MAX_EMBED_FIELD_NAME = 256
+    MAX_EMBED_FIELD_VALUE = 1024
+    MAX_EMBED_FOOTER = 2048
+    MAX_EMBED_AUTHOR = 256
 
 
 class ColorConstants(NamedConstant):
@@ -11,6 +18,7 @@ class ColorConstants(NamedConstant):
     DEEP_BLUE = 0x001A66
     HOT_PINK = 0xFF3385
     NEUTRAL_ORANGE = 0xFF6600
+    VIBRANT_PURPLE = 0xA901DB
 
 
 class HelpDescriptions(NamedConstant):

@@ -99,18 +99,24 @@ class Gambler(commands.Cog, Disambiguator):
                                     f"Reason: {description}"
         await destination_channel.send(introductory_message)
 
-        if verbose_dice:
-            roll_result_message = f"The results of the individual roll(s) inside the overall roll are as follows:"
-            await destination_channel.send(roll_result_message)
-            for index, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerate(verbose_dice, start=1):
-                verbose_roll_embed = discord.Embed(
-                    title=f"Dice Roll {index}: {raw_roll}",
-                    description=f"**Raw Dice Result:** {unsorted_result}\n"
-                                f"**Final Dice Result:** {sorted_result}\n"
-                                f"**Sum:** {dice_result}",
-                    color=ColorConstants.NEUTRAL_ORANGE
+        enumerated_dice = enumerate(verbose_dice, 1)
+        for embed_field_index in range(0, len(verbose_dice), 25):
+            verbose_roll_embed = discord.Embed(
+                title=f"Individual Dice Results {1 + (embed_field_index // 25)}",
+                description="The results of the individual roll(s) inside the overall roll are as follows:",
+                color=ColorConstants.NEUTRAL_ORANGE
+            )
+            for index, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerated_dice:
+                verbose_roll_embed.add_field(
+                    name=f"Dice Roll {index}: {raw_roll}",
+                    value=f"**Raw Dice Result:** {unsorted_result}\n"
+                          f"**Final Dice Result:** {sorted_result}\n"
+                          f"**Sum:** {dice_result}",
+                    inline=False
                 )
-                await destination_channel.send(embed=verbose_roll_embed)
+                if len(verbose_roll_embed.fields) == DiscordConstants.MAX_EMBED_FIELDS:
+                    break
+            await destination_channel.send(embed=verbose_roll_embed)
 
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \

@@ -15,12 +15,18 @@ class Helper(commands.Cog):
         :param ctx: The context from which the quotation came.
         :return: None.
         """
-        support_embed = discord.Embed(title='Smorg Support',
-                                      description='This bot supports the following commands:',
-                                      color=0x20409A)
+        support_embed = discord.Embed(
+            title='Smorg Support',
+            description='This bot supports the following commands:',
+            color=ColorConstants.VIBRANT_PURPLE
+        )
         sorted_commands = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
         for command in sorted_commands:
-            support_embed.add_field(name=f".{command.name}", value=command.description, inline=False)
+            support_embed.add_field(
+                name=f".{command.name}",
+                value=command.description,
+                inline=False
+            )
         await ctx.send(embed=support_embed)
 
     @commands.command(description=HelpDescriptions.OBSERVE)
