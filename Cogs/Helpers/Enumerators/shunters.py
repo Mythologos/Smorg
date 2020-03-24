@@ -1,5 +1,8 @@
-from aenum import Enum
+# TODO:
+
 import math
+
+from aenum import Enum
 
 
 class ShuntComparison(Enum):
@@ -10,8 +13,7 @@ class ShuntComparison(Enum):
     GREATER_THAN = 2
 
     @staticmethod
-    async def compare_by_value(ctx, comparison_value, item_a, item_b):
-        comparison_boolean: bool = False
+    async def compare_by_value(comparison_value, item_a, item_b):
         if comparison_value == ShuntComparison.LESS_THAN.value:
             comparison_boolean = item_a < item_b
         elif comparison_value == ShuntComparison.LESS_THAN_OR_EQUAL_TO.value:
@@ -20,10 +22,8 @@ class ShuntComparison(Enum):
             comparison_boolean = item_a == item_b
         elif comparison_value == ShuntComparison.GREATER_THAN_OR_EQUAL_TO.value:
             comparison_boolean = item_a >= item_b
-        elif comparison_value == ShuntComparison.GREATER_THAN.value:
-            comparison_boolean = item_a > item_b
         else:
-            await ctx.send("Error: unknown comparison value. Please try again!")
+            comparison_boolean = item_a > item_b
         return comparison_boolean
 
 
@@ -41,31 +41,27 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
     EXPONENTIATION = (4, '^', 3, ShuntAssociativity.RIGHT)
 
     @staticmethod
-    async def get_by_symbol(ctx, given_symbol):
+    async def get_by_symbol(given_symbol):
         desired_operator = None
         for operation in ShuntOperator:
             if operation.symbol == given_symbol:
                 desired_operator = operation
                 break
-        if not desired_operator:
-            await ctx.send("Error: Corresponding operation for operator " + given_symbol +
-                           " not found. Please try again!")
-        else:
-            return desired_operator
+        return desired_operator
 
     @staticmethod
-    async def compare_precedence(ctx, symbol_one: str, symbol_two: str, comparison_value: ShuntComparison) -> bool:
-        first_operator = await ShuntOperator.get_by_symbol(ctx, symbol_one)
-        second_operator = await ShuntOperator.get_by_symbol(ctx, symbol_two)
-        precedence_boolean: bool = await ShuntComparison.compare_by_value(ctx, comparison_value.value,
+    async def compare_precedence(symbol_one: str, symbol_two: str, comparison_value: ShuntComparison) -> bool:
+        first_operator = await ShuntOperator.get_by_symbol(symbol_one)
+        second_operator = await ShuntOperator.get_by_symbol(symbol_two)
+        precedence_boolean: bool = await ShuntComparison.compare_by_value(comparison_value.value,
                                                                           first_operator.precedence,
                                                                           second_operator.precedence)
         return precedence_boolean
 
     @staticmethod
-    async def compare_associativity(ctx, symbol, associativity):
+    async def compare_associativity(symbol, associativity):
         associativity_indicator: bool = False
-        relevant_operator = await ShuntOperator.get_by_symbol(ctx, symbol)
+        relevant_operator = await ShuntOperator.get_by_symbol(symbol)
         if relevant_operator.associativity == associativity:
             associativity_indicator = True
         return associativity_indicator
@@ -93,17 +89,13 @@ class ShuntFunction(Enum, init='value representation'):
     ABSOLUTE_VALUE = (3, 'abs')
 
     @staticmethod
-    async def get_by_name(ctx, given_name):
+    async def get_by_name(given_name):
         desired_function = None
         for function in ShuntFunction:
             if function.representation == given_name:
                 desired_function = function
                 break
-        if not desired_function:
-            await ctx.send("Error: Corresponding functionality for function " + given_name +
-                           " not found. Please try again!")
-        else:
-            return desired_function
+        return desired_function
 
     @staticmethod
     async def function_evaluator(associated_value, first_operand):

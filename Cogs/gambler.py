@@ -1,4 +1,4 @@
-# TODO: overall documentation
+# TODO: overall documentationD
 # TODO: deck of cards.
 
 # Current Agenda:
@@ -7,15 +7,16 @@
 # TODO: divide up some of these functions; some are getting decently long.
 
 import discord
-from discord.ext import commands
 import asyncio
 import re
+from discord.ext import commands
 from random import randint
 from copy import deepcopy
 from collections import namedtuple
 
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, InvalidRecipient, MissingParenthesis
 from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from Cogs.Helpers.yard_shunter import YardShunter
@@ -45,7 +46,7 @@ class Gambler(commands.Cog, Disambiguator):
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
             current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
                 else ctx.message.channel
-            flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
+            flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
     async def get_recipients(self, ctx, recipients: str) -> list:
@@ -65,18 +66,18 @@ class Gambler(commands.Cog, Disambiguator):
                 if chosen_recipient not in chosen_recipients:
                     chosen_recipients.append(chosen_recipient)
             else:
-                raise commands.UserInputError(message=recipient)
+                raise InvalidRecipient(message=recipient)
         return chosen_recipients
 
     async def inform_recipients(self, ctx, roll: str, description: str, chosen_recipients: list):
-        flat_tokens, verbose_dice, roll_result = await self.handle_roll(ctx, roll)
+        flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
         for chosen_recipient in chosen_recipients:
             if not chosen_recipient.dm_channel:
                 await self.bot.get_user(chosen_recipient.id).create_dm()
             recipient_dm_channel = chosen_recipient.dm_channel
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, recipient_dm_channel)
 
-    async def handle_roll(self, ctx, roll: str):
+    async def handle_roll(self, roll: str):
         raw_roll: str = roll.replace(' ', '')
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
@@ -89,7 +90,7 @@ class Gambler(commands.Cog, Disambiguator):
                 verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
                 parsed_roll[match_index] = (str(dice_result),)
         flat_matches: list = [item for match in parsed_roll for item in match if item]
-        roll_result = await self.yard_shunter.shunt_yard(ctx, flat_matches)
+        roll_result = await self.yard_shunter.shunt_yard(flat_matches)
         return flat_matches, verbose_dice, roll_result
 
     async def send_roll(self, ctx, roll, flat_tokens, verbose_dice, roll_result, description, destination_channel):
@@ -213,16 +214,47 @@ class Gambler(commands.Cog, Disambiguator):
     async def roll_error(self, ctx, error):
         if isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
-                title='Error (Roll)',
+                title='Error (Roll): Missing Closing Quote',
                 description=f'You forgot to close the quotation on one of your arguments.',
                 color=ColorConstants.ERROR_RED
             )
         elif isinstance(error, commands.UserInputError):
-            error_embed = discord.Embed(
-                title='Error (Roll)',
-                description=f'No individual matches the recipient name {error}.',
-                color=ColorConstants.ERROR_RED
-            )
+            if isinstance(error, DuplicateOperator):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Duplicate Operator',
+                    description=f'The roll contains a duplicate operator.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, ImproperFunction):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Improper Function',
+                    description=f'A function in your roll is missing a starting parenthesis.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidRecipient):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Invalid Recipient',
+                    description=f'No individual matches the recipient name {error}.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, MissingParenthesis):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Missing Parenthesis',
+                    description=f'Your roll has imbalanced parentheses.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, commands.MissingRequiredArgument):
+                error_embed = discord.Embed(
+                    title='Error (Roll): Missing Required Argument',
+                    description=f'You didn\'t supply a roll.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Roll): User Input Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, asyncio.TimeoutError):
                 error_embed = discord.Embed(
@@ -238,7 +270,7 @@ class Gambler(commands.Cog, Disambiguator):
                 )
         else:
             error_embed = discord.Embed(
-                title='Error (Roll)',
+                title='Error (Roll): Miscellaneous Error',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
                 color=ColorConstants.ERROR_RED
             )
