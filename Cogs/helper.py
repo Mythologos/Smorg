@@ -37,6 +37,14 @@ class Helper(commands.Cog):
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
 
+    # TODO: add ability to use time instead of a message count;
+    # integrates well with history function's optional args
+    @commands.command(description=HelpDescriptions.PURGE)
+    async def purge(self, ctx, message_count=1):
+        async for message in ctx.message.channel.history(limit=message_count + 1):
+            await message.delete()
+        await ctx.send(f"You've deleted up to {message_count} messages just now.")
+
     @observe.error
     async def observe_error(self, ctx, error):
         if isinstance(error, commands.MissingRequiredArgument):

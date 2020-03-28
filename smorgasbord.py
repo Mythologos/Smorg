@@ -1,5 +1,5 @@
 # TODO: MODULAR DOCUMENTATION
-# Add: flush/purge command for messages, a command to change the bot's prefix.
+# Add: flush/purge command for messages.
 
 from discord.ext import commands
 

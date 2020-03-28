@@ -29,6 +29,7 @@ class HelpDescriptions(NamedConstant):
     IMMORTALIZE = "This command embeds a quote and stores it for posterity's sake. " \
                   "It takes a quote and, optionally, an author as arguments."
     OBSERVE = "This command allows a Guild to change the prefix to which the bot will respond."
+    PURGE = "This command deletes a specified number of messages prior to the given command."
     QUOTE = "This command embeds a quote. " \
             "It takes a quote (in quotation marks) and, optionally, an author as arguments."
     REMIND = "This command signals a role at a certain time with a certain message. " \
