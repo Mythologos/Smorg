@@ -1,6 +1,8 @@
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis
 from Cogs.Helpers.Enumerators.shunters import ShuntAssociativity, ShuntFunction, ShuntOperator, ShuntComparison
 
+from typing import Union
+
 
 class YardShunter:
     def __init__(self):
@@ -26,7 +28,7 @@ class YardShunter:
         self.operator_stack.clear()
         self.output_queue.clear()
 
-    async def consolidate_tokens(self, flattened_tokens: list):
+    async def consolidate_tokens(self, flattened_tokens: list) -> list:
         index: int = 0
         previous_is_operator: bool = False
         while index < len(flattened_tokens):
@@ -55,7 +57,7 @@ class YardShunter:
             index += 1
         return flattened_tokens
 
-    async def process_input(self, complete_tokens: list):
+    async def process_input(self, complete_tokens: list) -> None:
         index: int = 0
         while index < len(complete_tokens):
             if isinstance(complete_tokens[index], int):
@@ -72,7 +74,7 @@ class YardShunter:
                                                                                    complete_tokens[index],
                                                                                    ShuntComparison.EQUAL_TO)
                     last_left_associative = await ShuntOperator.compare_associativity(self.operator_stack[0],
-                                                                                      ShuntAssociativity.LEFT.direction)
+                                                                                      ShuntAssociativity.LEFT)
                     if last_was_function or current_has_precedence or (last_equal_precedence and last_left_associative):
                         self.output_queue.append(self.operator_stack.pop(0))
                     else:
@@ -95,21 +97,20 @@ class YardShunter:
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
 
-    async def evaluate_input(self):
+    async def evaluate_input(self) -> Union[float, int]:
         output_stack: list = []
         for output in self.output_queue:
             if output in self.current_operators:
                 second_operand: int = output_stack.pop(0)
                 first_operand: int = output_stack.pop(0)
                 relevant_operator = await ShuntOperator.get_by_symbol(output)
-                operation_result = await ShuntOperator.function_evaluator(relevant_operator.value,
-                                                                          first_operand, second_operand)
+                operation_result = await ShuntOperator.evaluate_operator(relevant_operator.value, first_operand,
+                                                                         second_operand)
                 output_stack.insert(0, operation_result)
             elif output in self.current_functions:
                 first_operand: int = output_stack.pop(0)
                 relevant_function = await ShuntFunction.get_by_name(output)
-                operation_result = await ShuntFunction.function_evaluator(relevant_function.value,
-                                                                          first_operand)
+                operation_result = await ShuntFunction.evaluate_function(relevant_function.value, first_operand)
                 output_stack.insert(0, operation_result)
             else:
                 output_stack.insert(0, output)

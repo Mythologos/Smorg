@@ -1,11 +1,12 @@
-# TODO:
+# TODO: documentation
+# TODO: fix IDE not reading some items correctly, if possible
 
 import math
 
-from aenum import Enum
+from aenum import Enum, NamedConstant
 
 
-class ShuntComparison(Enum):
+class ShuntComparison(NamedConstant):
     LESS_THAN = -2
     LESS_THAN_OR_EQUAL_TO = -1
     EQUAL_TO = 0
@@ -14,23 +15,23 @@ class ShuntComparison(Enum):
 
     @staticmethod
     async def compare_by_value(comparison_value, item_a, item_b):
-        if comparison_value == ShuntComparison.LESS_THAN.value:
+        if comparison_value == ShuntComparison.LESS_THAN:
             comparison_boolean = item_a < item_b
-        elif comparison_value == ShuntComparison.LESS_THAN_OR_EQUAL_TO.value:
+        elif comparison_value == ShuntComparison.LESS_THAN_OR_EQUAL_TO:
             comparison_boolean = item_a <= item_b
-        elif comparison_value == ShuntComparison.EQUAL_TO.value:
+        elif comparison_value == ShuntComparison.EQUAL_TO:
             comparison_boolean = item_a == item_b
-        elif comparison_value == ShuntComparison.GREATER_THAN_OR_EQUAL_TO.value:
+        elif comparison_value == ShuntComparison.GREATER_THAN_OR_EQUAL_TO:
             comparison_boolean = item_a >= item_b
         else:
             comparison_boolean = item_a > item_b
         return comparison_boolean
 
 
-class ShuntAssociativity(Enum, init='direction'):
-    LEFT = ('left',)
-    RIGHT = ('right',)
-    NONE = ('none',)
+class ShuntAssociativity(NamedConstant):
+    LEFT = "left"
+    RIGHT = "right"
+    NONE = "none"
 
 
 class ShuntOperator(Enum, init='value symbol precedence associativity'):
@@ -50,13 +51,12 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
         return desired_operator
 
     @staticmethod
-    async def compare_precedence(symbol_one: str, symbol_two: str, comparison_value: ShuntComparison) -> bool:
+    async def compare_precedence(symbol_one: str, symbol_two: str, comparison_value) -> bool:
         first_operator = await ShuntOperator.get_by_symbol(symbol_one)
         second_operator = await ShuntOperator.get_by_symbol(symbol_two)
-        precedence_boolean: bool = await ShuntComparison.compare_by_value(comparison_value.value,
-                                                                          first_operator.precedence,
-                                                                          second_operator.precedence)
-        return precedence_boolean
+        return await ShuntComparison.compare_by_value(comparison_value,
+                                                      first_operator.precedence,
+                                                      second_operator.precedence)
 
     @staticmethod
     async def compare_associativity(symbol, associativity):
@@ -67,8 +67,7 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
         return associativity_indicator
 
     @staticmethod
-    async def function_evaluator(associated_value, first_operand, second_operand):
-        evaluated_value = 0
+    async def evaluate_operator(associated_value, first_operand, second_operand):
         if associated_value == ShuntOperator.ADDITION.value:
             evaluated_value = first_operand + second_operand
         elif associated_value == ShuntOperator.SUBTRACTION.value:
@@ -79,6 +78,8 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
             evaluated_value = first_operand / second_operand
         elif associated_value == ShuntOperator.EXPONENTIATION.value:
             evaluated_value = first_operand**second_operand
+        else:
+            evaluated_value = 0
         return evaluated_value
 
 
@@ -98,8 +99,7 @@ class ShuntFunction(Enum, init='value representation'):
         return desired_function
 
     @staticmethod
-    async def function_evaluator(associated_value, first_operand):
-        evaluated_value: float = 0
+    async def evaluate_function(associated_value, first_operand):
         if associated_value == ShuntFunction.SQUARE_ROOT.value:
             evaluated_value = math.sqrt(first_operand)
         elif associated_value == ShuntFunction.FLOOR.value:
@@ -108,4 +108,6 @@ class ShuntFunction(Enum, init='value representation'):
             evaluated_value = math.ceil(first_operand)
         elif associated_value == ShuntFunction.ABSOLUTE_VALUE.value:
             evaluated_value = abs(first_operand)
+        else:
+            evaluated_value = 0
         return evaluated_value
