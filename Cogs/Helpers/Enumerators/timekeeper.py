@@ -1,4 +1,5 @@
 from aenum import Enum
+from typing import Union
 
 
 # note: names dictate military time zone name, if it exists
@@ -54,49 +55,49 @@ class TimeZone(Enum, init='value aliases'):
     Y = (-12, ('UTC-12', 'GMT-12', 'IDLW', 'AoE'))
     Z = (0, ('UTC', 'UTC+0', 'GMT', 'GMT+0', 'AZOST', 'EGST', 'WET', 'WEZ', 'WT'))
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             lt_bool = self.value < other
         else:
             lt_bool = self.value < other.value
         return lt_bool
 
-    def __gt__(self, other):
+    def __gt__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             gt_bool = self.value > other
         else:
             gt_bool = self.value > other.value
         return gt_bool
 
-    def __ge__(self, other):
+    def __ge__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             ge_bool = self.value >= other
         else:
             ge_bool = self.value >= other.value
         return ge_bool
 
-    def __le__(self, other):
+    def __le__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             le_bool = self.value <= other
         else:
             le_bool = self.value <= other.value
         return le_bool
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             eq_bool = self.value == other
         else:
             eq_bool = self.value == other.value
         return eq_bool
 
-    def __ne__(self, other):
+    def __ne__(self, other) -> bool:
         if isinstance(other, int) or isinstance(other, float) or isinstance(other, complex):
             ne_bool = self.value < other
         else:
             ne_bool = self.value < other.value
         return ne_bool
 
-    def __str__(self):
+    def __str__(self) -> str:
         tz_template: str = 'Time Zone ' + self.name + ': '
         for alias in self.aliases:
             tz_template += alias + ', '
@@ -104,13 +105,13 @@ class TimeZone(Enum, init='value aliases'):
         return tz_template
 
     @staticmethod
-    def get_lowest_zone_value():
+    def get_lowest_zone_value() -> int:
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         lowest_zone_value = sorted_zones_by_enum[0].value
         return lowest_zone_value
 
     @staticmethod
-    def get_highest_zone_value():
+    def get_highest_zone_value() -> int:
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         highest_zone_value = sorted_zones_by_enum[-1].value
         return highest_zone_value

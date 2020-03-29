@@ -23,12 +23,13 @@ from Cogs.Helpers.yard_shunter import YardShunter
 
 
 class Gambler(commands.Cog, Disambiguator):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.yard_shunter = YardShunter()
 
     @commands.command(description=HelpDescriptions.ROLL)
-    async def roll(self, ctx, roll: str, description: str = 'To Contend with Lady Luck', recipients: str = None):
+    async def roll(self, ctx: commands.Context, roll: str, description: str = 'To Contend with Lady Luck',
+                   recipients: str = None) -> None:
         """
         The main method for the roll command.
         :param ctx: The context from which the request came.
@@ -49,7 +50,7 @@ class Gambler(commands.Cog, Disambiguator):
             flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
-    async def get_recipients(self, ctx, recipients: str) -> list:
+    async def get_recipients(self, ctx: commands.Context, recipients: str) -> list:
         chosen_recipients: list = []
         ReducedMember = namedtuple('ReducedMember', 'nickname username id')
         guild_members: list = list(map(lambda member: ReducedMember(member.nick, member.name, member.id),
@@ -69,7 +70,7 @@ class Gambler(commands.Cog, Disambiguator):
                 raise InvalidRecipient(message=recipient)
         return chosen_recipients
 
-    async def inform_recipients(self, ctx, roll: str, description: str, chosen_recipients: list):
+    async def inform_recipients(self, ctx, roll: str, description: str, chosen_recipients: list) -> None:
         flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
         for chosen_recipient in chosen_recipients:
             if not chosen_recipient.dm_channel:
@@ -77,7 +78,7 @@ class Gambler(commands.Cog, Disambiguator):
             recipient_dm_channel = chosen_recipient.dm_channel
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, recipient_dm_channel)
 
-    async def handle_roll(self, roll: str):
+    async def handle_roll(self, roll: str) -> tuple:
         raw_roll: str = roll.replace(' ', '')
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
@@ -93,7 +94,8 @@ class Gambler(commands.Cog, Disambiguator):
         roll_result = await self.yard_shunter.shunt_yard(flat_matches)
         return flat_matches, verbose_dice, roll_result
 
-    async def send_roll(self, ctx, roll, flat_tokens, verbose_dice, roll_result, description, destination_channel):
+    async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
+                        description: str, destination_channel: discord.TextChannel):
         description: str = description.strip()
         introductory_message: str = f"{ctx.message.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
@@ -106,7 +108,7 @@ class Gambler(commands.Cog, Disambiguator):
         await destination_channel.send(concluding_message)
 
     @staticmethod
-    async def send_dice(verbose_dice, destination_channel):
+    async def send_dice(verbose_dice: list, destination_channel: discord.TextChannel) -> None:
         enumerated_dice = enumerate(verbose_dice, 1)
         for embed_field_index in range(0, len(verbose_dice), DiscordConstants.MAX_EMBED_FIELDS):
             verbose_roll_embed = discord.Embed(
@@ -127,7 +129,7 @@ class Gambler(commands.Cog, Disambiguator):
             await destination_channel.send(embed=verbose_roll_embed)
 
     @staticmethod
-    async def parse_roll(raw_roll):
+    async def parse_roll(raw_roll: str):
         roll_pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
                                   r'(?P<regular_operator>[+\-*/^])|'
                                   r'(?P<grouping_operator>[()])|'
@@ -136,7 +138,7 @@ class Gambler(commands.Cog, Disambiguator):
         return re.findall(roll_pattern, raw_roll)
 
     @staticmethod
-    async def parse_dice(raw_dice):
+    async def parse_dice(raw_dice: str):
         dice_pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                   r'(?P<die_size>[\d]+)'
                                   r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
@@ -147,7 +149,7 @@ class Gambler(commands.Cog, Disambiguator):
         return re.match(dice_pattern, raw_dice)
 
     @staticmethod
-    async def process_dice(matched_dice):
+    async def process_dice(matched_dice) -> dict:
         number_of_dice: int = int(matched_dice.group('number_of_dice'))
         die_size: int = int(matched_dice.group('die_size'))
         drop_keep_value: int = int(matched_dice.group('drop_keep_value')) if matched_dice.group(
@@ -165,7 +167,7 @@ class Gambler(commands.Cog, Disambiguator):
             'challenge_value': challenge_value,
         }
 
-    async def evaluate_roll(self, processed_roll):
+    async def evaluate_roll(self, processed_roll) -> tuple:
         roll_results: list = await self.roll_dice(processed_roll['number_of_dice'], processed_roll['die_size'],
                                                   processed_roll['explosion_sign'])
         unsorted_results: list = deepcopy(roll_results)
@@ -177,7 +179,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_result, unsorted_results, roll_results
 
     @staticmethod
-    async def roll_dice(number_of_dice, die_size, explosion_sign):
+    async def roll_dice(number_of_dice: int, die_size: int, explosion_sign: str) -> list:
         roll_list: list = []
         roll_index: int = 0
         while roll_index < number_of_dice:
@@ -188,7 +190,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_list
 
     @staticmethod
-    async def select_dice(roll_list, drop_sign, keep_sign, drop_keep_value):
+    async def select_dice(roll_list: list, drop_sign: str, keep_sign: str, drop_keep_value: int) -> list:
         if drop_sign:
             del roll_list[(len(roll_list) - drop_keep_value):]
         elif keep_sign:
@@ -196,7 +198,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_list
 
     @staticmethod
-    async def analyze_roll(roll_list, challenge_sign, challenge_value) -> int:
+    async def analyze_roll(roll_list: list, challenge_sign: str, challenge_value: int) -> int:
         roll_result: int = 0
         if challenge_sign:
             if challenge_sign == '>':
@@ -211,7 +213,7 @@ class Gambler(commands.Cog, Disambiguator):
         return roll_result
 
     @roll.error
-    async def roll_error(self, ctx, error):
+    async def roll_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         if isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Roll): Missing Closing Quote',

@@ -1,5 +1,4 @@
 # TODO: MODULAR DOCUMENTATION
-# Add: flush/purge command for messages.
 
 from discord.ext import commands
 

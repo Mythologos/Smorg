@@ -6,18 +6,17 @@ import discord
 from discord.ext import commands
 from random import randint
 
-
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
 class Quoter(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
 
     @commands.command(description=HelpDescriptions.QUOTE)
-    async def quote(self, ctx, text, author='An Anonymous Intellectual'):
+    async def quote(self, ctx: commands.Context, text: str, author: str = "An Anonymous Intellectual") -> None:
         """
         This method receives a quotation and embeds it in its quotation chat.
         :param ctx: The context from which the quotation came.
@@ -37,7 +36,7 @@ class Quoter(commands.Cog):
         await current_channel.send(embed=quote_response)
 
     @quote.error
-    async def quote_error(self, ctx, error):
+    async def quote_error(self, ctx: commands.Context, error: discord.DiscordException):
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Quote): Missing Quotation',
@@ -59,7 +58,7 @@ class Quoter(commands.Cog):
         await ctx.send(embed=error_embed)
 
     @commands.command(description=HelpDescriptions.IMMORTALIZE)
-    async def immortalize(self, ctx, text, author="A True Legend"):
+    async def immortalize(self, ctx: commands.Context, text: str, author: str = "A True Legend") -> None:
         """
         This method receives a quotation and embeds it in its quotation chat.
         It also stores this information in the database.
@@ -82,7 +81,7 @@ class Quoter(commands.Cog):
         await current_channel.send(embed=quote_response)
 
     @immortalize.error
-    async def immortalize_error(self, ctx, error):
+    async def immortalize_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         # TODO: add more errors related to engrave's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
@@ -107,7 +106,7 @@ class Quoter(commands.Cog):
     # TODO: add Enum for list access values
     @commands.command(description=HelpDescriptions.YOINK)
     @commands.check(Checker.is_yoinkable)
-    async def yoink(self, ctx):
+    async def yoink(self, ctx: commands.Context) -> None:
         """
         This method retrieves a random Quote formed by the calling Guild in the database.
         It also lets the user know whether a Quote even exists.
@@ -126,7 +125,7 @@ class Quoter(commands.Cog):
         await ctx.send(embed=yoink_response)
 
     @yoink.error
-    async def yoink_error(self, ctx, error):
+    async def yoink_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         if isinstance(error, commands.CheckFailure):
             error_embed = discord.Embed(
                 title='Error (Yoink): Invalid Request',

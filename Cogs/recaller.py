@@ -12,7 +12,7 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptio
 
 
 class Recaller(commands.Cog, Disambiguator):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.time_zones: list = []
         for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
@@ -21,7 +21,7 @@ class Recaller(commands.Cog, Disambiguator):
 
     # TODO: documentation...
     @commands.command(description=HelpDescriptions.REMIND)
-    async def remind(self, ctx, name, reminder_time, message=''):
+    async def remind(self, ctx: commands.Context, name, reminder_time: str, message: str = ""):
         reminder_response = "Your reminder has been successfully processed! " + \
                             "It will be sent at the specified time."
         current_guild = ctx.guild
@@ -41,12 +41,12 @@ class Recaller(commands.Cog, Disambiguator):
             reminder_response = "Error: that role is invalid. Please try again."
         await current_channel.send(reminder_response)
 
-    async def select_tag(self, ctx, mentionables):
+    async def select_tag(self, ctx: commands.Context, mentionables):
         chosen_mentionable: str = mentionables[0]
         chosen_mentionable_index: int = await Disambiguator.disambiguate(self.bot, ctx, mentionables)
         return chosen_mentionable[chosen_mentionable_index]
 
-    async def select_time(self, ctx, reminder_time):
+    async def select_time(self, ctx: commands.Context, reminder_time):
         datetime_components = reminder_time.split(',')
         try:
             full_time: list = datetime_components[0].split(' ')
@@ -109,7 +109,7 @@ class Recaller(commands.Cog, Disambiguator):
 
     # converts time zone to a standard.
     # TODO: instead of GMT +/- 0, convert to database time zone?
-    async def convert_to_standard_time(self, ctx, hours, minutes, time_zone):
+    async def convert_to_standard_time(self, ctx: commands.Context, hours: int, minutes: int, time_zone):
         retrieved_time_zones: list = self.get_time_zones_by_alias(time_zone)
         chosen_time_zone_index: int = await Disambiguator.disambiguate(self.bot, ctx, retrieved_time_zones)
         time_zone_number = retrieved_time_zones[chosen_time_zone_index].value

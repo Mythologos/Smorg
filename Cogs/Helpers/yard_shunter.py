@@ -17,7 +17,7 @@ class YardShunter:
         self.grouping_operators: tuple = ('(', ')')
         self.signs: tuple = ('+', '-')
 
-    async def shunt_yard(self, flat_tokens: list):
+    async def shunt_yard(self, flat_tokens: list) -> Union[float, int]:
         await self.flush_stacks()
         complete_tokens: list = await self.consolidate_tokens(flat_tokens)
         await self.process_input(complete_tokens)

@@ -12,7 +12,7 @@ class Helper(commands.Cog):
         self.bot = bot
 
     @commands.command(name='help', description=HelpDescriptions.SUPPORT)
-    async def support(self, ctx):
+    async def support(self, ctx: commands.Context):
         """
         This method displays Smorg's help menu.
         :param ctx: The context from which the quotation came.
@@ -33,20 +33,20 @@ class Helper(commands.Cog):
         await ctx.send(embed=support_embed)
 
     @commands.command(description=HelpDescriptions.OBSERVE)
-    async def observe(self, ctx, new_prefix):
+    async def observe(self, ctx: commands.Context, new_prefix: str) -> None:
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
 
     # TODO: add ability to use time instead of a message count;
     # integrates well with history function's optional args
     @commands.command(description=HelpDescriptions.PURGE)
-    async def purge(self, ctx, message_count=1):
+    async def purge(self, ctx: commands.Context, message_count: int = 1):
         async for message in ctx.message.channel.history(limit=message_count + 1):
             await message.delete()
         await ctx.send(f"You've deleted up to {message_count} messages just now.")
 
     @observe.error
-    async def observe_error(self, ctx, error):
+    async def observe_error(self, ctx: commands.Context, error: discord.DiscordException):
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Observe): Missing Prefix',

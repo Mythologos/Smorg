@@ -7,7 +7,7 @@ from smorgasDB import BaseAddition, Guild
 
 
 class Hearer(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.reset_database = True
 
@@ -38,9 +38,8 @@ class Hearer(commands.Cog):
                     # TODO: make the below better...
                     print("Error! There are no text channels.")
 
-    @staticmethod
     @commands.Cog.listener()
-    async def on_command_error(ctx, error):
+    async def on_command_error(self, ctx: commands.Context, error: discord.DiscordException):
         """
         TODO -- document!
         :param ctx:

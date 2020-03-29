@@ -10,7 +10,7 @@ from Cogs.Helpers.Enumerators.universalist import HelpDescriptions
 
 
 class Encoder(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.morse_to_alphabet = {
             '• −': 'a',
@@ -121,17 +121,17 @@ class Encoder(commands.Cog):
         }
 
     @commands.group(description=HelpDescriptions.TRANSLATE)
-    async def translate(self, ctx):
+    async def translate(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send("An argument for the starting language was not found. Please try again.")
 
     @translate.group(name='alphabet')
-    async def from_alphabet(self, ctx):
+    async def from_alphabet(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send("An argument for the target language was not found. Please try again.")
 
     @from_alphabet.command(name='morse')
-    async def to_morse(self, ctx, quote):
+    async def to_morse(self, ctx: commands.Context, quote: str) -> None:
         morse_quote: str = ''
         for index, character in enumerate(quote.lower()):
             morse_quote += self.alphabet_to_morse[character]
@@ -140,12 +140,12 @@ class Encoder(commands.Cog):
         await ctx.send(f"The morse translation of your alphabetical input is: \n{morse_quote}")
 
     @translate.group(name='morse')
-    async def from_morse(self, ctx):
+    async def from_morse(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             await ctx.send("An argument for the target language was not found. Please try again.")
 
     @from_morse.command(name='alphabet')
-    async def to_alphabet(self, ctx, quote):
+    async def to_alphabet(self, ctx: commands.Context, quote: str) -> None:
         alphabetical_quote: str = ''
         spaced_quote: list = quote.split('  /  ')
         for word in spaced_quote:

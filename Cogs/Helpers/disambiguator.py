@@ -1,12 +1,12 @@
 # TODO: documentation...
 # describe as Cog mixin
 
-import discord
+from discord.ext import commands
 
 
 class Disambiguator:
     @staticmethod
-    async def disambiguate(bot, ctx, options):
+    async def disambiguate(bot: commands.Bot, ctx: commands.Context, options: list) -> int:
         if len(options) > 1:
             selection_message: str = 'Please select an item from the following options via its number:\n'
             for index, item in enumerate(options, 1):

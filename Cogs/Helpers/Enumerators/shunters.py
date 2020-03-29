@@ -1,6 +1,8 @@
 # TODO: documentation
 # TODO: fix IDE not reading some items correctly, if possible
 
+from __future__ import annotations
+
 import math
 
 from aenum import Enum, NamedConstant
@@ -14,7 +16,7 @@ class ShuntComparison(NamedConstant):
     GREATER_THAN = 2
 
     @staticmethod
-    async def compare_by_value(comparison_value, item_a, item_b):
+    async def compare_by_value(comparison_value: int, item_a: int, item_b: int) -> bool:
         if comparison_value == ShuntComparison.LESS_THAN:
             comparison_boolean = item_a < item_b
         elif comparison_value == ShuntComparison.LESS_THAN_OR_EQUAL_TO:
@@ -42,7 +44,7 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
     EXPONENTIATION = (4, '^', 3, ShuntAssociativity.RIGHT)
 
     @staticmethod
-    async def get_by_symbol(given_symbol):
+    async def get_by_symbol(given_symbol: str) -> ShuntOperator:
         desired_operator = None
         for operation in ShuntOperator:
             if operation.symbol == given_symbol:
@@ -51,7 +53,7 @@ class ShuntOperator(Enum, init='value symbol precedence associativity'):
         return desired_operator
 
     @staticmethod
-    async def compare_precedence(symbol_one: str, symbol_two: str, comparison_value) -> bool:
+    async def compare_precedence(symbol_one: ShuntOperator, symbol_two: ShuntOperator, comparison_value: int) -> bool:
         first_operator = await ShuntOperator.get_by_symbol(symbol_one)
         second_operator = await ShuntOperator.get_by_symbol(symbol_two)
         return await ShuntComparison.compare_by_value(comparison_value,

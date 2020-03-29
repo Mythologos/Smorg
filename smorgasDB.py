@@ -1,7 +1,12 @@
 # TODO: MODULAR DOCUMENTATION
 # TODO: handle deleted channels case for various tables here
 
+from __future__ import annotations
+
 import sqlalchemy
+import discord
+from typing import Callable
+from discord.ext import commands
 from functools import wraps
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
@@ -23,7 +28,7 @@ Session = sessionmaker(bind=engine)
 # TODO: describe this as a mixin.
 class BaseAddition:
     @classmethod
-    def session_method(cls, decorated_function):
+    def session_method(cls, decorated_function: Callable) -> Callable:
         """
         Decorator; automatically sets up and closes sessions for database connections.
         :param decorated_function: a function that requires a session.
@@ -31,14 +36,14 @@ class BaseAddition:
         """
         @wraps(decorated_function)
         def session_decorator(*args, **kwargs):
-            method_session = Session()
+            method_session: Session = Session()
             session_value = decorated_function(method_session, *args, **kwargs)
             method_session.close()
             return session_value
         return session_decorator
 
     @staticmethod
-    def reset_database():
+    def reset_database() -> None:
         """
         TODO -- should this be placed somewhere else?
         This method resets the database down to the structure based upon the classes described above.
@@ -74,7 +79,7 @@ class Quote(BaseAddition, Base):
     # Queries:
     @staticmethod
     @BaseAddition.session_method
-    def count_quotes(method_session, g_id):
+    def count_quotes(method_session: Session, g_id: int) -> int:
         """
         This method counts the number of quotes that a Guild has stored in the database.
         :param method_session: a Session database connection.
@@ -86,7 +91,7 @@ class Quote(BaseAddition, Base):
 
     @staticmethod
     @BaseAddition.session_method
-    def create_quote_with(method_session, g_id, quote, auth):
+    def create_quote_with(method_session: Session, g_id: int, quote: str, auth: str) -> None:
         """
         This method creates and stores a Quote in the database.
         :param method_session: a Session database connection.
@@ -101,7 +106,7 @@ class Quote(BaseAddition, Base):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_random_quote_by(method_session, g_id, q_number):
+    def get_random_quote_by(method_session: Session, g_id: int, q_number: int) -> str:
         """
         This method retrieves a random quote from a given server from the database.
         :param method_session: a Session database connection.
@@ -129,14 +134,14 @@ class Reminder(Base, BaseAddition):
     guild = relationship("Guild", back_populates="reminders")
 
     # Methods:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Guild(guild_id: {self.guild_id}, tag: {self.tag}, tag_text: {self.tag_text}, ' \
                f'reminder_date: {self.reminder_date}, reminder_time: {self.reminder_time}, ' \
                f'created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     @staticmethod
     @BaseAddition.session_method
-    def create_reminder_with(method_session, g_id, tag, tag_text, date, time):
+    def create_reminder_with(method_session: Session, g_id: int, tag: str, tag_text: str, date, time) -> None:
         new_guild = Reminder(guild_id=g_id, tag=tag, tag_text=tag_text, reminder_date=date, reminder_time=time)
         method_session.add(new_guild)
         method_session.commit()
@@ -183,7 +188,7 @@ class Guild(Base, BaseAddition):
     # Queries:
     @staticmethod
     @BaseAddition.session_method
-    def get_quotation_channel_by(method_session, g_id):
+    def get_quotation_channel_by(method_session: Session, g_id: int) -> int:
         """
         This method retrieves the quotation channel for a given Guild.
         :param method_session: a Session database connection.
@@ -195,7 +200,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def exists_with(method_session, g_id):
+    def exists_with(method_session: Session, g_id: int) -> bool:
         """
         This method determines whether a Guild has channels assigned to it.
         :param method_session: a Session database connection.
@@ -203,12 +208,12 @@ class Guild(Base, BaseAddition):
         :return: a Boolean of whether a Guild has a channel quotation to it according to the database.
         """
         guild_id = method_session.query(Guild.guild_id).filter_by(guild_id=g_id).first()
-        guild_existence = guild_id is not None
-        return guild_existence
+        is_guild = guild_id is not None
+        return is_guild
 
     @staticmethod
     @BaseAddition.session_method
-    def create_guild_with(method_session, g_id, c_id):
+    def create_guild_with(method_session: Session, g_id: int, c_id: int):
         """
         This method creates a Guild and stores it in the database.
         :param method_session: a Session database connection.
@@ -222,7 +227,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def update_quotation_channel(method_session, g_id, c_id):
+    def update_quotation_channel(method_session: Session, g_id: int, c_id: int):
         """
         This method retrieves a Guild and updates its quotation channel.
         :param method_session: a Session database connection.
@@ -237,7 +242,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_reminder_channel_by(method_session, g_id):
+    def get_reminder_channel_by(method_session: Session, g_id: int) -> int:
         """
         This method retrieves the reminder channel for a given Guild.
         :param method_session: a Session database connection.
@@ -249,7 +254,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def update_reminder_channel(method_session, g_id, c_id):
+    def update_reminder_channel(method_session: Session, g_id: int, c_id: int) -> None:
         """
         This method retrieves a Guild and updates its quotation channel.
         :param method_session: a Session database connection.
@@ -264,7 +269,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_gamble_channel_by(method_session, g_id):
+    def get_gamble_channel_by(method_session: Session, g_id: int) -> int:
         """
         This method retrieves the gamble channel for a given Guild.
         :param method_session: a Session database connection.
@@ -276,7 +281,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def update_gamble_channel(method_session, g_id, c_id):
+    def update_gamble_channel(method_session: Session, g_id: int, c_id: int) -> None:
         """
         This method retrieves a Guild and updates its gamble channel.
         :param method_session: a Session database connection.
@@ -291,14 +296,14 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_prefix(method_session, bot, message):
+    def get_prefix(method_session: Session, bot: commands.Bot, message: discord.Message):
         g_id: int = message.channel.guild.id
         guild_prefix = method_session.query(Guild.guild_prefix).filter_by(guild_id=g_id).first()
         return guild_prefix[0]
 
     @staticmethod
     @BaseAddition.session_method
-    def update_prefix(method_session, g_id, new_prefix):
+    def update_prefix(method_session: Session, g_id: int, new_prefix: str):
         method_session.query(Guild) \
                       .filter_by(guild_id=g_id) \
                       .update({"guild_prefix": new_prefix})
