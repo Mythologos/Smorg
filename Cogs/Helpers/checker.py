@@ -1,7 +1,6 @@
 # TODO: documentation...
 # describe as Cog mixin
 
-import discord
 from discord.ext import commands
 
 from smorgasDB import Quote

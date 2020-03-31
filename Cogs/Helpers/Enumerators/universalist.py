@@ -22,6 +22,8 @@ class ColorConstants(NamedConstant):
 
 
 class HelpDescriptions(NamedConstant):
+    FORGET = "This command allows someone to delete a reminder. To do so, it accepts arguments of a role and a time. " \
+             "It deletes a reminder corresponding to that role and time."
     GOVERN = "This command tells Smorg what channel in which it should perform some task. " \
              "It takes a the type of channel (e.g. quotation, reminder), the channel's name, and, " \
              "if the channel has the same name as other channels, " \
@@ -46,6 +48,7 @@ class HelpDescriptions(NamedConstant):
            "Quoted, a description of what the roll was for may be included next. " \
            "The result is posted either in a set gamble channel or where the die was rolled."
     SUPPORT = "This command retrieves the menu below shown here."
+    TIMETABLE = "WIP"
     TRANSLATE = "This command translates text of one set of characters to another set of characters. " \
                 "Current sets of characters include the Latin alphabet (alphabet) and Morse code (morse)."
     YOINK = "This command retrieves and displays a random stored quote."

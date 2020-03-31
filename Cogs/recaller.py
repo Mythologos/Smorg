@@ -4,6 +4,7 @@
 
 import discord
 from discord.ext import commands
+from typing import Union
 
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
@@ -12,7 +13,7 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptio
 
 
 class Recaller(commands.Cog, Disambiguator):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.time_zones: list = []
         for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
@@ -21,30 +22,34 @@ class Recaller(commands.Cog, Disambiguator):
 
     # TODO: documentation...
     @commands.command(description=HelpDescriptions.REMIND)
-    async def remind(self, ctx: commands.Context, name, reminder_time: str, message: str = ""):
+    async def remind(self, ctx: commands.Context, name: Union[discord.Member, discord.Role],
+                     reminder_time: str, message: str = ""):
         reminder_response = "Your reminder has been successfully processed! " + \
                             "It will be sent at the specified time."
         current_guild = ctx.guild
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild.id)
         current_channel = self.bot.get_channel(reminder_channel_id)
-        # TODO: I like this, but I wonder if I can further constrict the bounds to
-        # only the roles available in Smorg's reminder channel.
-        mentionables = [role.name for role in current_guild.roles if role.name == name] + \
-                       [member.display_name for member in current_channel.members if member.display_name == name]
-        if mentionables:
-            selected_tag = self.select_tag(ctx, mentionables)
-            if reminder_time:
-                selected_time = self.select_time(ctx, reminder_time)
-            else:
-                reminder_response = "Error: that time is invalid. Please try again."
+        if reminder_time:
+            selected_time = self.select_time(ctx, reminder_time)
         else:
-            reminder_response = "Error: that role is invalid. Please try again."
+            reminder_response = "Error: that time is invalid. Please try again."
         await current_channel.send(reminder_response)
 
-    async def select_tag(self, ctx: commands.Context, mentionables):
-        chosen_mentionable: str = mentionables[0]
-        chosen_mentionable_index: int = await Disambiguator.disambiguate(self.bot, ctx, mentionables)
-        return chosen_mentionable[chosen_mentionable_index]
+    @commands.command(description=HelpDescriptions.REVISE)
+    async def revise(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], old_reminder_time: str,
+                     new_reminder_time: str, new_message: str = ""):
+        raise NotImplementedError
+
+    # TODO: documentation... "forgets" a reminder
+    @commands.command(description=HelpDescriptions.FORGET)
+    async def forget(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], reminder_time: str):
+        raise NotImplementedError
+
+    # TODO: documentation... lists server reminder
+    # do I want this command? is this the best command?
+    # @commands.command(description=HelpDescriptions.TIMETABLE)
+    # async def timetable(self, ctx: commands.Context):
+        # raise NotImplementedError
 
     async def select_time(self, ctx: commands.Context, reminder_time):
         datetime_components = reminder_time.split(',')

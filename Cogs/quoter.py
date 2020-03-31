@@ -12,7 +12,7 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptio
 
 
 class Quoter(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
     @commands.command(description=HelpDescriptions.QUOTE)

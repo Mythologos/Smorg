@@ -12,7 +12,6 @@ import re
 from discord.ext import commands
 from random import randint
 from copy import deepcopy
-from collections import namedtuple
 
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
@@ -23,13 +22,13 @@ from Cogs.Helpers.yard_shunter import YardShunter
 
 
 class Gambler(commands.Cog, Disambiguator):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.yard_shunter = YardShunter()
 
     @commands.command(description=HelpDescriptions.ROLL)
-    async def roll(self, ctx: commands.Context, roll: str, description: str = 'To Contend with Lady Luck',
-                   recipients: str = None) -> None:
+    async def roll(self, ctx: commands.Context, roll: str, recipients: commands.Greedy[discord.Member] = None, *,
+                   description: str = 'To Contend with Lady Luck') -> None:
         """
         The main method for the roll command.
         :param ctx: The context from which the request came.
@@ -40,43 +39,18 @@ class Gambler(commands.Cog, Disambiguator):
         the requester wants to which the requester wants to send results.
         :return: None.
         """
+        flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
         if recipients:
-            chosen_recipients = await self.get_recipients(ctx, recipients)
-            await self.inform_recipients(ctx, roll, description, chosen_recipients)
+            for recipient in recipients:
+                if not recipient.dm_channel:
+                    await self.bot.get_user(recipient.id).create_dm()
+                await self.send_roll(ctx, roll, flat_tokens, verbose_dice,
+                                     roll_result, description, recipient.dm_channel)
         else:
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
             current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
                 else ctx.message.channel
-            flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
-
-    async def get_recipients(self, ctx: commands.Context, recipients: str) -> list:
-        chosen_recipients: list = []
-        ReducedMember = namedtuple('ReducedMember', 'nickname username id')
-        guild_members: list = list(map(lambda member: ReducedMember(member.nick, member.name, member.id),
-                                       ctx.guild.members))
-        for recipient in recipients.split(';'):
-            recipient = recipient.strip()
-            found_recipients: list = []
-            for reduced_member in guild_members:
-                if recipient in [reduced_member.nickname, reduced_member.username]:
-                    found_recipients.append(reduced_member)
-            if len(found_recipients) > 0:
-                chosen_recipient_index: int = await Disambiguator.disambiguate(self.bot, ctx, found_recipients)
-                chosen_recipient = self.bot.get_user(found_recipients[chosen_recipient_index].id)
-                if chosen_recipient not in chosen_recipients:
-                    chosen_recipients.append(chosen_recipient)
-            else:
-                raise InvalidRecipient(message=recipient)
-        return chosen_recipients
-
-    async def inform_recipients(self, ctx, roll: str, description: str, chosen_recipients: list) -> None:
-        flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
-        for chosen_recipient in chosen_recipients:
-            if not chosen_recipient.dm_channel:
-                await self.bot.get_user(chosen_recipient.id).create_dm()
-            recipient_dm_channel = chosen_recipient.dm_channel
-            await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, recipient_dm_channel)
 
     async def handle_roll(self, roll: str) -> tuple:
         raw_roll: str = roll.replace(' ', '')

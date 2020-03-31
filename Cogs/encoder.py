@@ -10,7 +10,7 @@ from Cogs.Helpers.Enumerators.universalist import HelpDescriptions
 
 
 class Encoder(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.morse_to_alphabet = {
             '• −': 'a',

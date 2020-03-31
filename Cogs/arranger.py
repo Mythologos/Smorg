@@ -11,7 +11,7 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptio
 
 
 class Arranger(commands.Cog, Disambiguator):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
     @commands.group(description=HelpDescriptions.GOVERN)
@@ -24,51 +24,45 @@ class Arranger(commands.Cog, Disambiguator):
             ))
 
     @govern.command()
-    async def quotation(self, ctx: commands.Context, channel_name: str) -> None:
+    async def quotation(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
         """
         This method allows users to alter the chat in which Smorg embeds its quotes.
         See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where I engrave your greatest sayings.'
-        await self.handle_domain(ctx, Guild.update_quotation_channel, govern_message, channel_name)
+        await self.handle_domain(ctx, Guild.update_quotation_channel, channel.id, govern_message)
 
     @govern.command()
-    async def reminder(self, ctx: commands.Context, channel_name: str) -> None:
+    async def reminder(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
         """
         This method allows users to alter the chat in which Smorg posts its reminders.
         See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where I blare your noisiest pings.'
-        await self.handle_domain(ctx, Guild.update_reminder_channel, govern_message, channel_name)
+        await self.handle_domain(ctx, Guild.update_reminder_channel, channel.id, govern_message)
 
     @govern.command()
-    async def gamble(self, ctx: commands.Context, channel_name: str) -> None:
+    async def gamble(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
         """
         This method allows users to alter the chat in which Smorg posts its public gambles.
         See the handle_domain function for further details.
         """
         govern_message = 'Congrats! You have successfully changed where you let the cards and dice fly.'
-        await self.handle_domain(ctx, Guild.update_gamble_channel, govern_message, channel_name)
+        await self.handle_domain(ctx, Guild.update_gamble_channel, channel.id, govern_message)
 
-    async def handle_domain(self, ctx: commands.Context, table_update_method: Callable, govern_message: str,
-                            channel_name: str):
+    async def handle_domain(self, ctx: commands.Context, table_update_method: Callable, channel_id: int,
+                            govern_message: str):
         """
         This method allows users to alter the chats in which Smorg posts information.
         :param ctx: The context from which the request came.
         :param table_update_method: The SmorgDB method which will update the relevant domain channel for Smorg.
         :param govern_message: The message which Smorg reports back after updating the relevant domain channel.
-        :param channel_name: The name of the channel which the user wants to designate as a domain for Smorg's messages.
-        If channels have the same name, Disambiguator derives order from counting Discord channels from top to bottom.
+        :param channel_id: The ID of the channel which the user wants to designate as a domain for Smorg's messages.
         :return: None.
         """
         current_guild = ctx.guild
-        valid_channels: list = [channel for channel in current_guild.text_channels if channel.name == channel_name]
-        if not valid_channels:
-            raise commands.UserInputError()
-        else:
-            channel_index: int = await Disambiguator.disambiguate(self.bot, ctx, valid_channels)
-            table_update_method(current_guild.id, valid_channels[channel_index].id)
-        await self.bot.get_channel(valid_channels[channel_index].id).send(govern_message)
+        table_update_method(current_guild.id, channel_id)
+        await self.bot.get_channel(channel_id).send(govern_message)
 
     @quotation.error
     @reminder.error
@@ -86,7 +80,7 @@ class Arranger(commands.Cog, Disambiguator):
                 description='You forgot a closing quotation mark on your channel name.',
                 color=ColorConstants.ERROR_RED
             )
-        elif isinstance(error, commands.UserInputError):
+        elif isinstance(error, commands.BadArgument):
             error_embed = discord.Embed(
                 title='Error (Govern): Invalid Channel',
                 description='The channel name given was not found.',

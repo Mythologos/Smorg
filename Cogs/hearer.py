@@ -7,7 +7,7 @@ from smorgasDB import BaseAddition, Guild
 
 
 class Hearer(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.reset_database = True
 
@@ -19,7 +19,9 @@ class Hearer(commands.Cog):
         This is important because it must know in which channel it should perform some of its functions.
         :return: None.
         """
-        on_ready_message = "Hello! Smorg is online! To view commands, please type '.support'."
+        on_ready_message = "Hello! Smorg is online! To view commands, " \
+                           "please type the 'help' command with the appropriate prefix. " \
+                           "If this is your first time using this bot, '.' is your prefix."
         if self.reset_database:
             BaseAddition.reset_database()
         for guild in self.bot.guilds:

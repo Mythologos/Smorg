@@ -39,6 +39,7 @@ class Helper(commands.Cog):
 
     # TODO: add ability to use time instead of a message count;
     # integrates well with history function's optional args
+    # add: last_message_time: str = None, user: str = None
     @commands.command(description=HelpDescriptions.PURGE)
     async def purge(self, ctx: commands.Context, message_count: int = 1):
         async for message in ctx.message.channel.history(limit=message_count + 1):
