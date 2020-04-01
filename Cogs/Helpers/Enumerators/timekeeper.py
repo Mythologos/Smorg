@@ -1,4 +1,4 @@
-from aenum import Enum
+from aenum import Enum, NamedConstant
 from typing import Union
 
 
@@ -98,11 +98,10 @@ class TimeZone(Enum, init='value aliases'):
         return ne_bool
 
     def __str__(self) -> str:
-        tz_template: str = 'Time Zone ' + self.name + ': '
+        tz_template: str = f'Time Zone {self.name}: '
         for alias in self.aliases:
-            tz_template += alias + ', '
-        tz_template = tz_template.rstrip(', ') + '.'
-        return tz_template
+            tz_template.join(alias.join(', '))
+        return tz_template.rstrip(', ').join('.')
 
     @staticmethod
     def get_lowest_zone_value() -> int:
@@ -115,3 +114,29 @@ class TimeZone(Enum, init='value aliases'):
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         highest_zone_value = sorted_zones_by_enum[-1].value
         return highest_zone_value
+
+
+class HourConstants(NamedConstant):
+    START_MINUTE = 0
+    END_MINUTE = 59
+
+
+class MonthConstants(NamedConstant):
+    JANUARY = ('January', 'Jan', '1')
+    FEBRUARY = ('February', 'Feb', '2')
+    MARCH = ('March', 'Mar', '3')
+    APRIL = ('April', 'Apr', '4')
+    MAY = ('May', '5')
+    JUNE = ('June', 'Jun', '6')
+    JULY = ('July', 'Jul', '7')
+    AUGUST = ('August', 'Aug', '8')
+    SEPTEMBER = ('September', 'Sept', '9')
+    OCTOBER = ('October', 'Oct', '10')
+    NOVEMBER = ('November', 'Nov', '11')
+    DECEMBER = ('December', 'Dec', '12')
+
+
+class PeriodConstants:
+    SINE_MERIDIEM = 0  # "without a midday," referring to how there's no period separation in a twenty-four hour clock
+    ANTE_MERIDIEM = 1
+    POST_MERIDIEM = 2
