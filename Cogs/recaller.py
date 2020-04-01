@@ -3,6 +3,7 @@
 # TODO: be sure to add Disambiguator TimeoutError handling
 
 import discord
+import re
 from discord.ext import commands
 from typing import Union
 
@@ -46,10 +47,34 @@ class Recaller(commands.Cog, Disambiguator):
         raise NotImplementedError
 
     # TODO: documentation... lists server reminder
-    # do I want this command? is this the best command?
+    # do I want this command name? is this the best command name?
     # @commands.command(description=HelpDescriptions.TIMETABLE)
     # async def timetable(self, ctx: commands.Context):
         # raise NotImplementedError
+
+    @staticmethod
+    async def parse_time(reminder_time: str):
+        datetime_pattern = re.compile(
+            r'(?:(?P<time>'
+            r'(?P<hours>[012][\d]):'
+            r'(?P<minutes>[012345][\d])(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)'
+            r'(?:[\s](?P<time_zone>[\dA-Z+\-]{3,6}))?'
+            r'(?:[;][\s](?P<date>(?P<day>[0123]?[\d])'
+            r'(?:[\s](?P<month>Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|'
+            r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
+            r'(?:[\s](?P<year>[\d]{0,4}))?)?))?)'
+        )
+        return re.match(datetime_pattern, reminder_time)
+    # Notes:
+    # The above reads the time as a requirement. Can be in 24-hour or 12-hour time;
+    # the period modifier determines which. Period can be ante- or post-meridiem with or without dots.
+    # Dates are not required. If included, days are required first, then months, then years.
+    # If sequential items are not included, the current or nearest item is assumed.
+    # e.g. day = today or tomorrow depending on the time;
+    # month = next month in which the day occurs;
+    # year = next year in which the month occurs.
+    # Validation is required for most items to assure that they have not occurred yet and are legal values.
+    # Months, if in English text, must be converted (just by an if/elif chain or dict) to their numerical values.
 
     async def select_time(self, ctx: commands.Context, reminder_time):
         datetime_components = reminder_time.split(',')
