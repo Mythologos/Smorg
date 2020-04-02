@@ -2,6 +2,7 @@
 # aenum: https://bitbucket.org/stoneleaf/aenum/src/default/aenum/doc/aenum.rst
 # TODO: be sure to add Disambiguator TimeoutError handling
 
+import asyncio
 import discord
 import datetime
 import re
@@ -10,7 +11,9 @@ from typing import Union
 
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
-from Cogs.Helpers.Enumerators.timekeeper import HourConstants, MonthConstants, PeriodConstants, TimeZone
+from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
+from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants,\
+    TimeConstants, TimeZone
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
@@ -88,28 +91,32 @@ class Recaller(commands.Cog, Disambiguator):
         month = await self.validate_month(reminder_time.group('month'))
         year = await self.validate_year(reminder_time.group('year'))
         return {
-            'hours': await self.validate_hour(reminder_time.group('hour'), period, time_zone),
-            'minutes': await self.validate_minute(reminder_time.group('minute')),
-            'period': period,
-            'time_zone': time_zone,
+            'hour': await self.validate_hour(reminder_time.group('hour'), period, time_zone),
+            'minute': await self.validate_minute(reminder_time.group('minute')),
             'day': await self.validate_day(reminder_time.group('day'), month, year),
             'month': month,
             'year': year
         }
 
-    @staticmethod
-    async def validate_hour(hour_value: str, period, time_zone):
-        ...
-        return ...
+    async def validate_hour(self, hour_value: str, period: int, time_zone):
+        if TimeConstants.START_HOUR <= int(hour_value) <= TimeConstants.END_HOUR:
+            hour = int(hour_value)
+            if period:
+                hour = self.convert_to_24_hour_time(hour, period)
+            if time_zone:
+                hour = self.convert_to_standard_time_zone(hour, time_zone)
+        else:
+            raise InvalidHour
+        return hour
 
     @staticmethod
     async def validate_minute(minute_value: str) -> int:
         if not minute_value:
             minute: int = 0
-        elif HourConstants.START_MINUTE <= int(minute_value) <= HourConstants.END_MINUTE:
+        elif TimeConstants.START_MINUTE <= int(minute_value) <= TimeConstants.END_MINUTE:
             minute = int(minute_value)
         else:
-            raise NotImplementedError  # TODO: give better error
+            raise InvalidMinute
         return minute
 
     @staticmethod
@@ -129,39 +136,50 @@ class Recaller(commands.Cog, Disambiguator):
 
     @staticmethod
     async def validate_day(day_value: str, month, year):
-        ...
-        return ...
+        if not day_value:
+            day: int = datetime.date.today().day
+        else:
+            if year % 4 and month == MonthConstants.FEBRUARY.value:
+                this_month: MonthConstants = MonthConstants(13)
+            else:
+                this_month = MonthConstants(month)
+
+            if DateConstants.FIRST_DAY_OF_MONTH <= int(day_value) <= this_month.number_of_days:
+                day = int(day_value)
+            else:
+                raise InvalidDay
+        return day
 
     @staticmethod
     async def validate_month(month_value: str):
         if not month_value:
             month: int = datetime.date.today().month
-        elif month_value in MonthConstants.JANUARY:
+        elif month_value in MonthAliases.JANUARY:
             month: int = 1
-        elif month_value in MonthConstants.FEBRUARY:
+        elif month_value in MonthAliases.FEBRUARY:
             month = 2
-        elif month_value in MonthConstants.MARCH:
+        elif month_value in MonthAliases.MARCH:
             month = 3
-        elif month_value in MonthConstants.APRIL:
+        elif month_value in MonthAliases.APRIL:
             month = 4
-        elif month_value in MonthConstants.MAY:
+        elif month_value in MonthAliases.MAY:
             month = 5
-        elif month_value in MonthConstants.JUNE:
+        elif month_value in MonthAliases.JUNE:
             month = 6
-        elif month_value in MonthConstants.JULY:
+        elif month_value in MonthAliases.JULY:
             month = 7
-        elif month_value in MonthConstants.AUGUST:
+        elif month_value in MonthAliases.AUGUST:
             month = 8
-        elif month_value in MonthConstants.SEPTEMBER:
+        elif month_value in MonthAliases.SEPTEMBER:
             month = 9
-        elif month_value in MonthConstants.OCTOBER:
+        elif month_value in MonthAliases.OCTOBER:
             month = 10
-        elif month_value in MonthConstants.NOVEMBER:
+        elif month_value in MonthAliases.NOVEMBER:
             month = 11
-        elif month_value in MonthConstants.DECEMBER:
+        elif month_value in MonthAliases.DECEMBER:
             month = 12
         else:
-            raise NotImplementedError  # TODO: some better error here
+            raise InvalidMonth
         return month
 
     @staticmethod
@@ -172,8 +190,97 @@ class Recaller(commands.Cog, Disambiguator):
         elif current_year >= int(year_value):
             year = int(year_value)
         else:
-            raise NotImplementedError  # TODO: some better error here
+            raise InvalidYear
         return year
+
+    @staticmethod
+    async def convert_to_24_hour_time(hour: int, period: int) -> int:
+        if TimeConstants.START_MERIDIEM_HOUR <= hour <= TimeConstants.END_MERIDIEM_HOUR:
+            if period == PeriodConstants.ANTE_MERIDIEM:
+                if hour == TimeConstants.END_MERIDIEM_HOUR:
+                    hour -= TimeConstants.END_MERIDIEM_HOUR
+            else:
+                if hour != TimeConstants.END_MERIDIEM_HOUR:
+                    hour += TimeConstants.END_MERIDIEM_HOUR
+        else:
+            raise InvalidHour
+        return hour
+
+    @staticmethod
+    async def convert_to_standard_time_zone(hour: int, time_zone: int) -> int:
+        ...
+
+    @remind.error
+    async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):
+        if isinstance(error, commands.UserInputError):
+            if isinstance(error, InvalidDay):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Day',
+                    description=f'...',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidHour):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Hour',
+                    description=f'The given hour is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidMinute):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Minute',
+                    description=f'The given minute is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidMonth):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Month',
+                    description=f'The given month does not match any acceptable month indicator.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidTimeZone):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Time Zone',
+                    description=f'The given time zone is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidYear):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Invalid Year',
+                    description=f'The given year is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, commands.MissingRequiredArgument):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Missing Required Argument',
+                    description=f'The given time zone is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Remind): User Input Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
+        elif isinstance(error, commands.CommandInvokeError):
+            if isinstance(error.original, asyncio.TimeoutError):
+                error_embed = discord.Embed(
+                    title='Error (Remind): Disambiguation Timeout',
+                    description='You didn\'t supply a valid integer quickly enough.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Remind): Command Invoke Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Remind): Miscellaneous Error',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=ColorConstants.ERROR_RED
+            )
+        await ctx.send(embed=error_embed)
 
     # TODO: take from the following what I want and likely trash most of it.
     async def select_time(self, ctx: commands.Context, reminder_time):
@@ -205,11 +312,11 @@ class Recaller(commands.Cog, Disambiguator):
                                                                   color=ColorConstants.ERROR_RED)
                         await ctx.send(embed=invalid_time_format_embed)
                     else:
-                        hours, minutes = await self.convert_to_military_time(ctx, hours, minutes, period)
+                        # hours, minutes = await self.convert_to_military_time(ctx, hours, minutes, period)
                         hours, minutes = await self.convert_to_standard_time(ctx, hours, minutes, time_zone)
                 elif reminder_time[1] in self.twelve_hour_periods:
                     period: str = full_time[1].lower()
-                    hours, minutes = self.convert_to_military_time(ctx, hours, minutes, period)
+                    # hours, minutes = self.convert_to_military_time(ctx, hours, minutes, period)
                 elif reminder_time[1] in self.time_zones:
                     time_zone: str = full_time[1].lower()
                     hours, minutes = self.convert_to_standard_time(ctx, hours, minutes, time_zone)
@@ -219,22 +326,6 @@ class Recaller(commands.Cog, Disambiguator):
                     # TIME: "12:00 [P.M.] [EST]"
                     # DATE: "4 January 2019"
                 # TODO: handle dates
-            return hours, minutes
-
-    @staticmethod
-    async def convert_to_military_time(ctx: commands.Context, hours: int, minutes: int, period: str) -> tuple:
-        try:
-            assert (0 < hours <= 12 and 0 <= minutes <= 59), 'Function only accepts valid twelve-hour times.'
-        except AssertionError:
-            invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time',
-                                               description='You didn\'t give a valid numerical time.',
-                                               color=ColorConstants.ERROR_RED)
-            await ctx.send(embed=invalid_time_embed)
-        else:
-            if period in ['pm', 'p.m'] and hours != 12:
-                hours += 12
-            elif period in ['am', 'a.m.'] and hours == 12:
-                hours = 0
             return hours, minutes
 
     # converts time zone to a standard.

@@ -116,12 +116,21 @@ class TimeZone(Enum, init='value aliases'):
         return highest_zone_value
 
 
-class HourConstants(NamedConstant):
+class DateConstants(NamedConstant):
+    FIRST_DAY_OF_MONTH = 1
+    LEAP_YEAR_MODULO = 4
+
+
+class TimeConstants(NamedConstant):
     START_MINUTE = 0
     END_MINUTE = 59
+    START_HOUR = 0
+    START_MERIDIEM_HOUR = 1
+    END_MERIDIEM_HOUR = 12
+    END_HOUR = 23
 
 
-class MonthConstants(NamedConstant):
+class MonthAliases(NamedConstant):
     JANUARY = ('January', 'Jan', '1')
     FEBRUARY = ('February', 'Feb', '2')
     MARCH = ('March', 'Mar', '3')
@@ -134,6 +143,22 @@ class MonthConstants(NamedConstant):
     OCTOBER = ('October', 'Oct', '10')
     NOVEMBER = ('November', 'Nov', '11')
     DECEMBER = ('December', 'Dec', '12')
+
+
+class MonthConstants(Enum, init='value number_of_days'):
+    JANUARY = 1, 31
+    FEBRUARY = 2, 28
+    MARCH = 3, 31
+    APRIL = 4, 30
+    MAY = 5, 31
+    JUNE = 6, 30
+    JULY = 7, 31
+    AUGUST = 8, 31
+    SEPTEMBER = 9, 31
+    OCTOBER = 10, 31
+    NOVEMBER = 11, 30
+    DECEMBER = 12, 31
+    LEAP_YEAR_FEBRUARY = 13, 29
 
 
 class PeriodConstants:
