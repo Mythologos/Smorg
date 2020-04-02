@@ -23,14 +23,13 @@ class Recaller(commands.Cog, Disambiguator):
         self.time_zones: list = []
         for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
             self.time_zones.append(TimeZone(i))
-        self.twelve_hour_periods: tuple = ('a.m.', 'am', 'p.m.', 'pm')
 
     # TODO: documentation...
     @commands.command(description=HelpDescriptions.REMIND)
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:
         reminder_response = "Your reminder has been successfully processed! It'll be sent at the specified time."
-        await self.handle_time(mentionable, reminder_time, message)
+        await self.handle_time(ctx, mentionable, reminder_time, message)
         current_guild = ctx.guild
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild.id)
         current_channel = self.bot.get_channel(reminder_channel_id)
@@ -52,10 +51,13 @@ class Recaller(commands.Cog, Disambiguator):
     # async def timetable(self, ctx: commands.Context):
         # raise NotImplementedError
 
-    async def handle_time(self, mentionable: Union[discord.Member, discord.Role], reminder_time: str,
-                          message: str) -> None:
+    async def handle_time(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
+                          reminder_time: str, message: str) -> None:
         parsed_time = await self.parse_time(reminder_time)
-        validated_time: dict = await self.validate_time(parsed_time)
+        validated_time: dict = await self.validate_time(ctx, parsed_time)
+        # create datetime object
+        # send to DB with relevant information
+        # send message verifying that the act occurred
 
     @staticmethod
     async def parse_time(reminder_time: str):
@@ -63,7 +65,7 @@ class Recaller(commands.Cog, Disambiguator):
             r'(?:(?P<time>'
             r'(?P<hour>[012][\d])(?:[:]'
             r'(?P<minute>[012345][\d])(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)?)'
-            r'(?:[\s](?P<time_zone>[\dA-Z+\-]{3,6}))?'
+            r'(?:[\s](?P<time_zone>[\da-zA-Z+\-]{3,6}))?'
             r'(?:[;][\s](?P<date>(?P<day>[0123]?[\d])'
             r'(?:[\s](?P<month>Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|'
             r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
@@ -85,11 +87,11 @@ class Recaller(commands.Cog, Disambiguator):
     # if specified, it'll be determined using timekeeper and disambiguated with disambiguator if need be.
     # Minutes are not required. The default is on the hour (AKA 0 minutes)
 
-    async def validate_time(self, reminder_time) -> dict:
-        period = await self.validate_period(reminder_time.group('post_value'), reminder_time.group('ante_value'))
-        time_zone = await self.validate_time_zone(reminder_time.group('time_zone'))
-        month = await self.validate_month(reminder_time.group('month'))
-        year = await self.validate_year(reminder_time.group('year'))
+    async def validate_time(self, ctx: commands.Context, reminder_time) -> dict:
+        period: int = await self.validate_period(reminder_time.group('post_value'), reminder_time.group('ante_value'))
+        time_zone: int = await self.validate_time_zone(ctx, reminder_time.group('time_zone'))
+        month: int = await self.validate_month(reminder_time.group('month'))
+        year: int = await self.validate_year(reminder_time.group('year'))
         return {
             'hour': await self.validate_hour(reminder_time.group('hour'), period, time_zone),
             'minute': await self.validate_minute(reminder_time.group('minute')),
@@ -129,13 +131,23 @@ class Recaller(commands.Cog, Disambiguator):
             period = PeriodConstants.POST_MERIDIEM
         return period
 
-    @staticmethod
-    async def validate_time_zone(time_zone_value: str):
-        ...
-        return ...
+    async def validate_time_zone(self, ctx: commands.Context, time_zone_value: str) -> int:
+        if not time_zone_value:
+            time_zone = ...  # default time zone
+        else:
+            matching_time_zones: list = await self.get_time_zones_by_alias(time_zone_value)
+            if matching_time_zones:
+                if len(matching_time_zones) > 1:
+                    chosen_time_zone_index: int = await Disambiguator.disambiguate(self.bot, ctx, matching_time_zones)
+                    time_zone = matching_time_zones[chosen_time_zone_index].value
+                else:
+                    time_zone = matching_time_zones[0].value
+            else:
+                raise InvalidTimeZone
+        return time_zone
 
     @staticmethod
-    async def validate_day(day_value: str, month, year):
+    async def validate_day(day_value: str, month, year) -> int:
         if not day_value:
             day: int = datetime.date.today().day
         else:
@@ -151,7 +163,7 @@ class Recaller(commands.Cog, Disambiguator):
         return day
 
     @staticmethod
-    async def validate_month(month_value: str):
+    async def validate_month(month_value: str) -> int:
         if not month_value:
             month: int = datetime.date.today().month
         elif month_value in MonthAliases.JANUARY:
@@ -198,10 +210,10 @@ class Recaller(commands.Cog, Disambiguator):
         if TimeConstants.START_MERIDIEM_HOUR <= hour <= TimeConstants.END_MERIDIEM_HOUR:
             if period == PeriodConstants.ANTE_MERIDIEM:
                 if hour == TimeConstants.END_MERIDIEM_HOUR:
-                    hour -= TimeConstants.END_MERIDIEM_HOUR
+                    hour -= 12
             else:
                 if hour != TimeConstants.END_MERIDIEM_HOUR:
-                    hour += TimeConstants.END_MERIDIEM_HOUR
+                    hour += 12
         else:
             raise InvalidHour
         return hour
@@ -210,13 +222,17 @@ class Recaller(commands.Cog, Disambiguator):
     async def convert_to_standard_time_zone(hour: int, time_zone: int) -> int:
         ...
 
+    async def get_time_zones_by_alias(self, given_alias):
+        selected_time_zones: list = [gmt_zone for gmt_zone in self.time_zones if given_alias in gmt_zone]
+        return selected_time_zones
+
     @remind.error
     async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):
         if isinstance(error, commands.UserInputError):
             if isinstance(error, InvalidDay):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Day',
-                    description=f'...',
+                    description=f'The given day is invalid.',
                     color=ColorConstants.ERROR_RED
                 )
             elif isinstance(error, InvalidHour):
@@ -234,7 +250,7 @@ class Recaller(commands.Cog, Disambiguator):
             elif isinstance(error, InvalidMonth):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Month',
-                    description=f'The given month does not match any acceptable month indicator.',
+                    description=f'The given month is invalid.',
                     color=ColorConstants.ERROR_RED
                 )
             elif isinstance(error, InvalidTimeZone):
@@ -282,56 +298,10 @@ class Recaller(commands.Cog, Disambiguator):
             )
         await ctx.send(embed=error_embed)
 
-    # TODO: take from the following what I want and likely trash most of it.
-    async def select_time(self, ctx: commands.Context, reminder_time):
-        datetime_components = reminder_time.split(',')
-        try:
-            full_time: list = datetime_components[0].split(' ')
-            numerical_time: list = full_time[0].split(':')
-            hours: int = int(numerical_time[0])
-            minutes: int = int(numerical_time[1])
-        except ValueError:
-            invalid_time_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
-                                               description='You didn\'t give a time with correctly-formatted, ' +
-                                                           'numerical hours and minutes.',
-                                               color=ColorConstants.ERROR_RED)
-            await ctx.send(embed=invalid_time_embed)
-        else:
-            if len(full_time) > 1:
-                if len(full_time) > 2:
-                    try:
-                        period: str = full_time[1].lower()
-                        time_zone: str = full_time[2].lower()
-                        assert (period in self.twelve_hour_periods and
-                                time_zone in self.get_time_zone_aliases()), \
-                            'Time period and time zone must be recognizable to the program.'
-                    except AssertionError:
-                        invalid_time_format_embed = discord.Embed(title='Error (Remind): Invalid Time Formatting',
-                                                                  description='You didn\'t give a time with ' +
-                                                                              'a valid time zone or time period.',
-                                                                  color=ColorConstants.ERROR_RED)
-                        await ctx.send(embed=invalid_time_format_embed)
-                    else:
-                        # hours, minutes = await self.convert_to_military_time(ctx, hours, minutes, period)
-                        hours, minutes = await self.convert_to_standard_time(ctx, hours, minutes, time_zone)
-                elif reminder_time[1] in self.twelve_hour_periods:
-                    period: str = full_time[1].lower()
-                    # hours, minutes = self.convert_to_military_time(ctx, hours, minutes, period)
-                elif reminder_time[1] in self.time_zones:
-                    time_zone: str = full_time[1].lower()
-                    hours, minutes = self.convert_to_standard_time(ctx, hours, minutes, time_zone)
-                else:
-                    ...
-                    # TODO: handle time formatting.
-                    # TIME: "12:00 [P.M.] [EST]"
-                    # DATE: "4 January 2019"
-                # TODO: handle dates
-            return hours, minutes
-
     # converts time zone to a standard.
     # TODO: instead of GMT +/- 0, convert to database time zone?
     async def convert_to_standard_time(self, ctx: commands.Context, hours: int, minutes: int, time_zone):
-        retrieved_time_zones: list = self.get_time_zones_by_alias(time_zone)
+        retrieved_time_zones: list = []  # self.get_time_zones_by_alias(time_zone)
         chosen_time_zone_index: int = await Disambiguator.disambiguate(self.bot, ctx, retrieved_time_zones)
         time_zone_number = retrieved_time_zones[chosen_time_zone_index].value
         while time_zone_number != 0:
@@ -346,7 +316,3 @@ class Recaller(commands.Cog, Disambiguator):
     def get_time_zone_aliases(self):
         time_zone_aliases = set(alias for gmt_zone in self.time_zones for alias in gmt_zone.aliases)
         return time_zone_aliases
-
-    def get_time_zones_by_alias(self, given_alias):
-        selected_time_zones: list = [gmt_zone for gmt_zone in self.time_zones if given_alias in gmt_zone]
-        return selected_time_zones

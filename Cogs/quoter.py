@@ -1,6 +1,7 @@
 # TODO: documentation
 # TODO: possibly synthesize quote and engrave portions to reduce code duplication?
 # TODO: maybe change yoink's name to 'fetch'? add other things to it?
+# TODO: get a method to display quotes from the database per Guild or per author.
 
 import discord
 from discord.ext import commands
