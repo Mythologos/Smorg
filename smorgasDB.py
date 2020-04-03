@@ -15,6 +15,7 @@ from sqlalchemy import Column, ForeignKey
 from sqlalchemy import BigInteger, DateTime, SmallInteger, String
 
 import secretbord
+from Cogs.Helpers.Enumerators.universalist import DiscordConstants
 
 
 engine = sqlalchemy.create_engine(
@@ -61,7 +62,7 @@ class Quote(BaseAddition, Base):
     __tablename__ = 'quotes'
 
     # Attributes:
-    author = Column(String(100), nullable=True)
+    author = Column(String(DiscordConstants.MAX_ROLE_LENGTH), nullable=True)
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), nullable=False)
     quote_id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
     text = Column(String, nullable=False)
@@ -124,8 +125,8 @@ class Reminder(Base, BaseAddition):
 
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), primary_key=True, nullable=False)
     mentionable = Column(String(100), primary_key=True, nullable=False)
-    reminder_datetime = Column(DateTime(timezone=True), nullable=False)
-    reminder_text = Column(String)
+    reminder_datetime = Column(DateTime(timezone=True), primary_key=True, nullable=False)
+    reminder_text = Column(String(DiscordConstants.MAX_MESSAGE_LENGTH), nullable=True)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())

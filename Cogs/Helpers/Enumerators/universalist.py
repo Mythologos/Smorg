@@ -2,6 +2,8 @@ from aenum import NamedConstant
 
 
 class DiscordConstants(NamedConstant):
+    MAX_MEMBER_NAME_LENGTH = 32
+    MAX_ROLE_LENGTH = 100
     MAX_MESSAGE_LENGTH = 2000
     MAX_EMBED_TITLE = 256
     MAX_EMBED_DESCRIPTION = 2048
@@ -22,6 +24,7 @@ class ColorConstants(NamedConstant):
 
 
 class HelpDescriptions(NamedConstant):
+    DISPLAY = "WIP"
     FORGET = "This command allows someone to delete a reminder. To do so, it accepts arguments of a role and a time. " \
              "It deletes a reminder corresponding to that role and time."
     GOVERN = "This command tells Smorg what channel in which it should perform some task. " \

@@ -42,7 +42,7 @@ class Recaller(commands.Cog):
     async def forget(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], reminder_time: str):
         raise NotImplementedError
 
-    # TODO: documentation... lists server reminder
+    # TODO: documentation... lists server reminders
     # do I want this command name? is this the best command name?
     # @commands.command(description=HelpDescriptions.TIMETABLE)
     # async def timetable(self, ctx: commands.Context):
@@ -60,6 +60,7 @@ class Recaller(commands.Cog):
             minute=validated_time['minute'],
             tzinfo=validated_time['time_zone']
         )
+        await self.validate_complete_datetime(reminder_datetime, validated_time['time_zone'])
         Reminder.create_reminder_with(guild_id, mentionable, message, reminder_datetime)
 
     @staticmethod
@@ -72,7 +73,7 @@ class Recaller(commands.Cog):
             r'(?:[;][\s](?P<date>(?P<day>[0123]?[\d])'
             r'(?:[\s](?P<month>Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|'
             r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
-            r'(?:[\s](?P<year>[\d]{0,4}))?)?))?)'
+            r'(?:[\s](?P<year>[\d]{0,4})?))?))?)'
         )
         return re.match(datetime_pattern, reminder_time)
 
@@ -107,7 +108,7 @@ class Recaller(commands.Cog):
         if TimeConstants.START_HOUR <= int(hour_value) <= TimeConstants.END_HOUR:
             hour = int(hour_value)
             if period:
-                hour = self.convert_to_24_hour_time(hour, period)
+                hour = await self.convert_to_24_hour_time(hour, period)
         else:
             raise InvalidHour
         return hour
@@ -124,7 +125,7 @@ class Recaller(commands.Cog):
 
     @staticmethod
     async def validate_period(post_value: str, ante_value: str) -> int:
-        if not (post_value and ante_value):
+        if not (post_value or ante_value):
             period = PeriodConstants.SINE_MERIDIEM
         elif ante_value:
             period = PeriodConstants.ANTE_MERIDIEM
@@ -132,17 +133,15 @@ class Recaller(commands.Cog):
             period = PeriodConstants.POST_MERIDIEM
         return period
 
-    # Am I using time_delta wrong with time zones?
-    # Seems like it pushed me back four hours regardless of the DB's time zone. Not sure where the issue lies yet.
     async def validate_time_zone(self, time_zone_value: str) -> datetime.timezone:
         if not time_zone_value:
             # TODO: unsure of what to choose for default...
             time_delta: datetime.timedelta = datetime.timedelta(0)
             time_zone: datetime.timezone = datetime.timezone(time_delta, name="UTC")
         else:
-            matching_time_zones: list = await self.get_time_zones_by_alias(time_zone_value)
-            if matching_time_zones:
-                time_delta = datetime.timedelta(hours=matching_time_zones[0].value)
+            matching_time_zone: Union[TimeZone, None] = await self.get_time_zone_by_alias(time_zone_value)
+            if matching_time_zone:
+                time_delta = datetime.timedelta(hours=matching_time_zone.value)
                 time_zone = datetime.timezone(time_delta, name=time_zone_value)
             else:
                 raise InvalidTimeZone
@@ -201,10 +200,8 @@ class Recaller(commands.Cog):
         current_year = datetime.date.today().year
         if not year_value:
             year: int = current_year
-        elif current_year >= int(year_value):
-            year = int(year_value)
         else:
-            raise InvalidYear
+            year = int(year_value)
         return year
 
     @staticmethod
@@ -220,9 +217,28 @@ class Recaller(commands.Cog):
             raise InvalidHour
         return hour
 
-    async def get_time_zones_by_alias(self, given_alias):
-        selected_time_zones: list = [gmt_zone for gmt_zone in self.time_zones if given_alias in gmt_zone]
-        return selected_time_zones
+    async def get_time_zone_by_alias(self, given_alias):
+        selected_time_zone: Union[TimeZone, None] = None
+        for zone in self.time_zones:
+            if given_alias in zone.aliases:
+                selected_time_zone = zone
+                break
+        return selected_time_zone
+
+    @staticmethod
+    async def validate_complete_datetime(complete_datetime: datetime.datetime, time_zone) -> None:
+        today = datetime.datetime.now(time_zone)
+        if complete_datetime < today:
+            if complete_datetime.year < today.year:
+                raise InvalidYear
+            elif complete_datetime.month < today.month:
+                raise InvalidMonth
+            elif complete_datetime.day < today.day:
+                raise InvalidDay
+            elif complete_datetime.hour < today.hour:
+                raise InvalidHour
+            else:
+                raise InvalidMinute
 
     @remind.error
     async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):

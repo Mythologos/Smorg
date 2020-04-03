@@ -6,11 +6,10 @@ from discord.ext import commands
 from typing import Callable
 
 from smorgasDB import Guild
-from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
-class Arranger(commands.Cog, Disambiguator):
+class Arranger(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
