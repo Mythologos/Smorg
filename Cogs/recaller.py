@@ -7,7 +7,7 @@ import re
 from discord.ext import commands
 from typing import Union
 
-from smorgasDB import Guild
+from smorgasDB import Guild, Reminder
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants, \
     TimeConstants, TimeZone
@@ -26,9 +26,9 @@ class Recaller(commands.Cog):
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:
         reminder_response = "Your reminder has been successfully processed! It'll be sent at the specified time."
-        await self.handle_time(ctx, mentionable, reminder_time, message)
-        current_guild = ctx.guild
-        reminder_channel_id = Guild.get_reminder_channel_by(current_guild.id)
+        current_guild_id = ctx.guild.id
+        await self.handle_time(current_guild_id, mentionable.mention, reminder_time, message)
+        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(reminder_channel_id)
         await current_channel.send(reminder_response)
 
@@ -48,19 +48,25 @@ class Recaller(commands.Cog):
     # async def timetable(self, ctx: commands.Context):
         # raise NotImplementedError
 
-    async def handle_time(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
+    async def handle_time(self, guild_id: int, mentionable: Union[discord.Member, discord.Role],
                           reminder_time: str, message: str) -> None:
         parsed_time = await self.parse_time(reminder_time)
         validated_time: dict = await self.validate_time(parsed_time)
-        # create datetime object
-        # send to DB with relevant information
-        # send message verifying that the act occurred
+        reminder_datetime: datetime.datetime = datetime.datetime(
+            year=validated_time['year'],
+            month=validated_time['month'],
+            day=validated_time['day'],
+            hour=validated_time['hour'],
+            minute=validated_time['minute'],
+            tzinfo=validated_time['time_zone']
+        )
+        Reminder.create_reminder_with(guild_id, mentionable, message, reminder_datetime)
 
     @staticmethod
     async def parse_time(reminder_time: str):
         datetime_pattern = re.compile(
             r'(?:(?P<time>'
-            r'(?P<hour>[012][\d])(?:[:]'
+            r'(?P<hour>[012]?[\d])(?:[:]'
             r'(?P<minute>[012345][\d])(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)?)'
             r'(?:[\s](?P<time_zone>[\da-zA-Z+\-]{3,6}))?'
             r'(?:[;][\s](?P<date>(?P<day>[0123]?[\d])'
@@ -85,7 +91,7 @@ class Recaller(commands.Cog):
     # Minutes are not required. The default is on the hour (AKA 0 minutes)
 
     async def validate_time(self, reminder_time) -> dict:
-        period: int = await self.validate_period(reminder_time.group('post_value'), reminder_time.group('ante_value'))
+        period: int = await self.validate_period(reminder_time.group('post'), reminder_time.group('ante'))
         month: int = await self.validate_month(reminder_time.group('month'))
         year: int = await self.validate_year(reminder_time.group('year'))
         return {
@@ -126,6 +132,8 @@ class Recaller(commands.Cog):
             period = PeriodConstants.POST_MERIDIEM
         return period
 
+    # Am I using time_delta wrong with time zones?
+    # Seems like it pushed me back four hours regardless of the DB's time zone. Not sure where the issue lies yet.
     async def validate_time_zone(self, time_zone_value: str) -> datetime.timezone:
         if not time_zone_value:
             # TODO: unsure of what to choose for default...

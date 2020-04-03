@@ -5,13 +5,14 @@ from __future__ import annotations
 
 import sqlalchemy
 import discord
+import datetime
 from typing import Callable
 from discord.ext import commands
 from functools import wraps
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import Column, ForeignKey
-from sqlalchemy import BigInteger, Date, DateTime, SmallInteger, String, Time
+from sqlalchemy import BigInteger, DateTime, SmallInteger, String
 
 import secretbord
 
@@ -122,10 +123,9 @@ class Reminder(Base, BaseAddition):
     __tablename__ = 'reminders'
 
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), primary_key=True, nullable=False)
-    tag = Column(String(100), primary_key=True, nullable=False)
-    tag_text = Column(String)
-    reminder_date = Column(Date, nullable=False)
-    reminder_time = Column(Time, nullable=False)
+    mentionable = Column(String(100), primary_key=True, nullable=False)
+    reminder_datetime = Column(DateTime(timezone=True), nullable=False)
+    reminder_text = Column(String)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())
@@ -135,14 +135,15 @@ class Reminder(Base, BaseAddition):
 
     # Methods:
     def __repr__(self) -> str:
-        return f'<Guild(guild_id: {self.guild_id}, tag: {self.tag}, tag_text: {self.tag_text}, ' \
-               f'reminder_date: {self.reminder_date}, reminder_time: {self.reminder_time}, ' \
+        return f'<Guild(guild_id: {self.guild_id}, tag: {self.mentionable}, tag_text: {self.reminder_text}, ' \
+               f'reminder_datetime: {self.reminder_datetime}, ' \
                f'created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     @staticmethod
     @BaseAddition.session_method
-    def create_reminder_with(method_session: Session, g_id: int, tag: str, tag_text: str, date, time) -> None:
-        new_guild = Reminder(guild_id=g_id, tag=tag, tag_text=tag_text, reminder_date=date, reminder_time=time)
+    def create_reminder_with(method_session: Session, g_id: int, mentionable: str, r_text: str,
+                             r_datetime: datetime.datetime) -> None:
+        new_guild = Reminder(guild_id=g_id, mentionable=mentionable, reminder_text=r_text, reminder_datetime=r_datetime)
         method_session.add(new_guild)
         method_session.commit()
 
@@ -175,7 +176,7 @@ class Guild(Base, BaseAddition):
 
     # Relationships:
     quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild")
-    reminders = relationship("Reminder", order_by=[Reminder.reminder_date, Reminder.reminder_time],
+    reminders = relationship("Reminder", order_by=[Reminder.reminder_datetime],
                              back_populates="guild")
 
     # Methods:

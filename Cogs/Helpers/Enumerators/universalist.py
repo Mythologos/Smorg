@@ -47,6 +47,7 @@ class HelpDescriptions(NamedConstant):
            "^ (exponentiation), parentheses, floor(), ceiling(), abs(), and sqrt() are allowed. " \
            "Quoted, a description of what the roll was for may be included next. " \
            "The result is posted either in a set gamble channel or where the die was rolled."
+    REVISE = "WIP"
     SUPPORT = "This command retrieves the menu below shown here."
     TIMETABLE = "WIP"
     TRANSLATE = "This command translates text of one set of characters to another set of characters. " \
