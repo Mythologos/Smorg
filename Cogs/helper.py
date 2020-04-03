@@ -2,6 +2,7 @@
 
 import discord
 from discord.ext import commands
+from typing import Optional
 
 from smorgasDB import Guild
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
@@ -19,18 +20,29 @@ class Helper(commands.Cog):
         :return: None.
         """
         support_embed = discord.Embed(
-            title='Smorg Support',
+            title='Smorg Support, Page 1',
             description='This bot supports the following commands:',
             color=ColorConstants.VIBRANT_PURPLE
         )
         sorted_commands = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
-        for command in sorted_commands:
-            support_embed.add_field(
-                name=f".{command.name}",
-                value=command.description,
-                inline=False
-            )
-        await ctx.send(embed=support_embed)
+        enumerated_commands = enumerate(sorted_commands)
+        for counter, command in enumerated_commands:
+            if counter and (counter % 25) == 0:
+                print(f"{counter}")
+                await ctx.send(embed=support_embed)
+                support_embed = discord.Embed(
+                    title=f'Smorg Support, Page {(counter // 25) + 1}',
+                    description='This bot also supports these commands:',
+                    color=ColorConstants.VIBRANT_PURPLE
+                )
+            else:
+                support_embed.add_field(
+                    name=f".{command.name}",
+                    value=command.description,
+                    inline=False
+                )
+        else:
+            await ctx.send(embed=support_embed)
 
     @commands.command(description=HelpDescriptions.OBSERVE)
     async def observe(self, ctx: commands.Context, new_prefix: str) -> None:
@@ -39,6 +51,8 @@ class Helper(commands.Cog):
 
     # TODO: add ability to use time instead of a message count;
     # integrates well with history function's optional args
+    # extract time validation from recaller, use as mix-in here.
+    # use Optional from typing here
     # add: last_message_time: str = None, user: str = None
     @commands.command(description=HelpDescriptions.PURGE)
     async def purge(self, ctx: commands.Context, message_count: int = 1):
