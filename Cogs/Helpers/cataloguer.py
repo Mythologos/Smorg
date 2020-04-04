@@ -1,9 +1,6 @@
 # TODO: method to display server's quotes (and by author name)
-# TODO: method to display server's reminders (a general timetable and by role)
+# TODO: method to display server's reminders (a general timetable)
 # TODO: method to display accepted roll syntax mechanics
-# Maybe somehow incorporate this in other Cogs, making this like Disambiguator?
-# That way, I could subclass display to many Cogs without making the functions related to said Cogs
-# separate from their respective modules.
 
 import discord
 from discord.ext import commands

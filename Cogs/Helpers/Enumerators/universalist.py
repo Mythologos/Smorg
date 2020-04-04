@@ -21,6 +21,7 @@ class ColorConstants(NamedConstant):
     HOT_PINK = 0xFF3385
     NEUTRAL_ORANGE = 0xFF6600
     VIBRANT_PURPLE = 0xA901DB
+    CALM_GREEN = 0x0CCC3F
 
 
 class HelpDescriptions(NamedConstant):
