@@ -1,6 +1,5 @@
 # TODO: be sure to add Disambiguator TimeoutError handling
 
-import asyncio
 import discord
 import datetime
 import re
@@ -8,13 +7,14 @@ from discord.ext import commands
 from typing import Union
 
 from smorgasDB import Guild, Reminder
+from Cogs.Helpers.cataloguer import Cataloguer
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants, \
     TimeConstants, TimeZone
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
 
 
-class Recaller(commands.Cog):
+class Recaller(commands.Cog, Cataloguer):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.time_zones: list = []
@@ -291,19 +291,6 @@ class Recaller(commands.Cog):
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
                     color=ColorConstants.ERROR_RED
                 )
-        elif isinstance(error, commands.CommandInvokeError):
-            if isinstance(error.original, asyncio.TimeoutError):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Disambiguation Timeout',
-                    description='You didn\'t supply a valid integer quickly enough.',
-                    color=ColorConstants.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Remind): Command Invoke Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
-                )
         else:
             error_embed = discord.Embed(
                 title='Error (Remind): Miscellaneous Error',
@@ -312,7 +299,28 @@ class Recaller(commands.Cog):
             )
         await ctx.send(embed=error_embed)
 
-    # May be useful for something? Not used in the above, though...
-    async def get_time_zone_aliases(self):
-        time_zone_aliases = set(alias for gmt_zone in self.time_zones for alias in gmt_zone.aliases)
-        return time_zone_aliases
+    # TODO: merge embed-counter setup with other instances of it
+    @Cataloguer.display.command(name='zones')
+    async def zones(self, ctx: commands.Context) -> None:
+        sorted_time_zones = sorted(self.time_zones, key=lambda tz: tz.value)
+        enumerated_time_zones = enumerate(sorted_time_zones)
+        time_zone_embed = discord.Embed(
+            title="Time Zone Aliases by GMT Offset, Page 1",
+            description="The time zones accepted in writing times include:",
+            color=0xFF6600
+        )
+        for counter, time_zone in enumerated_time_zones:
+            alias_string = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
+            if counter and (counter % 25) == 0:
+                await ctx.send(embed=time_zone_embed)
+                time_zone_embed = discord.Embed(
+                    title=f'Time Zone Aliases by GMT Offset, Page {(counter // 25) + 1}',
+                    description='This bot also supports these commands:',
+                    color=ColorConstants.NEUTRAL_ORANGE
+                )
+            time_zone_embed.add_field(
+                name=f"Zone {time_zone.value}",
+                value=alias_string,
+                inline=False
+            )
+        await ctx.send(embed=time_zone_embed)

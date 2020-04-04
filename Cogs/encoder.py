@@ -123,11 +123,13 @@ class Encoder(commands.Cog):
     @commands.group(description=HelpDescriptions.TRANSLATE)
     async def translate(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
+            # TODO: change to raise error, add to error handling
             await ctx.send("An argument for the starting language was not found. Please try again.")
 
     @translate.group(name='alphabet')
     async def from_alphabet(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
+            # TODO: change to raise error, add to error handling
             await ctx.send("An argument for the target language was not found. Please try again.")
 
     @from_alphabet.command(name='morse')

@@ -28,19 +28,17 @@ class Helper(commands.Cog):
         enumerated_commands = enumerate(sorted_commands)
         for counter, command in enumerated_commands:
             if counter and (counter % 25) == 0:
-                print(f"{counter}")
                 await ctx.send(embed=support_embed)
                 support_embed = discord.Embed(
                     title=f'Smorg Support, Page {(counter // 25) + 1}',
                     description='This bot also supports these commands:',
                     color=ColorConstants.VIBRANT_PURPLE
                 )
-            else:
-                support_embed.add_field(
-                    name=f".{command.name}",
-                    value=command.description,
-                    inline=False
-                )
+            support_embed.add_field(
+                name=f".{command.name}",
+                value=command.description,
+                inline=False
+            )
         else:
             await ctx.send(embed=support_embed)
 
