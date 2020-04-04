@@ -5,7 +5,7 @@ from discord.ext import commands
 from typing import Optional
 
 from smorgasDB import Guild
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 
 
 class Helper(commands.Cog):
@@ -25,12 +25,11 @@ class Helper(commands.Cog):
             color=ColorConstants.VIBRANT_PURPLE
         )
         sorted_commands = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
-        enumerated_commands = enumerate(sorted_commands)
-        for counter, command in enumerated_commands:
-            if counter and (counter % 25) == 0:
+        for counter, command in enumerate(sorted_commands):
+            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
                 await ctx.send(embed=support_embed)
                 support_embed = discord.Embed(
-                    title=f'Smorg Support, Page {(counter // 25) + 1}',
+                    title=f'Smorg Support, Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}',
                     description='This bot also supports these commands:',
                     color=ColorConstants.VIBRANT_PURPLE
                 )
@@ -39,8 +38,7 @@ class Helper(commands.Cog):
                 value=command.description,
                 inline=False
             )
-        else:
-            await ctx.send(embed=support_embed)
+        await ctx.send(embed=support_embed)
 
     @commands.command(description=HelpDescriptions.OBSERVE)
     async def observe(self, ctx: commands.Context, new_prefix: str) -> None:

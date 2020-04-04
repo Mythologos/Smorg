@@ -1,11 +1,14 @@
 # TODO: documentation
-# TODO: possibly synthesize quote and engrave portions to reduce code duplication?
+# TODO: possibly synthesize quote and immortalize portions to reduce code duplication?
 # TODO: maybe change yoink's name to 'fetch'? add other things to it?
 # TODO: get a method to display quotes from the database per Guild or per author.
+# TODO: re-evaluate the method by which quotes are stored and retrieved per author. How do I want to handle author?
+# Can it only be roles? Can it be names? What's the best way to keep everything organized and retrievable?
 
 import discord
 from discord.ext import commands
 from random import randint
+from typing import Union
 
 from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
@@ -17,19 +20,25 @@ class Quoter(commands.Cog):
         self.bot = bot
 
     @commands.command(description=HelpDescriptions.QUOTE)
-    async def quote(self, ctx: commands.Context, text: str, author: str = "An Anonymous Intellectual") -> None:
+    async def quote(self, ctx: commands.Context, text: str,
+                    author: Union[discord.Member, str, None] = None) -> None:
         """
         This method receives a quotation and embeds it in its quotation chat.
         :param ctx: The context from which the quotation came.
         :param text: a quote to be embedded (a String).
-        :param author: the name of the author of the quote (a String).
+        :param author: TODO: REWRITE
         :return: None.
         """
         quotation_channel_id = Guild.get_quotation_channel_by(ctx.guild.id)
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
+        if author:
+            if isinstance(author, discord.Member):
+                author = author.name
+            else:
+                author = author.strip()
         quote_response = discord.Embed(
-            title=f'The Words of {author}:',
+            title=f'The Words of {author if author else "An Anonymous Intellectual"}:',
             description=text,
             color=ColorConstants.DEEP_BLUE
         )
@@ -59,21 +68,27 @@ class Quoter(commands.Cog):
         await ctx.send(embed=error_embed)
 
     @commands.command(description=HelpDescriptions.IMMORTALIZE)
-    async def immortalize(self, ctx: commands.Context, text: str, author: str = "A True Legend") -> None:
+    async def immortalize(self, ctx: commands.Context, text: str,
+                          author: Union[discord.Member, str, None] = None) -> None:
         """
         This method receives a quotation and embeds it in its quotation chat.
         It also stores this information in the database.
         :param ctx: The context from which the quotation came.
         :param text: a quote to be embedded (a String).
-        :param author: the name of the author of the quote (a String).
+        :param author: TODO: REWRITE
         :return: None.
         """
         current_guild_id = ctx.guild.id
         quotation_channel_id = Guild.get_quotation_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(quotation_channel_id)
         text = text.strip()
+        if author:
+            if isinstance(author, discord.Member):
+                author = author.name
+            else:
+                author = author.strip()
         quote_response = discord.Embed(
-            title=f'The Masterpiece of {author}:',
+            title=f'The Masterpiece of {author if author else "A True Legend"}:',
             description=text,
             color=ColorConstants.HEAVENLY_YELLOW
         )

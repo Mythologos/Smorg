@@ -4,14 +4,14 @@ import discord
 import datetime
 import re
 from discord.ext import commands
-from typing import Union
+from typing import Optional, Union
 
 from smorgasDB import Guild, Reminder
 from Cogs.Helpers.cataloguer import Cataloguer
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants, \
     TimeConstants, TimeZone
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 
 
 class Recaller(commands.Cog, Cataloguer):
@@ -299,22 +299,20 @@ class Recaller(commands.Cog, Cataloguer):
             )
         await ctx.send(embed=error_embed)
 
-    # TODO: merge embed-counter setup with other instances of it
-    @Cataloguer.display.command(name='zones')
+    @Cataloguer.display.command()
     async def zones(self, ctx: commands.Context) -> None:
         sorted_time_zones = sorted(self.time_zones, key=lambda tz: tz.value)
-        enumerated_time_zones = enumerate(sorted_time_zones)
         time_zone_embed = discord.Embed(
             title="Time Zone Aliases by GMT Offset, Page 1",
             description="The time zones accepted in writing times include:",
-            color=0xFF6600
+            color=ColorConstants.NEUTRAL_ORANGE
         )
-        for counter, time_zone in enumerated_time_zones:
+        for counter, time_zone in enumerate(sorted_time_zones):
             alias_string = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
-            if counter and (counter % 25) == 0:
+            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
                 await ctx.send(embed=time_zone_embed)
                 time_zone_embed = discord.Embed(
-                    title=f'Time Zone Aliases by GMT Offset, Page {(counter // 25) + 1}',
+                    title=f'Time Zone Aliases by GMT Offset, Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}',
                     description='This bot also supports these commands:',
                     color=ColorConstants.NEUTRAL_ORANGE
                 )
@@ -324,3 +322,36 @@ class Recaller(commands.Cog, Cataloguer):
                 inline=False
             )
         await ctx.send(embed=time_zone_embed)
+
+    @Cataloguer.display.command()
+    async def reminders(self, ctx: commands.Context,
+                        mentionable: Optional[Union[discord.Member, discord.Role]] = None) -> None:
+        mention = mentionable.mention if mentionable else ctx.message.author.mention
+        reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
+        reminder_embed: discord.Embed = discord.Embed(
+            name=f"The Reminders of {mentionable.name}, Page 1",
+            description="The upcoming reminders related to this mentionable are:",
+            color=ColorConstants.NEUTRAL_ORANGE  # TODO: maybe change color?
+        )
+        for counter, (reminder_datetime, reminder_message) in enumerate(reminder_list):
+            if counter and counter % DiscordConstants.MAX_EMBED_FIELDS == 0:
+                await ctx.send(embed=reminder_embed)
+                reminder_embed: discord.Embed = discord.Embed(
+                    name=f"The Reminders of {mentionable.name}, Page {(counter // 25) + 1}",
+                    description="Further upcoming reminders related to this mentionable are:",
+                    color=ColorConstants.NEUTRAL_ORANGE  # TODO: maybe change color?
+                )
+            reminder_embed.add_field(
+                name=f"Reminder at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}",
+                value=f"{reminder_message}",
+                inline=False
+            )
+        else:
+            if len(reminder_embed.fields) == 0:
+                today = datetime.datetime.now(tz=datetime.timezone.utc)
+                reminder_embed.add_field(
+                    name=f"Note at {today.strftime(r'%H:%M %Z on %d %b %Y')}",
+                    value="No reminders are available for this mentionable.",
+                    inline=False
+                )
+        await ctx.send(embed=reminder_embed)

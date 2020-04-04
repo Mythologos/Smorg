@@ -1,4 +1,4 @@
-# TODO: overall documentationD
+# TODO: overall documentation
 # TODO: deck of cards.
 
 # Current Agenda:
@@ -75,7 +75,8 @@ class Gambler(commands.Cog, Disambiguator):
                                     f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
         await destination_channel.send(introductory_message)
-        await self.send_dice(verbose_dice, destination_channel)
+        if verbose_dice:
+            await self.send_dice(verbose_dice, destination_channel)
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
                              f"The final result of this roll is: {roll_result}"
@@ -83,24 +84,27 @@ class Gambler(commands.Cog, Disambiguator):
 
     @staticmethod
     async def send_dice(verbose_dice: list, destination_channel: discord.TextChannel) -> None:
-        enumerated_dice = enumerate(verbose_dice, 1)
-        for embed_field_index in range(0, len(verbose_dice), DiscordConstants.MAX_EMBED_FIELDS):
-            verbose_roll_embed = discord.Embed(
-                title=f"Individual Dice Results {1 + (embed_field_index // DiscordConstants.MAX_EMBED_FIELDS)}",
-                description="The results of the individual roll(s) is/are as follows:",
-                color=ColorConstants.NEUTRAL_ORANGE
-            )
-            for index, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerated_dice:
-                verbose_roll_embed.add_field(
-                    name=f"Dice Roll {index}: {raw_roll}",
-                    value=f"**Raw Dice Result:** {unsorted_result}\n"
-                          f"**Final Dice Result:** {sorted_result}\n"
-                          f"**Sum:** {dice_result}",
-                    inline=False
+        verbose_roll_embed = discord.Embed(
+            title=f"Individual Dice Results",
+            description="The results of the individual roll(s) are as follows:",
+            color=ColorConstants.NEUTRAL_ORANGE
+        )
+        for counter, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerate(verbose_dice, 1):
+            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
+                await destination_channel.send(embed=verbose_roll_embed)
+                verbose_roll_embed = discord.Embed(
+                    title=f"Individual Dice Results, Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}",
+                    description="Further individual roll results are as follows:",
+                    color=ColorConstants.NEUTRAL_ORANGE
                 )
-                if len(verbose_roll_embed.fields) == DiscordConstants.MAX_EMBED_FIELDS:
-                    break
-            await destination_channel.send(embed=verbose_roll_embed)
+            verbose_roll_embed.add_field(
+                name=f"Dice Roll {counter + 1}: {raw_roll}",
+                value=f"**Raw Dice Result:** {unsorted_result}\n"
+                        f"**Final Dice Result:** {sorted_result}\n"
+                        f"**Sum:** {dice_result}",
+                inline=False
+            )
+        await destination_channel.send(embed=verbose_roll_embed)
 
     @staticmethod
     async def parse_roll(raw_roll: str):

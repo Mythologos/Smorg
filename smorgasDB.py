@@ -136,8 +136,8 @@ class Reminder(Base, BaseAddition):
 
     # Methods:
     def __repr__(self) -> str:
-        return f'<Guild(guild_id: {self.guild_id}, tag: {self.mentionable}, tag_text: {self.reminder_text}, ' \
-               f'reminder_datetime: {self.reminder_datetime}, ' \
+        return f'<Guild(guild_id: {self.guild_id}, mentionable: {self.mentionable}, ' \
+               f'reminder_datetime: {self.reminder_datetime}, reminder_text: {self.reminder_text}, ' \
                f'created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     @staticmethod
@@ -148,15 +148,12 @@ class Reminder(Base, BaseAddition):
         method_session.add(new_guild)
         method_session.commit()
 
-    # @staticmethod
-    # @BaseAddition.session_method
-    # def get_time_zone(method_session):
-        # time_zone = method_session.execute("SELECT current_setting('TIMEZONE');").fetchall()[0][0]
-        # print(time_zone)
-        # I may have to do a more complex mapping. If the database is just listing by a different
-        # standard than what I am using, maybe I really do have to flesh out time zones.
-        # For now, I could convert to EST; however, I'd really like it to sync up with the database.
-        # If only there was a library function that could get this for me.
+    @staticmethod
+    @BaseAddition.session_method
+    def get_reminders_by(method_session: Session, g_id: int, mention: str) -> list:
+        reminder_list: list = method_session.query(Reminder.reminder_datetime, Reminder.reminder_text) \
+            .filter_by(guild_id=g_id, mentionable=mention)
+        return reminder_list
 
 
 class Guild(Base, BaseAddition):
