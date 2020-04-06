@@ -1,18 +1,20 @@
 # TODO: MODULAR DOCUMENTATION
 # TODO: handle deleted channels case for various tables here
+# TODO: use query for type hints (as items retrieved are query.Query items)
 
 from __future__ import annotations
 
-import sqlalchemy
-import discord
 import datetime
-from typing import Callable
+import discord
+import sqlalchemy
+
 from discord.ext import commands
 from functools import wraps
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, query
 from sqlalchemy import Column, ForeignKey
 from sqlalchemy import BigInteger, DateTime, SmallInteger, String
+from typing import Callable, Union
 
 import secretbord
 from Cogs.Helpers.Enumerators.universalist import DiscordConstants
@@ -75,7 +77,7 @@ class Quote(BaseAddition, Base):
 
     # Methods:
     def __repr__(self):
-        return f'<Guild(author: {self.author}, guild_id: {self.guild_id}, quote_id: {self.quote_id}, ' \
+        return f'<Quote(author: {self.author}, guild_id: {self.guild_id}, quote_id: {self.quote_id}, ' \
                f'text: {self.text}, created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
     # Queries:
@@ -105,6 +107,15 @@ class Quote(BaseAddition, Base):
         new_quote = Quote(author=auth, guild_id=g_id, text=quote)
         method_session.add(new_quote)
         method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
+    def get_quotes_by(method_session: Session, g_id: int, auth: Union[str, None] = None) -> list:
+        if auth:
+            quote_list = method_session.query(Quote.author, Quote.text).filter_by(guild_id=g_id, author=auth)
+        else:
+            quote_list = method_session.query(Quote.author, Quote.text).filter_by(guild_id=g_id)
+        return quote_list
 
     @staticmethod
     @BaseAddition.session_method

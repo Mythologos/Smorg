@@ -1,7 +1,6 @@
 # TODO: documentation
-# TODO: possibly synthesize quote and immortalize portions to reduce code duplication?
+# TODO: synthesize quote and immortalize portions to reduce code duplication?
 # TODO: maybe change yoink's name to 'fetch'? add other things to it?
-# TODO: get a method to display quotes from the database per Guild or per author.
 # TODO: re-evaluate the method by which quotes are stored and retrieved per author. How do I want to handle author?
 # Can it only be roles? Can it be names? What's the best way to keep everything organized and retrievable?
 
@@ -10,9 +9,9 @@ from discord.ext import commands
 from random import randint
 from typing import Union
 
-from smorgasDB import Guild, Quote
 from Cogs.Helpers.checker import Checker
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from smorgasDB import Guild, Quote
 
 
 class Quoter(commands.Cog):

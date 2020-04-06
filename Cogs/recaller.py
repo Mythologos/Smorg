@@ -2,17 +2,17 @@
 
 import discord
 import datetime
-from discord.ext import commands
-from typing import Optional, Union
 
-from smorgasDB import Guild, Reminder
-from Cogs.Helpers.cataloguer import Cataloguer
+from discord.ext import commands
+from typing import Union
+
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from smorgasDB import Guild, Reminder
 
 
-class Recaller(commands.Cog, Cataloguer, Chronologist):
+class Recaller(commands.Cog, Chronologist):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
@@ -42,7 +42,13 @@ class Recaller(commands.Cog, Cataloguer, Chronologist):
     async def handle_time(self, guild_id: int, mentionable: Union[discord.Member, discord.Role],
                           reminder_time: str, message: str) -> None:
         parsed_time = await self.parse_datetime(reminder_time)
-        validated_time: dict = await self.validate_datetime(parsed_time)
+        default_time_zone = datetime.timezone(datetime.timedelta(0), name="UTC")
+        today: datetime.datetime = datetime.datetime.today()
+        validated_time: dict = await self.validate_datetime(
+            parsed_time, default_hour=None, default_minute=0,
+            default_tz=default_time_zone, default_day=today.day,
+            default_month=today.month, default_year=today.year
+        )
         reminder_datetime: datetime.datetime = datetime.datetime(
             year=validated_time['year'],
             month=validated_time['month'],
@@ -129,61 +135,3 @@ class Recaller(commands.Cog, Cataloguer, Chronologist):
                 color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)
-
-    @Cataloguer.display.command()
-    async def zones(self, ctx: commands.Context) -> None:
-        sorted_time_zones = sorted(self.time_zones, key=lambda tz: tz.value)
-        time_zone_embed = discord.Embed(
-            title="Time Zone Aliases by GMT Offset, Page 1",
-            description="The time zones accepted in writing times include:",
-            color=ColorConstants.NEUTRAL_ORANGE
-        )
-        for counter, time_zone in enumerate(sorted_time_zones):
-            alias_string = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
-            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
-                await ctx.send(embed=time_zone_embed)
-                time_zone_embed = discord.Embed(
-                    title=f'Time Zone Aliases by GMT Offset, Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}',
-                    description='This bot also supports these commands:',
-                    color=ColorConstants.NEUTRAL_ORANGE
-                )
-            time_zone_embed.add_field(
-                name=f"Zone {time_zone.value}",
-                value=alias_string,
-                inline=False
-            )
-        await ctx.send(embed=time_zone_embed)
-
-    @Cataloguer.display.command()
-    async def reminders(self, ctx: commands.Context,
-                        mentionable: Optional[Union[discord.Member, discord.Role]] = None) -> None:
-        mention = mentionable.mention if mentionable else ctx.message.author.mention
-        reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
-        reminder_embed: discord.Embed = discord.Embed(
-            name=f"The Reminders of {mentionable.name}, Page 1",
-            description="The upcoming reminders related to this mentionable are:",
-            color=ColorConstants.CALM_GREEN
-        )
-        for counter, (reminder_datetime, reminder_message) in enumerate(reminder_list):
-            if counter and counter % DiscordConstants.MAX_EMBED_FIELDS == 0:
-                await ctx.send(embed=reminder_embed)
-                reminder_embed: discord.Embed = discord.Embed(
-                    name=f"The Reminders of {mentionable.name}, "
-                         f"Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}",
-                    description="Further upcoming reminders related to this member or role are:",
-                    color=ColorConstants.CALM_GREEN
-                )
-            reminder_embed.add_field(
-                name=f"Reminder at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}",
-                value=f"{reminder_message}",
-                inline=False
-            )
-        else:
-            if len(reminder_embed.fields) == 0:
-                today = datetime.datetime.now(tz=datetime.timezone.utc)
-                reminder_embed.add_field(
-                    name=f"Note at {today.strftime(r'%H:%M %Z on %d %b %Y')}",
-                    value="No reminders are available for this member or role.",
-                    inline=False
-                )
-        await ctx.send(embed=reminder_embed)

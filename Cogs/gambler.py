@@ -9,14 +9,16 @@
 import discord
 import asyncio
 import re
+
+from copy import deepcopy
 from discord.ext import commands
 from random import randint
-from copy import deepcopy
+from typing import Match
 
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, InvalidRecipient, MissingParenthesis
-from Cogs.Helpers.Enumerators.croupier import MatchContents, MessageConstants
+from Cogs.Helpers.Enumerators.croupier import MatchContents
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from Cogs.Helpers.yard_shunter import YardShunter
 
@@ -59,7 +61,7 @@ class Gambler(commands.Cog, Disambiguator):
         for match_index, match in enumerate(parsed_roll):
             die_roll: str = match[MatchContents.DIE_ROLL.value]
             if die_roll:
-                parsed_dice = await self.parse_dice(die_roll)
+                parsed_dice: Match = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
                 dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
                 verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
@@ -100,14 +102,14 @@ class Gambler(commands.Cog, Disambiguator):
             verbose_roll_embed.add_field(
                 name=f"Dice Roll {counter + 1}: {raw_roll}",
                 value=f"**Raw Dice Result:** {unsorted_result}\n"
-                        f"**Final Dice Result:** {sorted_result}\n"
-                        f"**Sum:** {dice_result}",
+                      f"**Final Dice Result:** {sorted_result}\n"
+                      f"**Sum:** {dice_result}",
                 inline=False
             )
         await destination_channel.send(embed=verbose_roll_embed)
 
     @staticmethod
-    async def parse_roll(raw_roll: str):
+    async def parse_roll(raw_roll: str) -> list:
         roll_pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
                                   r'(?P<regular_operator>[+\-*/^])|'
                                   r'(?P<grouping_operator>[()])|'
@@ -116,7 +118,7 @@ class Gambler(commands.Cog, Disambiguator):
         return re.findall(roll_pattern, raw_roll)
 
     @staticmethod
-    async def parse_dice(raw_dice: str):
+    async def parse_dice(raw_dice: str) -> Match:
         dice_pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                   r'(?P<die_size>[\d]+)'
                                   r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'

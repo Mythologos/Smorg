@@ -1,12 +1,12 @@
-# TODO: alter time-related functions here so that they can be used more widely, treated as mix-ins.
+# TODO: maybe add checks to each validate function to assure that defaults are appropriate?
 
 import re
 import datetime
-from typing import Union
+from typing import Match, Pattern, Union
 
 from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants,\
     TimeConstants, TimeZone
-from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone
+from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 
 
 class Chronologist:
@@ -19,8 +19,8 @@ class Chronologist:
     # Do I want it to be less discriminating? How can I make this feel "generic" and "usable in different classes"?
     # Is it? Should there be separate parsers for different items (e.g. a time parser, a date parser)?
     @staticmethod
-    async def parse_datetime(reminder_time: str):
-        datetime_pattern = re.compile(
+    async def parse_datetime(datetime_string: str) -> Match:
+        datetime_pattern: Pattern = re.compile(
             r'(?:(?P<time>'
             r'(?P<hour>[012]?[\d])(?:[:]'
             r'(?P<minute>[012345][\d])(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)?)'
@@ -30,37 +30,54 @@ class Chronologist:
             r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
             r'(?:[\s](?P<year>[\d]{0,4})?))?))?)'
         )
-        return re.match(datetime_pattern, reminder_time)
+        return re.match(datetime_pattern, datetime_string)
 
-    # Notes (from Recaller, may not continue to hold true now or in the future):
-    # The above reads the time as a requirement. Can be in 24-hour or 12-hour time;
-    # the period modifier determines which. Period can be ante- or post-meridiem with or without dots.
-    # Dates are not required. If included, days are required first, then months, then years.
-    # If sequential items are not included, the current or nearest item is assumed.
-    # e.g. day = today or tomorrow depending on the time;
-    # month = next month in which the day occurs;
-    # year = next year in which the month occurs.
-    # Validation is required for most items to assure that they have not occurred yet and are legal values.
-    # Months, if in English text, must be converted (just by an if/elif chain or dict) to their numerical values.
-    # Time zone defaults to the one that the DB will hold for a Guild;
-    # if specified, it'll be determined using timekeeper and disambiguated with disambiguator if need be.
-    # Minutes are not required. The default is on the hour (AKA 0 minutes)
+    # TODO: test the following methods
+    @staticmethod
+    async def parse_date(date_string: str) -> Match:
+        date_pattern: Pattern = re.compile(
+            r'(?P<date>(?P<day>[0123]?[\d])'
+            r'(?:[\s](?P<month>Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|'
+            r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
+            r'(?:[\s](?P<year>[\d]{0,4})?))?)'
+        )
+        return re.match(date_pattern, date_string)
 
-    async def validate_datetime(self, reminder_time) -> dict:
+    @staticmethod
+    async def parse_time(time_string: str) -> Match:
+        time_pattern: Pattern = re.compile(
+            r'(?:(?P<time>(?P<hour>[012]?[\d])'
+            r'(?:[:](?P<minute>[012345][\d])'
+            r'(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)?)'
+            r'(?:[\s](?P<time_zone>[\da-zA-Z+\-]{3,6}))?)'
+        )
+        return re.match(time_pattern, time_string)
+
+    async def validate_datetime(self, reminder_time, default_hour: Union[int, None] = None,
+                                default_minute: Union[int, None] = None,
+                                default_tz: Union[datetime.timezone, None] = None, default_day: Union[int, None] = None,
+                                default_month: Union[int, None] = None, default_year: Union[int, None] = None) -> dict:
         period: int = await self.validate_period(reminder_time.group('post'), reminder_time.group('ante'))
-        month: int = await self.validate_month(reminder_time.group('month'))
-        year: int = await self.validate_year(reminder_time.group('year'))
+        month: int = await self.validate_month(reminder_time.group('month'), default_month)
+        year: int = await self.validate_year(reminder_time.group('year'), default_year)
         return {
-            'hour': await self.validate_hour(reminder_time.group('hour'), period),
-            'minute': await self.validate_minute(reminder_time.group('minute')),
-            'time_zone': await self.validate_time_zone(reminder_time.group('time_zone')),
-            'day': await self.validate_day(reminder_time.group('day'), month, year),
+            'hour': await self.validate_hour(reminder_time.group('hour'), period, default_hour),
+            'minute': await self.validate_minute(reminder_time.group('minute'), default_minute),
+            'time_zone': await self.validate_time_zone(reminder_time.group('time_zone'), default_tz),
+            'day': await self.validate_day(reminder_time.group('day'), month, year, default_day),
             'month': month,
             'year': year
         }
 
-    async def validate_hour(self, hour_value: str, period: int):
-        if TimeConstants.START_HOUR <= int(hour_value) <= TimeConstants.END_HOUR:
+    async def validate_hour(self, hour_value: str, period: int, default: Union[int, None]):
+        if not hour_value:
+            if default is not None:
+                hour: int = default
+                if period:
+                    hour = await self.convert_to_24_hour_time(hour, period)
+            else:
+                raise InvalidHour
+        elif TimeConstants.START_HOUR <= int(hour_value) <= TimeConstants.END_HOUR:
             hour = int(hour_value)
             if period:
                 hour = await self.convert_to_24_hour_time(hour, period)
@@ -69,9 +86,12 @@ class Chronologist:
         return hour
 
     @staticmethod
-    async def validate_minute(minute_value: str) -> int:
+    async def validate_minute(minute_value: str, default: Union[int, None]) -> int:
         if not minute_value:
-            minute: int = 0
+            if default is not None:
+                minute: int = default
+            else:
+                raise InvalidMinute
         elif TimeConstants.START_MINUTE <= int(minute_value) <= TimeConstants.END_MINUTE:
             minute = int(minute_value)
         else:
@@ -88,11 +108,13 @@ class Chronologist:
             period = PeriodConstants.POST_MERIDIEM
         return period
 
-    async def validate_time_zone(self, time_zone_value: str) -> datetime.timezone:
+    async def validate_time_zone(self, time_zone_value: str, default: Union[datetime.timezone, None]) -> \
+            datetime.timezone:
         if not time_zone_value:
-            # TODO: unsure of what to choose for default...
-            time_delta: datetime.timedelta = datetime.timedelta(0)
-            time_zone: datetime.timezone = datetime.timezone(time_delta, name="UTC")
+            if default is not None:
+                time_zone: datetime.timezone = default
+            else:
+                raise InvalidTimeZone
         else:
             matching_time_zone: Union[TimeZone, None] = await self.get_time_zone_by_alias(time_zone_value)
             if matching_time_zone:
@@ -103,11 +125,14 @@ class Chronologist:
         return time_zone
 
     @staticmethod
-    async def validate_day(day_value: str, month, year) -> int:
+    async def validate_day(day_value: str, month: int, year: int, default: Union[int, None]) -> int:
         if not day_value:
-            day: int = datetime.date.today().day
+            if default is not None:
+                day: int = default
+            else:
+                raise InvalidDay
         else:
-            if year % 4 and month == MonthConstants.FEBRUARY.value:
+            if year % DateConstants.LEAP_YEAR_MODULO and month == MonthConstants.FEBRUARY.value:
                 this_month: MonthConstants = MonthConstants(13)
             else:
                 this_month = MonthConstants(month)
@@ -119,9 +144,12 @@ class Chronologist:
         return day
 
     @staticmethod
-    async def validate_month(month_value: str) -> int:
+    async def validate_month(month_value: str, default: Union[int, None]) -> int:
         if not month_value:
-            month: int = datetime.date.today().month
+            if default is not None:
+                month: int = default
+            else:
+                raise InvalidMonth
         elif month_value in MonthAliases.JANUARY:
             month: int = 1
         elif month_value in MonthAliases.FEBRUARY:
@@ -151,10 +179,12 @@ class Chronologist:
         return month
 
     @staticmethod
-    async def validate_year(year_value: str):
-        current_year = datetime.date.today().year
+    async def validate_year(year_value: str, default: Union[int, None]) -> int:
         if not year_value:
-            year: int = current_year
+            if default is not None:
+                year: int = default
+            else:
+                raise InvalidYear
         else:
             year = int(year_value)
         return year
@@ -172,7 +202,7 @@ class Chronologist:
             raise InvalidHour
         return hour
 
-    async def get_time_zone_by_alias(self, given_alias):
+    async def get_time_zone_by_alias(self, given_alias: str):
         selected_time_zone: Union[TimeZone, None] = None
         for zone in self.time_zones:
             if given_alias in zone.aliases:
