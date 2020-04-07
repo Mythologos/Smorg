@@ -4,16 +4,17 @@
 import datetime
 import discord
 from discord.ext import commands
-from typing import Any, Callable, Iterable, List, Optional, Union
+from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
+from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import EmptyEmbed
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from smorgasDB import Quote, Reminder
 
 
-class Cataloguer(commands.Cog, Chronologist):
+class Cataloguer(commands.Cog, Chronologist, Embedder):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
@@ -22,46 +23,6 @@ class Cataloguer(commands.Cog, Chronologist):
     async def display(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             raise commands.MissingRequiredArgument
-
-    # Embed Pseudocode:
-    # general method setup:
-    # retrieve input from source
-    # sort data by some criterion
-    # enumerate data
-    # for loop
-    #   if 26th field:
-    #       send embed 1
-    #       create new embed
-    #   add embed field
-    # else
-    #   if embed empty
-    #       send default embed and/or error (undecided)
-    # send final embed
-
-    # TODO: likely move this out of this class, as embedding could be used by things like gambler
-    # for non-display commands.
-    @staticmethod
-    async def embed(ctx: commands.Context, sorted_data: List[Any], initialize_embed: Callable,
-                    initialize_field: Callable, embed_items: Union[dict, None] = None,
-                    field_items: Union[dict, None] = None) -> None:
-        enumerated_data: enumerate = enumerate(sorted_data)
-        data_embed: discord.Embed = await initialize_embed(**embed_items) if embed_items else await initialize_embed()
-        for counter, contents in enumerated_data:
-            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
-                await ctx.send(embed=data_embed)
-                data_embed = await initialize_embed(**embed_items, page_number=counter) if embed_items \
-                    else await initialize_embed(counter)
-            if isinstance(contents, Iterable):
-                name, value, inline = await initialize_field(*contents, **field_items) if field_items \
-                    else await initialize_field(*contents)
-            else:
-                name, value, inline = await initialize_field(contents, **field_items) \
-                    if isinstance(contents, Iterable) else await initialize_field(contents)
-            data_embed.add_field(name=name, value=value, inline=False)
-        else:
-            if len(data_embed.fields) == 0:
-                raise EmptyEmbed
-        await ctx.send(embed=data_embed)
 
     @staticmethod
     async def initialize_zone_embed(page_number: int = 0) -> discord.Embed:
@@ -90,21 +51,6 @@ class Cataloguer(commands.Cog, Chronologist):
         await self.embed(ctx, sorted_time_zones, initialize_embed=self.initialize_zone_embed,
                          initialize_field=self.initialize_zone_field)
 
-    # TODO: see if reminder and quote embeds can be merged, as their code is pretty similar.
-    @staticmethod
-    async def initialize_reminder_embed(reminder_name: str, page_number: int = 0) -> discord.Embed:
-        if not page_number:
-            desc: str = f'The upcoming reminders related to {reminder_name} are:'
-        else:
-            desc = f'Further upcoming reminders related to {reminder_name} are:'
-        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
-        reminder_embed: discord.Embed = discord.Embed(
-            title=f"The Reminders of {reminder_name}, Page {page_number}",
-            description=desc,
-            color=ColorConstants.CALM_GREEN
-        )
-        return reminder_embed
-
     @staticmethod
     async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str) -> tuple:
         name = f"Reminder at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
@@ -118,24 +64,13 @@ class Cataloguer(commands.Cog, Chronologist):
         mention = mentionable.mention if mentionable else ctx.message.author.mention
         reminder_name: str = mentionable.name if mentionable else ctx.message.author.name
         reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
-        embed_items: dict = {"reminder_name": reminder_name}
-        await self.embed(ctx, reminder_list, initialize_embed=self.initialize_reminder_embed,
+        embed_items: dict = {
+            "item_author": reminder_name,
+            "items": "reminders",
+            "color": ColorConstants.CALM_GREEN
+        }
+        await self.embed(ctx, reminder_list, initialize_embed=self.initialize_authored_embed,
                          initialize_field=self.initialize_reminder_field, embed_items=embed_items)
-
-    # TODO: see if reminder and quote embeds can be merged, as their code is pretty similar.
-    @staticmethod
-    async def initialize_quote_embed(quote_author: str, page_number: int = 0) -> discord.Embed:
-        if not page_number:
-            desc: str = f'The quotes authored by {quote_author} are:'
-        else:
-            desc = f'Further quotes authored by {quote_author} are:'
-        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
-        quote_embed: discord.Embed = discord.Embed(
-            title=f"The Quotes of {quote_author}, Page {page_number}",
-            description=desc,
-            color=ColorConstants.HEAVENLY_YELLOW
-        )
-        return quote_embed
 
     @staticmethod
     async def initialize_quote_field(quote_author: str, quote: str, overall_author: str):
@@ -148,11 +83,29 @@ class Cataloguer(commands.Cog, Chronologist):
     async def quotes(self, ctx: commands.Context, author: Union[discord.Member, str, None]) -> None:
         overall_name = author.name if isinstance(author, discord.Member) else author
         quote_list: list = Quote.get_quotes_by(g_id=ctx.guild.id, auth=overall_name)
-        embed_items = {"quote_author": overall_name or ctx.guild.name}
+        embed_items = {
+            "item_author": overall_name or ctx.guild.name,
+            "items": "quotes",
+            "color": ColorConstants.HEAVENLY_YELLOW
+        }
         field_items = {"overall_author": overall_name}
-        await self.embed(ctx, quote_list, initialize_embed=self.initialize_quote_embed,
+        await self.embed(ctx, quote_list, initialize_embed=self.initialize_authored_embed,
                          initialize_field=self.initialize_quote_field, embed_items=embed_items,
                          field_items=field_items)
+
+    @staticmethod
+    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstants, page_number: int = 0):
+        if not page_number:
+            desc: str = f'{items.title()} by {item_author} include:'
+        else:
+            desc = f'Further {items} by {item_author} consist of:'
+        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
+        quote_embed: discord.Embed = discord.Embed(
+            title=f"The {items.title()} of {item_author}, Page {page_number}",
+            description=desc,
+            color=color
+        )
+        return quote_embed
 
     # TODO: handle error where invalid subcommand argument is given (TypeError?)
     @display.error
