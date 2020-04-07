@@ -1,4 +1,3 @@
-# TODO: method to display server's reminders (a general timetable)
 # TODO: method to display accepted roll syntax mechanics
 
 import datetime

@@ -1,5 +1,6 @@
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis
-from Cogs.Helpers.Enumerators.shunters import ShuntAssociativity, ShuntFunction, ShuntOperator, ShuntComparison
+from Cogs.Helpers.Enumerators.tabulator import ComparisonOperator, MathematicalFunction, MathematicalOperator,\
+    OperatorAssociativity
 
 from typing import Union
 
@@ -9,10 +10,10 @@ class YardShunter:
         self.operator_stack: list = []
         self.output_queue: list = []
         self.current_functions: list = []
-        for name, member in ShuntFunction.__members__.items():
+        for name, member in MathematicalFunction.__members__.items():
             self.current_functions.append(member.representation)
         self.current_operators: list = []
-        for name, member in ShuntOperator.__members__.items():
+        for name, member in MathematicalOperator.__members__.items():
             self.current_operators.append(member.symbol)
         self.grouping_operators: tuple = ('(', ')')
         self.signs: tuple = ('+', '-')
@@ -67,14 +68,14 @@ class YardShunter:
             elif complete_tokens[index] in self.current_operators:
                 while self.operator_stack and self.operator_stack[0] != '(':
                     last_was_function = self.operator_stack[0] in self.current_functions
-                    current_has_precedence = await ShuntOperator.compare_precedence(self.operator_stack[0],
-                                                                                    complete_tokens[index],
-                                                                                    ShuntComparison.GREATER_THAN)
-                    last_equal_precedence = await ShuntOperator.compare_precedence(self.operator_stack[0],
-                                                                                   complete_tokens[index],
-                                                                                   ShuntComparison.EQUAL_TO)
-                    last_left_associative = await ShuntOperator.compare_associativity(self.operator_stack[0],
-                                                                                      ShuntAssociativity.LEFT)
+                    current_has_precedence = await \
+                        MathematicalOperator.compare_precedence(self.operator_stack[0], complete_tokens[index],
+                                                                ComparisonOperator.GREATER_THAN)
+                    last_equal_precedence = await \
+                        MathematicalOperator.compare_precedence(self.operator_stack[0], complete_tokens[index],
+                                                                ComparisonOperator.EQUAL_TO)
+                    last_left_associative = await \
+                        MathematicalOperator.compare_associativity(self.operator_stack[0], OperatorAssociativity.LEFT)
                     if last_was_function or current_has_precedence or (last_equal_precedence and last_left_associative):
                         self.output_queue.append(self.operator_stack.pop(0))
                     else:
@@ -103,14 +104,15 @@ class YardShunter:
             if output in self.current_operators:
                 second_operand: int = output_stack.pop(0)
                 first_operand: int = output_stack.pop(0)
-                relevant_operator = await ShuntOperator.get_by_symbol(output)
-                operation_result = await ShuntOperator.evaluate_operator(relevant_operator.value, first_operand,
-                                                                         second_operand)
+                relevant_operator = await MathematicalOperator.get_by_symbol(output)
+                operation_result = await MathematicalOperator.evaluate_operator(relevant_operator.value,
+                                                                                first_operand,
+                                                                                second_operand)
                 output_stack.insert(0, operation_result)
             elif output in self.current_functions:
                 first_operand: int = output_stack.pop(0)
-                relevant_function = await ShuntFunction.get_by_name(output)
-                operation_result = await ShuntFunction.evaluate_function(relevant_function.value, first_operand)
+                relevant_function = await MathematicalFunction.get_by_name(output)
+                operation_result = await MathematicalFunction.evaluate_function(relevant_function.value, first_operand)
                 output_stack.insert(0, operation_result)
             else:
                 output_stack.insert(0, output)
