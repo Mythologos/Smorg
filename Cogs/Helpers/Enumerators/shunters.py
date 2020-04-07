@@ -1,5 +1,6 @@
 # TODO: documentation
 # TODO: fix IDE not reading some items correctly, if possible
+# TODO: perhaps alter the names here, as much of this could be used for general mathematics?
 
 from __future__ import annotations
 

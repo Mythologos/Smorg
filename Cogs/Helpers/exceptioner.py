@@ -51,3 +51,8 @@ class InvalidTimeZone(commands.UserInputError):
 class InvalidYear(commands.UserInputError):
     def __init__(self, message: str = None, *args):
         super().__init__(message=message, *args)
+
+
+class EmptyEmbed(commands.UserInputError):
+    def __init__(self, message: str = None, *args):
+        super().__init__(message=message, *args)
