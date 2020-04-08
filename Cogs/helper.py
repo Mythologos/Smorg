@@ -1,16 +1,19 @@
 # TODO: documentation
 
+import datetime
 import discord
 from discord.ext import commands
 from typing import Optional
 
-from smorgasDB import Guild
+from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
+from smorgasDB import Guild
 
 
-class Helper(commands.Cog):
+class Helper(Chronologist, commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        super().__init__()
 
     @commands.command(name='help', description=HelpDescriptions.SUPPORT)
     async def support(self, ctx: commands.Context):
@@ -45,17 +48,6 @@ class Helper(commands.Cog):
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
 
-    # TODO: add ability to use time instead of a message count;
-    # integrates well with history function's optional args
-    # extract time validation from recaller, use as mix-in here.
-    # use Optional from typing here
-    # add: last_message_time: str = None, user: str = None
-    @commands.command(description=HelpDescriptions.PURGE)
-    async def purge(self, ctx: commands.Context, message_count: int = 1):
-        async for message in ctx.message.channel.history(limit=message_count + 1):
-            await message.delete()
-        await ctx.send(f"You've deleted up to {message_count} messages just now.")
-
     @observe.error
     async def observe_error(self, ctx: commands.Context, error: discord.DiscordException):
         if isinstance(error, commands.MissingRequiredArgument):
@@ -77,3 +69,38 @@ class Helper(commands.Cog):
                 color=ColorConstants.ERROR_RED
             )
         await ctx.send(embed=error_embed)
+
+    # TODO: the remaining issue here is that from_time and to_time can be aware, which doesn't work with history.
+    # This needs to be fixed. This may require a different approach than process_datetime.
+    # It may be possible to make process_datetime more flexible by accepting functional arguments.
+    # For example, it could accept: a parser, a main validator, and a list of other validating functions.
+    # This is alongside one or multiple dicts of optional values.
+    @commands.command(description=HelpDescriptions.PURGE)
+    async def purge(self, ctx: commands.Context, message_count: Optional[int],
+                    from_time: Optional[str], to_time: Optional[str]):
+        today: datetime.datetime = datetime.datetime.today()
+        datetime_defaults: dict = {'default_minute': None, 'default_hour': None, 'default_day': today.day,
+                                   'default_month': today.month, 'default_year': today.year, 'default_tz': None}
+        await ctx.message.delete()
+        if from_time and to_time:
+            start_time: datetime.datetime = await self.process_datetime(from_time, **datetime_defaults)
+            end_time: datetime.datetime = await self.process_datetime(to_time, **datetime_defaults)
+            async for message in ctx.message.channel.history(before=start_time, after=end_time, limit=message_count):
+                await message.delete()
+            await ctx.send(f"You've deleted up to {message_count} messages just now.")
+        elif from_time:
+            start_time: datetime.datetime = await self.process_datetime(from_time, **datetime_defaults)
+            if not message_count:
+                message_count: int = 1
+            async for message in ctx.message.channel.history(after=start_time, limit=message_count):
+                await message.delete()
+            await ctx.send(f"You've deleted up to {message_count} messages just now.")
+        elif message_count:
+            async for message in ctx.message.channel.history(limit=message_count):
+                await message.delete()
+            await ctx.send(f"You've deleted up to {message_count} messages just now.")
+        else:
+            message_count = 1
+            async for message in ctx.message.channel.history(limit=message_count):
+                await message.delete()
+            await ctx.send(f"You've deleted up to {message_count} messages just now.")

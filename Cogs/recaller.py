@@ -41,41 +41,15 @@ class Recaller(commands.Cog, Chronologist):
 
     async def handle_time(self, guild_id: int, mentionable: Union[discord.Member, discord.Role],
                           reminder_time: str, message: str) -> None:
-        parsed_time = await self.parse_datetime(reminder_time)
-        default_time_zone = datetime.timezone(datetime.timedelta(0), name="UTC")
+        default_tz = datetime.timezone(datetime.timedelta(0), name="UTC")
         today: datetime.datetime = datetime.datetime.today()
-        validated_time: dict = await self.validate_datetime(
-            parsed_time, default_hour=None, default_minute=0,
-            default_tz=default_time_zone, default_day=today.day,
+        validated_datetime: datetime.datetime = await self.process_datetime(
+            reminder_time, default_hour=None, default_minute=0,
+            default_tz=default_tz, default_day=today.day,
             default_month=today.month, default_year=today.year
         )
-        reminder_datetime: datetime.datetime = datetime.datetime(
-            year=validated_time['year'],
-            month=validated_time['month'],
-            day=validated_time['day'],
-            hour=validated_time['hour'],
-            minute=validated_time['minute'],
-            tzinfo=validated_time['time_zone']
-        )
-        await self.validate_future_datetime(reminder_datetime, validated_time['time_zone'])
-        Reminder.create_reminder_with(guild_id, mentionable, message, reminder_datetime)
-
-    # TODO: decide whether this should go in chronologist, too, or not.
-    # maybe alter to a predicate?
-    @staticmethod
-    async def validate_future_datetime(complete_datetime: datetime.datetime, time_zone) -> None:
-        today = datetime.datetime.now(time_zone)
-        if complete_datetime < today:
-            if complete_datetime.year < today.year:
-                raise InvalidYear
-            elif complete_datetime.month < today.month:
-                raise InvalidMonth
-            elif complete_datetime.day < today.day:
-                raise InvalidDay
-            elif complete_datetime.hour < today.hour:
-                raise InvalidHour
-            else:
-                raise InvalidMinute
+        await self.validate_future_datetime(validated_datetime, validated_datetime.tzinfo)
+        Reminder.create_reminder_with(guild_id, mentionable, message, validated_datetime)
 
     @remind.error
     async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):

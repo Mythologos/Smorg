@@ -15,9 +15,6 @@ class Chronologist:
         for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
             self.time_zones.append(TimeZone(i))
 
-    # TODO: if this is to be more generic, do I want it to accept hour, minute, etc. in this order?
-    # Do I want it to be less discriminating? How can I make this feel "generic" and "usable in different classes"?
-    # Is it? Should there be separate parsers for different items (e.g. a time parser, a date parser)?
     @staticmethod
     async def parse_datetime(datetime_string: str) -> Match:
         datetime_pattern: Pattern = re.compile(
@@ -53,21 +50,19 @@ class Chronologist:
         )
         return re.match(time_pattern, time_string)
 
-    async def validate_datetime(self, reminder_time, default_hour: Union[int, None] = None,
+    async def validate_datetime(self, parsed_datetime: Match, default_hour: Union[int, None] = None,
                                 default_minute: Union[int, None] = None,
-                                default_tz: Union[datetime.timezone, None] = None, default_day: Union[int, None] = None,
-                                default_month: Union[int, None] = None, default_year: Union[int, None] = None) -> dict:
-        period: int = await self.validate_period(reminder_time.group('post'), reminder_time.group('ante'))
-        month: int = await self.validate_month(reminder_time.group('month'), default_month)
-        year: int = await self.validate_year(reminder_time.group('year'), default_year)
-        return {
-            'hour': await self.validate_hour(reminder_time.group('hour'), period, default_hour),
-            'minute': await self.validate_minute(reminder_time.group('minute'), default_minute),
-            'time_zone': await self.validate_time_zone(reminder_time.group('time_zone'), default_tz),
-            'day': await self.validate_day(reminder_time.group('day'), month, year, default_day),
-            'month': month,
-            'year': year
-        }
+                                default_tz: Union[datetime.timezone, None] = None,
+                                default_day: Union[int, None] = None, default_month: Union[int, None] = None,
+                                default_year: Union[int, None] = None) -> datetime.datetime:
+        period: int = await self.validate_period(parsed_datetime.group('post'), parsed_datetime.group('ante'))
+        month: int = await self.validate_month(parsed_datetime.group('month'), default_month)
+        year: int = await self.validate_year(parsed_datetime.group('year'), default_year)
+        day: int = await self.validate_day(parsed_datetime.group('day'), month, year, default_day)
+        hour: int = await self.validate_hour(parsed_datetime.group('hour'), period, default_hour)
+        minute: int = await self.validate_minute(parsed_datetime.group('minute'), default_minute)
+        time_zone: datetime.timezone = await self.validate_time_zone(parsed_datetime.group('time_zone'), default_tz)
+        return datetime.datetime(minute=minute, hour=hour, day=day, month=month, year=year, tzinfo=time_zone)
 
     async def validate_hour(self, hour_value: str, period: int, default: Union[int, None]):
         if not hour_value:
@@ -108,8 +103,8 @@ class Chronologist:
             period = PeriodConstants.POST_MERIDIEM
         return period
 
-    async def validate_time_zone(self, time_zone_value: str, default: Union[datetime.timezone, None]) -> \
-            datetime.timezone:
+    async def validate_time_zone(self, time_zone_value: str,
+                                 default: Union[datetime.timezone, None]) -> datetime.timezone:
         if not time_zone_value:
             if default is not None:
                 time_zone: datetime.timezone = default
@@ -202,10 +197,37 @@ class Chronologist:
             raise InvalidHour
         return hour
 
-    async def get_time_zone_by_alias(self, given_alias: str):
+    async def get_time_zone_by_alias(self, given_alias: str) -> TimeZone:
         selected_time_zone: Union[TimeZone, None] = None
         for zone in self.time_zones:
             if given_alias in zone.aliases:
                 selected_time_zone = zone
                 break
         return selected_time_zone
+
+    @staticmethod
+    async def validate_future_datetime(aware_datetime: datetime.datetime, time_zone: datetime.tzinfo) -> None:
+        today = datetime.datetime.now(time_zone)
+        if aware_datetime < today:
+            if aware_datetime.year < today.year:
+                raise InvalidYear
+            elif aware_datetime.month < today.month:
+                raise InvalidMonth
+            elif aware_datetime.day < today.day:
+                raise InvalidDay
+            elif aware_datetime.hour < today.hour:
+                raise InvalidHour
+            else:
+                raise InvalidMinute
+
+    async def process_datetime(self, datetime_string: str, default_hour: Union[int, None] = None,
+                               default_minute: Union[int, None] = None,
+                               default_tz: Union[datetime.timezone, None] = None,
+                               default_day: Union[int, None] = None, default_month: Union[int, None] = None,
+                               default_year: Union[int, None] = None) -> datetime.datetime:
+        parsed_datetime: Match = await self.parse_datetime(datetime_string)
+        validated_datetime: datetime.datetime = await self.validate_datetime(
+            parsed_datetime, default_minute=default_minute, default_hour=default_hour, default_day=default_day,
+            default_month=default_month, default_year=default_year, default_tz=default_tz
+        )
+        return validated_datetime
