@@ -70,37 +70,63 @@ class Helper(Chronologist, commands.Cog):
             )
         await ctx.send(embed=error_embed)
 
-    # TODO: the remaining issue here is that from_time and to_time can be aware, which doesn't work with history.
-    # This needs to be fixed. This may require a different approach than process_datetime.
-    # It may be possible to make process_datetime more flexible by accepting functional arguments.
-    # For example, it could accept: a parser, a main validator, and a list of other validating functions.
-    # This is alongside one or multiple dicts of optional values.
+    # TODO: convert start_time and end_time to UTC or set tzinfo to None, if possible
     @commands.command(description=HelpDescriptions.PURGE)
     async def purge(self, ctx: commands.Context, message_count: Optional[int],
                     from_time: Optional[str], to_time: Optional[str]):
         today: datetime.datetime = datetime.datetime.today()
+        additional_validators: tuple = (self.validate_past_datetime,)
         datetime_defaults: dict = {'default_minute': None, 'default_hour': None, 'default_day': today.day,
-                                   'default_month': today.month, 'default_year': today.year, 'default_tz': None}
-        await ctx.message.delete()
-        if from_time and to_time:
-            start_time: datetime.datetime = await self.process_datetime(from_time, **datetime_defaults)
-            end_time: datetime.datetime = await self.process_datetime(to_time, **datetime_defaults)
-            async for message in ctx.message.channel.history(before=start_time, after=end_time, limit=message_count):
-                await message.delete()
-            await ctx.send(f"You've deleted up to {message_count} messages just now.")
-        elif from_time:
-            start_time: datetime.datetime = await self.process_datetime(from_time, **datetime_defaults)
-            if not message_count:
-                message_count: int = 1
-            async for message in ctx.message.channel.history(after=start_time, limit=message_count):
-                await message.delete()
-            await ctx.send(f"You've deleted up to {message_count} messages just now.")
-        elif message_count:
-            async for message in ctx.message.channel.history(limit=message_count):
-                await message.delete()
-            await ctx.send(f"You've deleted up to {message_count} messages just now.")
-        else:
+                                   'default_month': today.month, 'default_year': today.year,
+                                   'default_tz': None}
+        start_time: datetime.datetime = await self.process_temporality(
+            from_time, self.parse_naive_datetime, self.validate_datetime,
+            additional_validators=additional_validators, temporal_defaults=datetime_defaults
+        ) if from_time else None
+
+        end_time: datetime.datetime = await self.process_temporality(
+            to_time, self.parse_naive_datetime, self.validate_datetime,
+            additional_validators=additional_validators, temporal_defaults=datetime_defaults
+        ) if to_time else None
+
+        history_args: dict = {}
+        if start_time:
+            history_args["after"] = start_time
+        if end_time:
+            history_args["before"] = end_time
+        if message_count:
+            history_args["limit"] = message_count
+        elif not (start_time and end_time) and not message_count:
             message_count = 1
-            async for message in ctx.message.channel.history(limit=message_count):
-                await message.delete()
-            await ctx.send(f"You've deleted up to {message_count} messages just now.")
+            history_args["limit"] = message_count
+
+        delete_count: int = 0
+        await ctx.message.delete()
+        async for message in ctx.message.channel.history(**history_args):
+            await message.delete()
+            delete_count += 1
+        else:
+            await ctx.send(f"You've deleted up to {message_count or delete_count} messages just now.")
+
+    # TODO: add errors related to time-handling for purge
+    @purge.error
+    async def observe_error(self, ctx: commands.Context, error: discord.DiscordException):
+        if isinstance(error, commands.MissingRequiredArgument):
+            error_embed = discord.Embed(
+                title='Error (Purge): Missing Required Argument',
+                description='WIP',  # TODO: error message
+                color=ColorConstants.ERROR_RED
+            )
+        elif isinstance(error, commands.ExpectedClosingQuoteError):
+            error_embed = discord.Embed(
+                title='Error (Purge): Unfinished Quotation',
+                description='You forgot a closing quotation mark on one of your times.',
+                color=ColorConstants.ERROR_RED
+            )
+        else:
+            error_embed = discord.Embed(
+                title='Error (Purge)',
+                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                color=ColorConstants.ERROR_RED
+            )
+        await ctx.send(embed=error_embed)

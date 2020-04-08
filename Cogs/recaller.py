@@ -41,14 +41,17 @@ class Recaller(commands.Cog, Chronologist):
 
     async def handle_time(self, guild_id: int, mentionable: Union[discord.Member, discord.Role],
                           reminder_time: str, message: str) -> None:
-        default_tz = datetime.timezone(datetime.timedelta(0), name="UTC")
-        today: datetime.datetime = datetime.datetime.today()
-        validated_datetime: datetime.datetime = await self.process_datetime(
-            reminder_time, default_hour=None, default_minute=0,
-            default_tz=default_tz, default_day=today.day,
-            default_month=today.month, default_year=today.year
+        default_tz: datetime.timezone = datetime.timezone.utc
+        today: datetime.datetime = datetime.datetime.now(default_tz)
+        additional_validators: tuple = (self.validate_future_datetime,)
+        temporal_defaults: dict = {
+            "default_hour": None, "default_minute": 0, "default_tz": default_tz, "default_day": today.day,
+            "default_month": today.month, "default_year": today.year
+        }
+        validated_datetime: datetime.datetime = await self.process_temporality(
+            reminder_time, self.parse_aware_datetime, self.validate_datetime,
+            additional_validators=additional_validators, temporal_defaults=temporal_defaults
         )
-        await self.validate_future_datetime(validated_datetime, validated_datetime.tzinfo)
         Reminder.create_reminder_with(guild_id, mentionable, message, validated_datetime)
 
     @remind.error

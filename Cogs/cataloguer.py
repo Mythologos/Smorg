@@ -90,7 +90,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         }
         field_items: dict = {"overall_author": overall_name}
         await self.embed(
-            ctx, quote_list, initialize_embed=self.initialize_authored_embed, initialize_field=self.initialize_quote_field,
+            ctx, quote_list, initialize_embed=self.initialize_authored_embed,
+            initialize_field=self.initialize_quote_field,
             embed_items=embed_items, field_items=field_items
         )
 
