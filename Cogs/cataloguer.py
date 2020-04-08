@@ -10,6 +10,7 @@ from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import EmptyEmbed
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from smorgasDB import Quote, Reminder
 
 
@@ -82,15 +83,16 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     async def quotes(self, ctx: commands.Context, author: Union[discord.Member, str, None]) -> None:
         overall_name = author.name if isinstance(author, discord.Member) else author
         quote_list: list = Quote.get_quotes_by(g_id=ctx.guild.id, auth=overall_name)
-        embed_items = {
+        embed_items: dict = {
             "item_author": overall_name or ctx.guild.name,
             "items": "quotes",
             "color": ColorConstants.HEAVENLY_YELLOW
         }
-        field_items = {"overall_author": overall_name}
-        await self.embed(ctx, quote_list, initialize_embed=self.initialize_authored_embed,
-                         initialize_field=self.initialize_quote_field, embed_items=embed_items,
-                         field_items=field_items)
+        field_items: dict = {"overall_author": overall_name}
+        await self.embed(
+            ctx, quote_list, initialize_embed=self.initialize_authored_embed, initialize_field=self.initialize_quote_field,
+            embed_items=embed_items, field_items=field_items
+        )
 
     @staticmethod
     async def initialize_authored_embed(item_author: str, items: str, color: ColorConstants, page_number: int = 0):
@@ -106,8 +108,55 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         )
         return quote_embed
 
+    # TODO: maybe combine with the zones embed-creator
+    @staticmethod
+    async def initialize_arithmetic_embed(items: str, page_number: int = 0):
+        if not page_number:
+            desc: str = f'The {items} supported by Smorg include:'
+        else:
+            desc = f'Further {items} that Smorg supports consist of:'
+        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
+        operator_embed: discord.Embed = discord.Embed(
+            title=f"Smorg's {items.title()}, Page {page_number}",
+            description=desc,
+            color=ColorConstants.NEUTRAL_ORANGE
+        )
+        return operator_embed
+
+    @staticmethod
+    async def initialize_arithmetic_field(name: str, representation: str) -> tuple:
+        name = f"{name.title().replace('_', ' ')}"
+        value = f"Representation: {representation}"
+        if representation.isalpha():
+            value += '()'
+        inline: bool = False
+        return name, value, inline
+
+    @display.command()
+    async def operators(self, ctx: commands.Context) -> None:
+        operator_list: list = [(item.name, item.symbol) for item in MathematicalOperator.__members__.values()]
+        embed_items: dict = {
+            "items": "operators"
+        }
+        await self.embed(
+            ctx, operator_list, initialize_embed=self.initialize_arithmetic_embed,
+            initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
+        )
+
+    @display.command()
+    async def functions(self, ctx: commands.Context) -> None:
+        function_list: list = [(item.name, item.representation) for item in MathematicalFunction.__members__.values()]
+        embed_items: dict = {
+            "items": "functions"
+        }
+        await self.embed(
+            ctx, function_list, initialize_embed=self.initialize_arithmetic_embed,
+            initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
+        )
+
     # TODO: handle error where invalid subcommand argument is given (TypeError?)
     @display.error
+    @operators.error
     @reminders.error
     @quotes.error
     @zones.error
@@ -116,7 +165,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             if isinstance(error, commands.MissingRequiredArgument):
                 error_embed = discord.Embed(
                     title='Error (Display): Missing Required Argument',
-                    description=f'A required argument is missing from your command.',  # TODO: improve message?
+                    description=f'A required argument is missing from your command.',  # TODO: improve message
                     color=ColorConstants.ERROR_RED
                 )
             elif isinstance(error, EmptyEmbed):  # TODO: maybe change error type, not sure if it fits here

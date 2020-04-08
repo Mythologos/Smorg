@@ -56,9 +56,9 @@ class MathematicalOperator(Enum, init='value symbol precedence associativity'):
                                  comparison_value: int) -> bool:
         first_operator = await MathematicalOperator.get_by_symbol(symbol_one)
         second_operator = await MathematicalOperator.get_by_symbol(symbol_two)
-        return await ComparisonOperator.compare_by_value(comparison_value,
-                                                         first_operator.precedence,
-                                                         second_operator.precedence)
+        return await ComparisonOperator.compare_by_value(
+            comparison_value, first_operator.precedence, second_operator.precedence
+        )
 
     @staticmethod
     async def compare_associativity(symbol, associativity):
