@@ -49,7 +49,7 @@ class Recaller(commands.Cog, Chronologist):
             "default_month": today.month, "default_year": today.year
         }
         validated_datetime: datetime.datetime = await self.process_temporality(
-            reminder_time, self.parse_aware_datetime, self.validate_datetime,
+            reminder_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators, temporal_defaults=temporal_defaults
         )
         Reminder.create_reminder_with(guild_id, mentionable, message, validated_datetime)

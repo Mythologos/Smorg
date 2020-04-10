@@ -16,7 +16,7 @@ class Chronologist:
             self.time_zones.append(TimeZone(i))
 
     @staticmethod
-    async def parse_aware_datetime(datetime_string: str) -> dict:
+    async def parse_datetime(datetime_string: str) -> dict:
         datetime_pattern: Pattern = re.compile(
             r'(?:(?P<time>'
             r'(?P<hour>[012]?[\d])(?:[:]'
@@ -29,20 +29,7 @@ class Chronologist:
         )
         return re.match(datetime_pattern, datetime_string).groupdict()
 
-    @staticmethod
-    async def parse_naive_datetime(datetime_string: str) -> dict:
-        datetime_pattern: Pattern = re.compile(
-            r'(?:(?P<time>'
-            r'(?P<hour>[012]?[\d])(?:[:]'
-            r'(?P<minute>[012345][\d])(?:[\s](?P<period>(?:(?P<post>[pP])|(?P<ante>[aA]))[.]?[mM][.]?))?)?)'
-            r'(?:[;][\s](?P<date>(?P<day>[0123]?[\d])'
-            r'(?:[\s](?P<month>Jan|January|Feb|February|Mar|March|Apr|April|May|Jun|June|'
-            r'Jul|July|Aug|August|Sept|September|Oct|October|Nov|November|Dec|December|[01][\d])'
-            r'(?:[\s](?P<year>[\d]{0,4})?))?))?)'
-        )
-        return re.match(datetime_pattern, datetime_string).groupdict()
-
-    # TODO: test the following methods
+    # TODO: test the following parsing methods
     @staticmethod
     async def parse_date(date_string: str) -> dict:
         date_pattern: Pattern = re.compile(
@@ -73,10 +60,7 @@ class Chronologist:
         day: int = await self.validate_day(parsed_datetime['day'], month, year, default_day)
         hour: int = await self.validate_hour(parsed_datetime['hour'], period, default_hour)
         minute: int = await self.validate_minute(parsed_datetime['minute'], default_minute)
-        if 'time_zone' in parsed_datetime:
-            time_zone: datetime.timezone = await self.validate_time_zone(parsed_datetime['time_zone'], default_tz)
-        else:
-            time_zone = await self.validate_time_zone(None, default_tz)
+        time_zone: datetime.timezone = await self.validate_time_zone(parsed_datetime['time_zone'], default_tz)
         return datetime.datetime(minute=minute, hour=hour, day=day, month=month, year=year, tzinfo=time_zone)
 
     async def validate_hour(self, hour_value: Union[str, None], period: int, default: Union[int, None]):
@@ -249,6 +233,11 @@ class Chronologist:
                 raise InvalidHour
             else:
                 raise InvalidMinute
+
+    @staticmethod
+    async def convert_to_naive_timezone(valid_datetime: datetime.datetime,
+                                        time_zone: datetime.timezone = datetime.timezone.utc) -> datetime.datetime:
+        return valid_datetime.astimezone(time_zone).replace(tzinfo=None)
 
     @staticmethod
     async def process_temporality(temporal_string: str, temporal_parser: Callable, temporal_validator: Callable,

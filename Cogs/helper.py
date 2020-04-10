@@ -6,6 +6,7 @@ from discord.ext import commands
 from typing import Optional
 
 from Cogs.Helpers.chronologist import Chronologist
+from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
 from smorgasDB import Guild
 
@@ -70,29 +71,30 @@ class Helper(Chronologist, commands.Cog):
             )
         await ctx.send(embed=error_embed)
 
-    # TODO: convert start_time and end_time to UTC or set tzinfo to None, if possible
     @commands.command(description=HelpDescriptions.PURGE)
-    async def purge(self, ctx: commands.Context, message_count: Optional[int],
-                    from_time: Optional[str], to_time: Optional[str]):
+    async def purge(self, ctx: commands.Context, message_count: Optional[int], from_time: Optional[str],
+                    to_time: Optional[str]):
         today: datetime.datetime = datetime.datetime.today()
         additional_validators: tuple = (self.validate_past_datetime,)
         datetime_defaults: dict = {'default_minute': None, 'default_hour': None, 'default_day': today.day,
                                    'default_month': today.month, 'default_year': today.year,
                                    'default_tz': None}
         start_time: datetime.datetime = await self.process_temporality(
-            from_time, self.parse_naive_datetime, self.validate_datetime,
+            from_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators, temporal_defaults=datetime_defaults
         ) if from_time else None
 
         end_time: datetime.datetime = await self.process_temporality(
-            to_time, self.parse_naive_datetime, self.validate_datetime,
+            to_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators, temporal_defaults=datetime_defaults
         ) if to_time else None
 
         history_args: dict = {}
         if start_time:
+            start_time = await self.convert_to_naive_timezone(start_time)
             history_args["after"] = start_time
         if end_time:
+            end_time = await self.convert_to_naive_timezone(end_time)
             history_args["before"] = end_time
         if message_count:
             history_args["limit"] = message_count
@@ -108,9 +110,10 @@ class Helper(Chronologist, commands.Cog):
         else:
             await ctx.send(f"You've deleted up to {message_count or delete_count} messages just now.")
 
-    # TODO: add errors related to time-handling for purge
+    # TODO: figure out a way to combine some of these errors into a common handler.
+    # Perhaps use an dictionary?
     @purge.error
-    async def observe_error(self, ctx: commands.Context, error: discord.DiscordException):
+    async def purge_error(self, ctx: commands.Context, error: discord.DiscordException):
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Purge): Missing Required Argument',
@@ -123,6 +126,55 @@ class Helper(Chronologist, commands.Cog):
                 description='You forgot a closing quotation mark on one of your times.',
                 color=ColorConstants.ERROR_RED
             )
+        elif isinstance(error, commands.UserInputError):
+            if isinstance(error, InvalidDay):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Day',
+                    description=f'The given day is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidHour):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Hour',
+                    description=f'The given hour is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidMinute):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Minute',
+                    description=f'The given minute is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidMonth):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Month',
+                    description=f'The given month is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidTimeZone):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Time Zone',
+                    description=f'The given time zone is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, InvalidYear):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Invalid Year',
+                    description=f'The given year is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            elif isinstance(error, commands.MissingRequiredArgument):
+                error_embed = discord.Embed(
+                    title='Error (Purge): Missing Required Argument',
+                    description=f'The given time zone is invalid.',
+                    color=ColorConstants.ERROR_RED
+                )
+            else:
+                error_embed = discord.Embed(
+                    title='Error (Remind): User Input Error',
+                    description=f'The error type is: {error}. A better error message will be supplied soon.',
+                    color=ColorConstants.ERROR_RED
+                )
         else:
             error_embed = discord.Embed(
                 title='Error (Purge)',
