@@ -6,20 +6,20 @@ from discord.ext import commands
 from typing import Callable
 
 from smorgasDB import Guild
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 
 
 class Arranger(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
-    @commands.group(description=HelpDescriptions.GOVERN)
+    @commands.group(description=HelpDescription.GOVERN)
     async def govern(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
             await ctx.send(embed=discord.Embed(
                 title='Error (Govern): Missing Domain',
                 description='You didn\'t supply a domain.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             ))
 
     @govern.command()
@@ -71,37 +71,37 @@ class Arranger(commands.Cog):
             error_embed = discord.Embed(
                 title='Error (Govern): Missing Channel',
                 description='You didn\'t supply a channel.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Govern): Unfinished Channel Quotation',
                 description='You forgot a closing quotation mark on your channel name.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.BadArgument):
             error_embed = discord.Embed(
                 title='Error (Govern): Invalid Channel',
                 description='The channel name given was not found.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, asyncio.TimeoutError):
                 error_embed = discord.Embed(
                     title='Error (Govern): Disambiguation Timeout',
                     description='You didn\'t supply a valid integer quickly enough.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
                     title='Error (Govern): Command Invoke Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
         else:
             error_embed = discord.Embed(
                 title='Error (Govern)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)

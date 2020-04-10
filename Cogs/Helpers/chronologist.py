@@ -4,8 +4,8 @@ import re
 import datetime
 from typing import Callable, Pattern, Union
 
-from Cogs.Helpers.Enumerators.timekeeper import DateConstants, MonthAliases, MonthConstants, PeriodConstants,\
-    TimeConstants, TimeZone
+from Cogs.Helpers.Enumerators.timekeeper import DateConstant, MonthAliases, MonthConstant, PeriodConstant,\
+    TimeConstant, TimeZone
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 
 
@@ -71,7 +71,7 @@ class Chronologist:
                     hour = await self.convert_to_24_hour_time(hour, period)
             else:
                 raise InvalidHour
-        elif TimeConstants.START_HOUR <= int(hour_value) <= TimeConstants.END_HOUR:
+        elif TimeConstant.START_HOUR <= int(hour_value) <= TimeConstant.END_HOUR:
             hour = int(hour_value)
             if period:
                 hour = await self.convert_to_24_hour_time(hour, period)
@@ -86,7 +86,7 @@ class Chronologist:
                 minute: int = default
             else:
                 raise InvalidMinute
-        elif TimeConstants.START_MINUTE <= int(minute_value) <= TimeConstants.END_MINUTE:
+        elif TimeConstant.START_MINUTE <= int(minute_value) <= TimeConstant.END_MINUTE:
             minute = int(minute_value)
         else:
             raise InvalidMinute
@@ -95,11 +95,11 @@ class Chronologist:
     @staticmethod
     async def validate_period(post_value: Union[str, None], ante_value: Union[str, None]) -> int:
         if not (post_value or ante_value):
-            period = PeriodConstants.SINE_MERIDIEM
+            period = PeriodConstant.SINE_MERIDIEM
         elif ante_value:
-            period = PeriodConstants.ANTE_MERIDIEM
+            period = PeriodConstant.ANTE_MERIDIEM
         else:
-            period = PeriodConstants.POST_MERIDIEM
+            period = PeriodConstant.POST_MERIDIEM
         return period
 
     async def validate_time_zone(self, time_zone_value: Union[str, None], default: Union[datetime.timezone, None]) \
@@ -123,12 +123,12 @@ class Chronologist:
             else:
                 raise InvalidDay
         else:
-            if year % DateConstants.LEAP_YEAR_MODULO and month == MonthConstants.FEBRUARY.value:
-                this_month: MonthConstants = MonthConstants(13)
+            if year % DateConstant.LEAP_YEAR_MODULO and month == MonthConstant.FEBRUARY.value:
+                this_month: MonthConstant = MonthConstant(13)
             else:
-                this_month = MonthConstants(month)
+                this_month = MonthConstant(month)
 
-            if DateConstants.FIRST_DAY_OF_MONTH <= int(day_value) <= this_month.number_of_days:
+            if DateConstant.FIRST_DAY_OF_MONTH <= int(day_value) <= this_month.number_of_days:
                 day = int(day_value)
             else:
                 raise InvalidDay
@@ -182,12 +182,12 @@ class Chronologist:
 
     @staticmethod
     async def convert_to_24_hour_time(hour: int, period: int) -> int:
-        if TimeConstants.START_MERIDIEM_HOUR <= hour <= TimeConstants.END_MERIDIEM_HOUR:
-            if period == PeriodConstants.ANTE_MERIDIEM:
-                if hour == TimeConstants.END_MERIDIEM_HOUR:
+        if TimeConstant.START_MERIDIEM_HOUR <= hour <= TimeConstant.END_MERIDIEM_HOUR:
+            if period == PeriodConstant.ANTE_MERIDIEM:
+                if hour == TimeConstant.END_MERIDIEM_HOUR:
                     hour -= 12
             else:
-                if hour != TimeConstants.END_MERIDIEM_HOUR:
+                if hour != TimeConstant.END_MERIDIEM_HOUR:
                     hour += 12
         else:
             raise InvalidHour

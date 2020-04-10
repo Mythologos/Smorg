@@ -8,7 +8,7 @@ from typing import Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Guild, Reminder
 
 
@@ -18,10 +18,10 @@ class Recaller(commands.Cog, Chronologist):
         super().__init__()
 
     # TODO: documentation...
-    @commands.command(description=HelpDescriptions.REMIND)
+    @commands.command(description=HelpDescription.REMIND)
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:
-        reminder_response = "Your reminder has been successfully processed! It'll be sent at the specified time."
+        reminder_response: str = "Your reminder has been successfully processed! It'll be sent at the specified time."
         current_guild_id = ctx.guild.id
         await self.handle_time(current_guild_id, mentionable.mention, reminder_time, message)
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
@@ -29,13 +29,13 @@ class Recaller(commands.Cog, Chronologist):
         await current_channel.send(reminder_response)
 
     # TODO: documentation ... "revises" a reminder
-    @commands.command(description=HelpDescriptions.REVISE)
+    @commands.command(description=HelpDescription.REVISE)
     async def revise(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], old_reminder_time: str,
                      new_reminder_time: str, new_message: str = ""):
         raise NotImplementedError
 
     # TODO: documentation... "forgets" a reminder
-    @commands.command(description=HelpDescriptions.FORGET)
+    @commands.command(description=HelpDescription.FORGET)
     async def forget(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], reminder_time: str):
         raise NotImplementedError
 
@@ -61,54 +61,54 @@ class Recaller(commands.Cog, Chronologist):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Day',
                     description=f'The given day is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidHour):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Hour',
                     description=f'The given hour is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidMinute):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Minute',
                     description=f'The given minute is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidMonth):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Month',
                     description=f'The given month is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidTimeZone):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Time Zone',
                     description=f'The given time zone is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidYear):
                 error_embed = discord.Embed(
                     title='Error (Remind): Invalid Year',
                     description=f'The given year is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, commands.MissingRequiredArgument):
                 error_embed = discord.Embed(
                     title='Error (Remind): Missing Required Argument',
                     description=f'The given time zone is invalid.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
                     title='Error (Remind): User Input Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
         else:
             error_embed = discord.Embed(
                 title='Error (Remind): Miscellaneous Error',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)

@@ -6,7 +6,7 @@
 
 from discord.ext import commands
 
-from Cogs.Helpers.Enumerators.universalist import HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import HelpDescription
 
 
 class Encoder(commands.Cog):
@@ -120,7 +120,7 @@ class Encoder(commands.Cog):
             ' ': '  /  '
         }
 
-    @commands.group(description=HelpDescriptions.TRANSLATE)
+    @commands.group(description=HelpDescription.TRANSLATE)
     async def translate(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             # TODO: change to raise error, add to error handling

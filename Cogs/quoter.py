@@ -10,7 +10,7 @@ from random import randint
 from typing import Union
 
 from Cogs.Helpers.checker import Checker
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Guild, Quote
 
 
@@ -18,7 +18,7 @@ class Quoter(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
-    @commands.command(description=HelpDescriptions.QUOTE)
+    @commands.command(description=HelpDescription.QUOTE)
     async def quote(self, ctx: commands.Context, text: str,
                     author: Union[discord.Member, str, None] = None) -> None:
         """
@@ -39,7 +39,7 @@ class Quoter(commands.Cog):
         quote_response = discord.Embed(
             title=f'The Words of {author if author else "An Anonymous Intellectual"}:',
             description=text,
-            color=ColorConstants.DEEP_BLUE
+            color=ColorConstant.DEEP_BLUE
         )
         await ctx.message.delete()
         await current_channel.send(embed=quote_response)
@@ -50,23 +50,23 @@ class Quoter(commands.Cog):
             error_embed = discord.Embed(
                 title='Error (Quote): Missing Quotation',
                 description='You didn\'t supply a quote.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Quote): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Quote)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)
 
-    @commands.command(description=HelpDescriptions.IMMORTALIZE)
+    @commands.command(description=HelpDescription.IMMORTALIZE)
     async def immortalize(self, ctx: commands.Context, text: str,
                           author: Union[discord.Member, str, None] = None) -> None:
         """
@@ -89,7 +89,7 @@ class Quoter(commands.Cog):
         quote_response = discord.Embed(
             title=f'The Masterpiece of {author if author else "A True Legend"}:',
             description=text,
-            color=ColorConstants.HEAVENLY_YELLOW
+            color=ColorConstant.HEAVENLY_YELLOW
         )
         Quote.create_quote_with(current_guild_id, text, author)
         await ctx.message.delete()
@@ -102,24 +102,24 @@ class Quoter(commands.Cog):
             error_embed = discord.Embed(
                 title='Error (Immortalize): Missing Quotation',
                 description='You didn\'t supply a valid quote.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.ExpectedClosingQuoteError):
             error_embed = discord.Embed(
                 title='Error (Immortalize): Unfinished Quotation',
                 description='You forgot a closing quotation mark on your quote or author name.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Immortalize)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)
 
     # TODO: add Enum for list access values
-    @commands.command(description=HelpDescriptions.YOINK)
+    @commands.command(description=HelpDescription.YOINK)
     @commands.check(Checker.is_yoinkable)
     async def yoink(self, ctx: commands.Context) -> None:
         """
@@ -135,7 +135,7 @@ class Quoter(commands.Cog):
         yoink_response = discord.Embed(
             title=f'The Legendary Words of {author}',
             description=yoinked_quote[1],
-            color=ColorConstants.HOT_PINK
+            color=ColorConstant.HOT_PINK
         )
         await ctx.send(embed=yoink_response)
 
@@ -145,12 +145,12 @@ class Quoter(commands.Cog):
             error_embed = discord.Embed(
                 title='Error (Yoink): Invalid Request',
                 description='Your server has no quotes.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         else:
             error_embed = discord.Embed(
                 title='Error (Yoink)',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)

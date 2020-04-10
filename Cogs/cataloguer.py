@@ -9,7 +9,7 @@ from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import EmptyEmbed
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from smorgasDB import Quote, Reminder
 
@@ -19,24 +19,10 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         self.bot = bot
         super().__init__()
 
-    @commands.group(description=HelpDescriptions.DISPLAY)
+    @commands.group(description=HelpDescription.DISPLAY)
     async def display(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             raise commands.MissingRequiredArgument
-
-    @staticmethod
-    async def initialize_zone_embed(page_number: int = 0) -> discord.Embed:
-        if not page_number:
-            desc: str = 'Smorg supports the following time zones:'
-        else:
-            desc = 'Smorg also supports the following time zones:'
-        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
-        time_zone_embed = discord.Embed(
-            title=f'Time Zone Aliases by GMT Offset, Page {page_number}',
-            description=desc,
-            color=ColorConstants.NEUTRAL_ORANGE
-        )
-        return time_zone_embed
 
     @staticmethod
     async def initialize_zone_field(time_zone: TimeZone) -> tuple:
@@ -48,8 +34,12 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     @display.command()
     async def zones(self, ctx: commands.Context) -> None:
         sorted_time_zones = sorted(self.time_zones, key=lambda tz: tz.value)
-        await self.embed(ctx, sorted_time_zones, initialize_embed=self.initialize_zone_embed,
-                         initialize_field=self.initialize_zone_field)
+        embed_items: dict = {
+            "items": "time zones",
+            "color": ColorConstant.NEUTRAL_ORANGE
+        }
+        await self.embed(ctx, sorted_time_zones, initialize_embed=self.initialize_itemized_embed,
+                         initialize_field=self.initialize_zone_field, embed_items=embed_items)
 
     @staticmethod
     async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str) -> tuple:
@@ -67,7 +57,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         embed_items: dict = {
             "item_author": reminder_name,
             "items": "reminders",
-            "color": ColorConstants.CALM_GREEN
+            "color": ColorConstant.CALM_GREEN
         }
         await self.embed(ctx, reminder_list, initialize_embed=self.initialize_authored_embed,
                          initialize_field=self.initialize_reminder_field, embed_items=embed_items)
@@ -86,7 +76,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         embed_items: dict = {
             "item_author": overall_name or ctx.guild.name,
             "items": "quotes",
-            "color": ColorConstants.HEAVENLY_YELLOW
+            "color": ColorConstant.HEAVENLY_YELLOW
         }
         field_items: dict = {"overall_author": overall_name}
         await self.embed(
@@ -94,35 +84,6 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             initialize_field=self.initialize_quote_field,
             embed_items=embed_items, field_items=field_items
         )
-
-    @staticmethod
-    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstants, page_number: int = 0):
-        if not page_number:
-            desc: str = f'{items.title()} by {item_author} include:'
-        else:
-            desc = f'Further {items} by {item_author} consist of:'
-        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
-        quote_embed: discord.Embed = discord.Embed(
-            title=f"The {items.title()} of {item_author}, Page {page_number}",
-            description=desc,
-            color=color
-        )
-        return quote_embed
-
-    # TODO: maybe combine with the zones embed-creator
-    @staticmethod
-    async def initialize_arithmetic_embed(items: str, page_number: int = 0):
-        if not page_number:
-            desc: str = f'The {items} supported by Smorg include:'
-        else:
-            desc = f'Further {items} that Smorg supports consist of:'
-        page_number: int = (page_number // DiscordConstants.MAX_EMBED_FIELDS) + 1
-        operator_embed: discord.Embed = discord.Embed(
-            title=f"Smorg's {items.title()}, Page {page_number}",
-            description=desc,
-            color=ColorConstants.NEUTRAL_ORANGE
-        )
-        return operator_embed
 
     @staticmethod
     async def initialize_arithmetic_field(name: str, representation: str) -> tuple:
@@ -137,10 +98,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     async def operators(self, ctx: commands.Context) -> None:
         operator_list: list = [(item.name, item.symbol) for item in MathematicalOperator.__members__.values()]
         embed_items: dict = {
-            "items": "operators"
+            "items": "operators",
+            "color": ColorConstant.NEUTRAL_ORANGE
         }
         await self.embed(
-            ctx, operator_list, initialize_embed=self.initialize_arithmetic_embed,
+            ctx, operator_list, initialize_embed=self.initialize_itemized_embed,
             initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
         )
 
@@ -148,10 +110,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     async def functions(self, ctx: commands.Context) -> None:
         function_list: list = [(item.name, item.representation) for item in MathematicalFunction.__members__.values()]
         embed_items: dict = {
-            "items": "functions"
+            "items": "functions",
+            "color": ColorConstant.NEUTRAL_ORANGE
         }
         await self.embed(
-            ctx, function_list, initialize_embed=self.initialize_arithmetic_embed,
+            ctx, function_list, initialize_embed=self.initialize_itemized_embed,
             initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
         )
 
@@ -167,24 +130,24 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
                 error_embed = discord.Embed(
                     title='Error (Display): Missing Required Argument',
                     description=f'A required argument is missing from your command.',  # TODO: improve message
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, EmptyEmbed):  # TODO: maybe change error type, not sure if it fits here
                 error_embed = discord.Embed(
                     title='Error (Display): Empty Embed',
                     description=f'The display that you requested has no data to fill it.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
                     title='Error (Display): User Input Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
         else:
             error_embed = discord.Embed(
                 title='Error (Display): Miscellaneous Error',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)

@@ -1,5 +1,6 @@
 # TODO: documentation...
 # describe as Cog mixin
+# currently unused. how to use? maybe retool?
 
 from discord.ext import commands
 

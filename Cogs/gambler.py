@@ -5,6 +5,7 @@
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax.
 # TODO: divide up some of these functions; some are getting decently long.
+# TODO: using knowledge gained from timekeeper / embedder, improve functions here
 
 import discord
 import asyncio
@@ -18,8 +19,8 @@ from typing import Match
 from smorgasDB import Guild
 from Cogs.Helpers.disambiguator import Disambiguator
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, InvalidRecipient, MissingParenthesis
-from Cogs.Helpers.Enumerators.croupier import MatchContents
-from Cogs.Helpers.Enumerators.universalist import ColorConstants, DiscordConstants, HelpDescriptions
+from Cogs.Helpers.Enumerators.croupier import MatchContent
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription
 from Cogs.Helpers.yard_shunter import YardShunter
 
 
@@ -28,14 +29,14 @@ class Gambler(commands.Cog, Disambiguator):
         self.bot = bot
         self.yard_shunter = YardShunter()
 
-    @commands.command(description=HelpDescriptions.ROLL)
+    @commands.command(description=HelpDescription.ROLL)
     async def roll(self, ctx: commands.Context, roll: str, recipients: commands.Greedy[discord.Member] = None, *,
                    description: str = 'To Contend with Lady Luck') -> None:
         """
         The main method for the roll command.
         :param ctx: The context from which the request came.
         :param roll: The roll which the user gives for the bot to simulate.
-        See HelpDescriptions.ROLL for a description of a dice roll's format.
+        See HelpDescription.ROLL for a description of a dice roll's format.
         :param description: A string description of what the roll is meant for.
         :param recipients: A list of names or nicknames of individuals from a Guild that
         the requester wants to which the requester wants to send results.
@@ -59,7 +60,7 @@ class Gambler(commands.Cog, Disambiguator):
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
         for match_index, match in enumerate(parsed_roll):
-            die_roll: str = match[MatchContents.DIE_ROLL.value]
+            die_roll: str = match[MatchContent.DIE_ROLL.value]
             if die_roll:
                 parsed_dice: Match = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
@@ -89,15 +90,15 @@ class Gambler(commands.Cog, Disambiguator):
         verbose_roll_embed = discord.Embed(
             title=f"Individual Dice Results",
             description="The results of the individual roll(s) are as follows:",
-            color=ColorConstants.NEUTRAL_ORANGE
+            color=ColorConstant.NEUTRAL_ORANGE
         )
         for counter, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerate(verbose_dice, 1):
-            if counter and (counter % DiscordConstants.MAX_EMBED_FIELDS) == 0:
+            if counter and (counter % DiscordConstant.MAX_EMBED_FIELDS) == 0:
                 await destination_channel.send(embed=verbose_roll_embed)
                 verbose_roll_embed = discord.Embed(
-                    title=f"Individual Dice Results, Page {(counter // DiscordConstants.MAX_EMBED_FIELDS) + 1}",
+                    title=f"Individual Dice Results, Page {(counter // DiscordConstant.MAX_EMBED_FIELDS) + 1}",
                     description="Further individual roll results are as follows:",
-                    color=ColorConstants.NEUTRAL_ORANGE
+                    color=ColorConstant.NEUTRAL_ORANGE
                 )
             verbose_roll_embed.add_field(
                 name=f"Dice Roll {counter + 1}: {raw_roll}",
@@ -107,6 +108,17 @@ class Gambler(commands.Cog, Disambiguator):
                 inline=False
             )
         await destination_channel.send(embed=verbose_roll_embed)
+
+    # TODO: finish, integrate. Potentially alter embed to accept counter as an argument automatically in the field item.
+    # @staticmethod
+    # async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list,
+    #                                 dice_result: int) -> tuple:
+        # name = f"Dice Roll {counter + 1}: {raw_roll}"
+        # value = f"**Raw Dice Result:** {unsorted_result}\n" \
+        #         f"**Final Dice Result:** {sorted_result}\n" \
+        #         f"**Sum:** {dice_result}"
+        # inline = False
+        # return name, value, inline
 
     @staticmethod
     async def parse_roll(raw_roll: str) -> list:
@@ -198,62 +210,62 @@ class Gambler(commands.Cog, Disambiguator):
             error_embed = discord.Embed(
                 title='Error (Roll): Missing Closing Quote',
                 description=f'You forgot to close the quotation on one of your arguments.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         elif isinstance(error, commands.UserInputError):
             if isinstance(error, DuplicateOperator):
                 error_embed = discord.Embed(
                     title='Error (Roll): Duplicate Operator',
                     description=f'The roll contains a duplicate operator.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, ImproperFunction):
                 error_embed = discord.Embed(
                     title='Error (Roll): Improper Function',
                     description=f'A function in your roll is missing a starting parenthesis.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, InvalidRecipient):
                 error_embed = discord.Embed(
                     title='Error (Roll): Invalid Recipient',
                     description=f'No individual matches the recipient name {error}.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, MissingParenthesis):
                 error_embed = discord.Embed(
                     title='Error (Roll): Missing Parenthesis',
                     description=f'Your roll has imbalanced parentheses.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             elif isinstance(error, commands.MissingRequiredArgument):
                 error_embed = discord.Embed(
                     title='Error (Roll): Missing Required Argument',
                     description=f'You didn\'t supply a roll.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
                     title='Error (Roll): User Input Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
         elif isinstance(error, commands.CommandInvokeError):
             if isinstance(error.original, asyncio.TimeoutError):
                 error_embed = discord.Embed(
                     title='Error (Roll): Disambiguation Timeout',
                     description='You didn\'t supply a valid integer quickly enough.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
             else:
                 error_embed = discord.Embed(
                     title='Error (Roll): Command Invoke Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstants.ERROR_RED
+                    color=ColorConstant.ERROR_RED
                 )
         else:
             error_embed = discord.Embed(
                 title='Error (Roll): Miscellaneous Error',
                 description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstants.ERROR_RED
+                color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)

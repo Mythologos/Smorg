@@ -95,12 +95,12 @@ class TimeZone(Enum, init='value aliases'):
         return highest_zone_value
 
 
-class DateConstants(NamedConstant):
+class DateConstant(NamedConstant):
     FIRST_DAY_OF_MONTH = 1
     LEAP_YEAR_MODULO = 4
 
 
-class TimeConstants(NamedConstant):
+class TimeConstant(NamedConstant):
     START_MINUTE = 0
     END_MINUTE = 59
     START_HOUR = 0
@@ -124,7 +124,7 @@ class MonthAliases(NamedConstant):
     DECEMBER = ('December', 'Dec', '12')
 
 
-class MonthConstants(Enum, init='value number_of_days'):
+class MonthConstant(Enum, init='value number_of_days'):
     JANUARY = 1, 31
     FEBRUARY = 2, 28
     MARCH = 3, 31
@@ -140,7 +140,7 @@ class MonthConstants(Enum, init='value number_of_days'):
     LEAP_YEAR_FEBRUARY = 13, 29
 
 
-class PeriodConstants:
+class PeriodConstant:
     SINE_MERIDIEM = 0  # "without a midday," referring to how there's no period separation in a twenty-four hour clock
     ANTE_MERIDIEM = 1
     POST_MERIDIEM = 2

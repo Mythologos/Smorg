@@ -1,7 +1,7 @@
 from aenum import NamedConstant
 
 
-class DiscordConstants(NamedConstant):
+class DiscordConstant(NamedConstant):
     MAX_MEMBER_NAME_LENGTH = 32
     MAX_ROLE_LENGTH = 100
     MAX_MESSAGE_LENGTH = 2000
@@ -14,7 +14,7 @@ class DiscordConstants(NamedConstant):
     MAX_EMBED_AUTHOR = 256
 
 
-class ColorConstants(NamedConstant):
+class ColorConstant(NamedConstant):
     ERROR_RED = 0xB80000
     HEAVENLY_YELLOW = 0xFFE066
     DEEP_BLUE = 0x001A66
@@ -24,8 +24,8 @@ class ColorConstants(NamedConstant):
     CALM_GREEN = 0x0CCC3F
 
 
-class HelpDescriptions(NamedConstant):
-    DISPLAY = "WIP"
+class HelpDescription(NamedConstant):
+    DISPLAY = "WIP"  # TODO: finish
     FORGET = "This command allows someone to delete a reminder. To do so, it accepts arguments of a role and a time. " \
              "It deletes a reminder corresponding to that role and time."
     GOVERN = "This command tells Smorg what channel in which it should perform some task. " \
@@ -51,9 +51,8 @@ class HelpDescriptions(NamedConstant):
            "^ (exponentiation), parentheses, floor(), ceiling(), abs(), and sqrt() are allowed. " \
            "Quoted, a description of what the roll was for may be included next. " \
            "The result is posted either in a set gamble channel or where the die was rolled."
-    REVISE = "WIP"
+    REVISE = "WIP"  # TODO: finish
     SUPPORT = "This command retrieves the menu below shown here."
-    TIMETABLE = "WIP"
     TRANSLATE = "This command translates text of one set of characters to another set of characters. " \
                 "Current sets of characters include the Latin alphabet (alphabet) and Morse code (morse)."
     YOINK = "This command retrieves and displays a random stored quote."
