@@ -14,17 +14,16 @@ import re
 from copy import deepcopy
 from discord.ext import commands
 from random import randint
-from typing import Match
 
 from smorgasDB import Guild
-from Cogs.Helpers.disambiguator import Disambiguator
+from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, InvalidRecipient, MissingParenthesis
 from Cogs.Helpers.Enumerators.croupier import MatchContent
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from Cogs.Helpers.yard_shunter import YardShunter
 
 
-class Gambler(commands.Cog, Disambiguator):
+class Gambler(commands.Cog, Embedder):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.yard_shunter = YardShunter()
@@ -62,7 +61,7 @@ class Gambler(commands.Cog, Disambiguator):
         for match_index, match in enumerate(parsed_roll):
             die_roll: str = match[MatchContent.DIE_ROLL.value]
             if die_roll:
-                parsed_dice: Match = await self.parse_dice(die_roll)
+                parsed_dice: dict = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
                 dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
                 verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
@@ -79,46 +78,36 @@ class Gambler(commands.Cog, Disambiguator):
                                     f"Reason: {description}"
         await destination_channel.send(introductory_message)
         if verbose_dice:
-            await self.send_dice(verbose_dice, destination_channel)
+            field_items = {"counter": None}
+            await self.embed(destination_channel, verbose_dice, initialize_embed=self.initialize_dice_embed,
+                             initialize_field=self.initialize_dice_field, field_items=field_items)
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
                              f"The final result of this roll is: {roll_result}"
         await destination_channel.send(concluding_message)
 
     @staticmethod
-    async def send_dice(verbose_dice: list, destination_channel: discord.TextChannel) -> None:
-        verbose_roll_embed = discord.Embed(
-            title=f"Individual Dice Results",
-            description="The results of the individual roll(s) are as follows:",
+    async def initialize_dice_embed(page_number: int = 1):
+        if page_number == 1:
+            desc: str = "The results of the individual dice roll(s) are as follows:"
+        else:
+            desc = "Further rolls resulted in the following ways:"
+        dice_embed: discord.Embed = discord.Embed(
+            title=f"Individual Dice Results, Page {page_number}",
+            description=desc,
             color=ColorConstant.NEUTRAL_ORANGE
         )
-        for counter, (raw_roll, unsorted_result, sorted_result, dice_result) in enumerate(verbose_dice, 1):
-            if counter and (counter % DiscordConstant.MAX_EMBED_FIELDS) == 0:
-                await destination_channel.send(embed=verbose_roll_embed)
-                verbose_roll_embed = discord.Embed(
-                    title=f"Individual Dice Results, Page {(counter // DiscordConstant.MAX_EMBED_FIELDS) + 1}",
-                    description="Further individual roll results are as follows:",
-                    color=ColorConstant.NEUTRAL_ORANGE
-                )
-            verbose_roll_embed.add_field(
-                name=f"Dice Roll {counter + 1}: {raw_roll}",
-                value=f"**Raw Dice Result:** {unsorted_result}\n"
-                      f"**Final Dice Result:** {sorted_result}\n"
-                      f"**Sum:** {dice_result}",
-                inline=False
-            )
-        await destination_channel.send(embed=verbose_roll_embed)
+        return dice_embed
 
-    # TODO: finish, integrate. Potentially alter embed to accept counter as an argument automatically in the field item.
-    # @staticmethod
-    # async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list,
-    #                                 dice_result: int) -> tuple:
-        # name = f"Dice Roll {counter + 1}: {raw_roll}"
-        # value = f"**Raw Dice Result:** {unsorted_result}\n" \
-        #         f"**Final Dice Result:** {sorted_result}\n" \
-        #         f"**Sum:** {dice_result}"
-        # inline = False
-        # return name, value, inline
+    @staticmethod
+    async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list,
+                                    dice_result: int, counter: int) -> tuple:
+        name = f"Dice Roll {counter + 1}: {raw_roll}"
+        value = f"**Raw Dice Result:** {unsorted_result}\n" \
+                f"**Final Dice Result:** {sorted_result}\n" \
+                f"**Sum:** {dice_result}"
+        inline = False
+        return name, value, inline
 
     @staticmethod
     async def parse_roll(raw_roll: str) -> list:
@@ -130,7 +119,7 @@ class Gambler(commands.Cog, Disambiguator):
         return re.findall(roll_pattern, raw_roll)
 
     @staticmethod
-    async def parse_dice(raw_dice: str) -> Match:
+    async def parse_dice(raw_dice: str) -> dict:
         dice_pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                   r'(?P<die_size>[\d]+)'
                                   r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
@@ -138,24 +127,22 @@ class Gambler(commands.Cog, Disambiguator):
                                   r'(?P<explosion_sign>!)?'
                                   r'(?P<challenge_sign>[><])?'
                                   r'(?(challenge_sign)(?P<challenge_value>[+-]?[\d]+))')
-        return re.match(dice_pattern, raw_dice)
+        return re.match(dice_pattern, raw_dice).groupdict()
 
     @staticmethod
     async def process_dice(matched_dice) -> dict:
-        number_of_dice: int = int(matched_dice.group('number_of_dice'))
-        die_size: int = int(matched_dice.group('die_size'))
-        drop_keep_value: int = int(matched_dice.group('drop_keep_value')) if matched_dice.group(
-            'drop_keep_value') else None
-        challenge_value: int = int(matched_dice.group('challenge_value')) if matched_dice.group(
-            'challenge_value') else None
+        number_of_dice: int = int(matched_dice['number_of_dice'])
+        die_size: int = int(matched_dice['die_size'])
+        drop_keep_value: int = int(matched_dice['drop_keep_value']) if matched_dice['drop_keep_value'] else None
+        challenge_value: int = int(matched_dice['challenge_value']) if matched_dice['challenge_value'] else None
         return {
             'number_of_dice': number_of_dice,
             'die_size': die_size,
-            'drop_sign': matched_dice.group('drop_sign'),
-            'keep_sign': matched_dice.group('keep_sign'),
+            'drop_sign': matched_dice['drop_sign'],
+            'keep_sign': matched_dice['keep_sign'],
             'drop_keep_value': drop_keep_value,
-            'explosion_sign': matched_dice.group('explosion_sign'),
-            'challenge_sign': matched_dice.group('challenge_sign'),
+            'explosion_sign': matched_dice['explosion_sign'],
+            'challenge_sign': matched_dice['challenge_sign'],
             'challenge_value': challenge_value,
         }
 

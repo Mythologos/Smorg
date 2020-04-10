@@ -32,7 +32,7 @@ class Helper(Chronologist, commands.Cog, Embedder):
         field_items: dict = {
             "current_prefix": ctx.prefix
         }
-        await self.embed(ctx, sorted_commands, initialize_embed=self.initialize_itemized_embed,
+        await self.embed(ctx.channel, sorted_commands, initialize_embed=self.initialize_itemized_embed,
                          initialize_field=self.initialize_support_field,
                          embed_items=embed_items, field_items=field_items)
 

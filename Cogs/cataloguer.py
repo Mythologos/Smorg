@@ -38,12 +38,13 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             "items": "time zones",
             "color": ColorConstant.NEUTRAL_ORANGE
         }
-        await self.embed(ctx, sorted_time_zones, initialize_embed=self.initialize_itemized_embed,
+        await self.embed(ctx.channel, sorted_time_zones, initialize_embed=self.initialize_itemized_embed,
                          initialize_field=self.initialize_zone_field, embed_items=embed_items)
 
     @staticmethod
-    async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str) -> tuple:
-        name = f"Reminder at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
+    async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str, counter: int) -> \
+            tuple:
+        name = f"Reminder {counter + 1}, Scheduled at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
         value = f"{reminder_message}"
         inline: bool = False
         return name, value, inline
@@ -59,12 +60,14 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             "items": "reminders",
             "color": ColorConstant.CALM_GREEN
         }
-        await self.embed(ctx, reminder_list, initialize_embed=self.initialize_authored_embed,
-                         initialize_field=self.initialize_reminder_field, embed_items=embed_items)
+        field_items: dict = {"counter": None}
+        await self.embed(ctx.channel, reminder_list, initialize_embed=self.initialize_authored_embed,
+                         initialize_field=self.initialize_reminder_field, embed_items=embed_items,
+                         field_items=field_items)
 
     @staticmethod
-    async def initialize_quote_field(quote_author: str, quote: str, overall_author: str):
-        name = None
+    async def initialize_quote_field(quote_author: str, quote: str, overall_author: str, counter: int) -> tuple:
+        name = f"Quote {counter + 1}"
         value = f"\"{quote}\" -- {quote_author if quote_author != overall_author else (overall_author or 'Anonymous')}"
         inline: bool = False
         return name, value, inline
@@ -78,9 +81,9 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             "items": "quotes",
             "color": ColorConstant.HEAVENLY_YELLOW
         }
-        field_items: dict = {"overall_author": overall_name}
+        field_items: dict = {"counter": None, "overall_author": overall_name}
         await self.embed(
-            ctx, quote_list, initialize_embed=self.initialize_authored_embed,
+            ctx.channel, quote_list, initialize_embed=self.initialize_authored_embed,
             initialize_field=self.initialize_quote_field,
             embed_items=embed_items, field_items=field_items
         )
@@ -88,7 +91,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     @staticmethod
     async def initialize_arithmetic_field(name: str, representation: str) -> tuple:
         name = f"{name.title().replace('_', ' ')}"
-        value = f"Representation: {representation}"
+        value = f"Symbol: {representation}"
         if representation.isalpha():
             value += '()'
         inline: bool = False
@@ -102,7 +105,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             "color": ColorConstant.NEUTRAL_ORANGE
         }
         await self.embed(
-            ctx, operator_list, initialize_embed=self.initialize_itemized_embed,
+            ctx.channel, operator_list, initialize_embed=self.initialize_itemized_embed,
             initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
         )
 
@@ -114,7 +117,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             "color": ColorConstant.NEUTRAL_ORANGE
         }
         await self.embed(
-            ctx, function_list, initialize_embed=self.initialize_itemized_embed,
+            ctx.channel, function_list, initialize_embed=self.initialize_itemized_embed,
             initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
         )
 
