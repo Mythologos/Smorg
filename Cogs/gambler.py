@@ -5,7 +5,6 @@
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax.
 # TODO: divide up some of these functions; some are getting decently long.
-# TODO: using knowledge gained from timekeeper / embedder, improve functions here
 
 import discord
 import asyncio
@@ -59,7 +58,7 @@ class Gambler(commands.Cog, Embedder):
         parsed_roll: list = await self.parse_roll(raw_roll)
         verbose_dice: list = []
         for match_index, match in enumerate(parsed_roll):
-            die_roll: str = match[MatchContent.DIE_ROLL.value]
+            die_roll: str = match[MatchContent.DIE_ROLL]
             if die_roll:
                 parsed_dice: dict = await self.parse_dice(die_roll)
                 processed_dice: dict = await self.process_dice(parsed_dice)
@@ -100,8 +99,8 @@ class Gambler(commands.Cog, Embedder):
         return dice_embed
 
     @staticmethod
-    async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list,
-                                    dice_result: int, counter: int) -> tuple:
+    async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list, dice_result: int,
+                                    counter: int) -> tuple:
         name = f"Dice Roll {counter + 1}: {raw_roll}"
         value = f"**Raw Dice Result:** {unsorted_result}\n" \
                 f"**Final Dice Result:** {sorted_result}\n" \

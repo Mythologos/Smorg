@@ -1,4 +1,4 @@
-# TODO: method to display accepted roll syntax mechanics
+# TODO: documentation
 
 import datetime
 import discord
@@ -8,9 +8,10 @@ from typing import Optional, Union
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import EmptyEmbed
+from Cogs.Helpers.Enumerators.croupier import RollMechanic
+from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
-from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from smorgasDB import Quote, Reminder
 
 
@@ -121,7 +122,39 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
             initialize_field=self.initialize_arithmetic_field, embed_items=embed_items
         )
 
+    @display.command()
+    async def dice(self, ctx: commands.Context):
+        dice_mechanic_list: list = [(item.name, item.representation, item.value_range, item.description)
+                                    for item in RollMechanic.__members__.values()]
+        await self.embed(
+            ctx.channel, dice_mechanic_list, initialize_embed=self.initialize_dice_embed,
+            initialize_field=self.initialize_dice_field
+        )
+
+    @staticmethod
+    async def initialize_dice_embed(page_number: int = 1) -> discord.Embed:
+        if page_number == 1:
+            desc: str = f'The form of the dice roll can be represented by \'x[dD]y[kKdD]z![<>]a\',' \
+                        f'where the only required components are x, one of d or D, and y. The breakdown of each item ' \
+                        f'in this roll is given below:'
+        else:
+            desc = f'More of Smorg\'s dice mechanics are as follows:'
+        dice_mechanic_embed: discord.Embed = discord.Embed(
+            title=f"Smorg's Dice Mechanics, Page {page_number}",
+            description=desc,
+            color=ColorConstant.NEUTRAL_ORANGE
+        )
+        return dice_mechanic_embed
+
+    @staticmethod
+    async def initialize_dice_field(name: str, representation: str, value_range: str, description: str) -> tuple:
+        name: str = f"{name.title().replace('_', ' ')}, Representation: {representation}"
+        value: str = f"{value_range} {description}"
+        inline: bool = False
+        return name, value, inline
+
     # TODO: handle error where invalid subcommand argument is given (TypeError?)
+    @dice.error
     @display.error
     @operators.error
     @reminders.error
