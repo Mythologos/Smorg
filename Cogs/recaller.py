@@ -1,4 +1,4 @@
-# TODO: be sure to add Disambiguator TimeoutError handling
+# TODO: documentation...
 
 import discord
 import datetime
@@ -17,7 +17,6 @@ class Recaller(commands.Cog, Chronologist):
         self.bot = bot
         super().__init__()
 
-    # TODO: documentation...
     @commands.command(description=HelpDescription.REMIND)
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:

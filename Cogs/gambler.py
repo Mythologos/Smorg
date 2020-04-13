@@ -4,10 +4,8 @@
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
 # TODO: exceptions for incorrect roll syntax.
-# TODO: divide up some of these functions; some are getting decently long.
 
 import discord
-import asyncio
 import re
 
 from copy import deepcopy
@@ -45,8 +43,8 @@ class Gambler(commands.Cog, Embedder):
             for recipient in recipients:
                 if not recipient.dm_channel:
                     await self.bot.get_user(recipient.id).create_dm()
-                await self.send_roll(ctx, roll, flat_tokens, verbose_dice,
-                                     roll_result, description, recipient.dm_channel)
+                await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description,
+                                     recipient.dm_channel)
         else:
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
             current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
@@ -60,30 +58,36 @@ class Gambler(commands.Cog, Embedder):
         for match_index, match in enumerate(parsed_roll):
             die_roll: str = match[MatchContent.DIE_ROLL]
             if die_roll:
-                parsed_dice: dict = await self.parse_dice(die_roll)
-                processed_dice: dict = await self.process_dice(parsed_dice)
-                dice_result, unsorted_results, sorted_results = await self.evaluate_roll(processed_dice)
+                dice_result, unsorted_results, sorted_results = await self.handle_dice(die_roll)
                 verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
                 parsed_roll[match_index] = (str(dice_result),)
         flat_matches: list = [item for match in parsed_roll for item in match if item]
         roll_result = await self.yard_shunter.shunt_yard(flat_matches)
         return flat_matches, verbose_dice, roll_result
 
+    async def handle_dice(self, die_roll: str) -> tuple:
+        parsed_dice: dict = await self.parse_dice(die_roll)
+        processed_dice: dict = await self.process_dice(parsed_dice)
+        return await self.evaluate_roll(processed_dice)
+
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
                         description: str, destination_channel: discord.TextChannel):
-        description: str = description.strip()
-        introductory_message: str = f"{ctx.message.author.mention}\n" \
-                                    f"Initial Roll: {roll}\n" \
-                                    f"Reason: {description}"
-        await destination_channel.send(introductory_message)
+        await destination_channel.send(
+            f"{ctx.message.author.mention}\n"
+            f"Initial Roll: {roll}\n"
+            f"Reason: {description.strip()}"
+        )
         if verbose_dice:
             field_items = {"counter": None}
-            await self.embed(destination_channel, verbose_dice, initialize_embed=self.initialize_dice_embed,
-                             initialize_field=self.initialize_dice_field, field_items=field_items)
+            await self.embed(
+                destination_channel, verbose_dice, initialize_embed=self.initialize_dice_embed,
+                initialize_field=self.initialize_dice_field, field_items=field_items
+            )
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
-        concluding_message = f"The evaluated roll was: {evaluated_roll}\n" \
-                             f"The final result of this roll is: {roll_result}"
-        await destination_channel.send(concluding_message)
+        await destination_channel.send(
+            f"The evaluated roll was: {evaluated_roll}\n"
+            f"The final result of this roll is: {roll_result}"
+        )
 
     @staticmethod
     async def initialize_dice_embed(page_number: int = 1):
@@ -146,14 +150,17 @@ class Gambler(commands.Cog, Embedder):
         }
 
     async def evaluate_roll(self, processed_roll) -> tuple:
-        roll_results: list = await self.roll_dice(processed_roll['number_of_dice'], processed_roll['die_size'],
-                                                  processed_roll['explosion_sign'])
+        roll_results: list = await self.roll_dice(
+            processed_roll['number_of_dice'], processed_roll['die_size'], processed_roll['explosion_sign']
+        )
         unsorted_results: list = deepcopy(roll_results)
         roll_results.sort(reverse=True)
-        roll_results = await self.select_dice(roll_results, processed_roll['drop_sign'], processed_roll['keep_sign'],
-                                              processed_roll['drop_keep_value'])
-        roll_result: int = await self.analyze_roll(roll_results, processed_roll['challenge_sign'],
-                                                   processed_roll['challenge_value'])
+        roll_results = await self.select_dice(
+            roll_results, processed_roll['drop_sign'], processed_roll['keep_sign'], processed_roll['drop_keep_value']
+        )
+        roll_result: int = await self.analyze_roll(
+            roll_results, processed_roll['challenge_sign'], processed_roll['challenge_value']
+        )
         return roll_result, unsorted_results, roll_results
 
     @staticmethod
@@ -232,19 +239,6 @@ class Gambler(commands.Cog, Embedder):
             else:
                 error_embed = discord.Embed(
                     title='Error (Roll): User Input Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstant.ERROR_RED
-                )
-        elif isinstance(error, commands.CommandInvokeError):
-            if isinstance(error.original, asyncio.TimeoutError):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Disambiguation Timeout',
-                    description='You didn\'t supply a valid integer quickly enough.',
-                    color=ColorConstant.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Roll): Command Invoke Error',
                     description=f'The error type is: {error}. A better error message will be supplied soon.',
                     color=ColorConstant.ERROR_RED
                 )
