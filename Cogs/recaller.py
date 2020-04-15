@@ -1,10 +1,15 @@
 # TODO: documentation...
+# TODO: I think PostgreSQL is doing something with the datetimes. They get to the database intact,
+# but the database may handle them erroneously. This must be investigated.
+# TODO: error handling for revise, forget
+# TODO: should probably add "or ctx.channel" in cases where channels could be deleted
+
 
 import discord
 import datetime
 
 from discord.ext import commands
-from typing import Union
+from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
@@ -20,26 +25,51 @@ class Recaller(commands.Cog, Chronologist):
     @commands.command(description=HelpDescription.REMIND)
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:
-        reminder_response: str = "Your reminder has been successfully processed! It'll be sent at the specified time."
         current_guild_id = ctx.guild.id
-        await self.handle_time(current_guild_id, mentionable.mention, reminder_time, message)
+        validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
+        Reminder.create_reminder_with(current_guild_id, mentionable.mention, message, validated_datetime)
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(reminder_channel_id)
-        await current_channel.send(reminder_response)
+        await current_channel.send(
+            "Your reminder has been successfully processed! It'll be sent at the specified time."
+        )
 
-    # TODO: documentation ... "revises" a reminder
     @commands.command(description=HelpDescription.REVISE)
-    async def revise(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], old_reminder_time: str,
-                     new_reminder_time: str, new_message: str = ""):
-        raise NotImplementedError
+    async def revise(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
+                     old_reminder_time: str, new_reminder_time: Optional[str] = None,
+                     new_message: Optional[str] = None) -> None:
+        current_guild_id = ctx.guild.id
+        old_datetime: datetime.datetime = await self.handle_time(old_reminder_time)
+        if Reminder.has_reminder_at(current_guild_id, mentionable.mention, old_datetime):
+            new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
+            Reminder.update_reminder_with(current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message)
+            reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
+            current_channel = self.bot.get_channel(reminder_channel_id)
+            await current_channel.send(
+                "Your revision has been successfully processed!"
+            )
+        else:
+            raise ...  # fix this, specify exception to raise
 
-    # TODO: documentation... "forgets" a reminder
     @commands.command(description=HelpDescription.FORGET)
-    async def forget(self, ctx: commands.Context, name: Union[discord.Member, discord.Role], reminder_time: str):
-        raise NotImplementedError
+    async def forget(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
+                     reminder_time: str) -> None:
+        mention: str = mentionable.mention
+        current_guild_id = ctx.guild.id
+        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
+        current_channel = self.bot.get_channel(reminder_channel_id)
+        validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
+        if Reminder.has_reminder_at(current_guild_id, mention, validated_datetime):
+            Reminder.delete_reminder_with(current_guild_id, mention, validated_datetime)
+            await current_channel.send(
+                "Your deletion has been successfully processed!"
+            )
+        else:
+            await current_channel.send(
+                "There was no such reminder to delete."
+            )
 
-    async def handle_time(self, guild_id: int, mentionable: Union[discord.Member, discord.Role],
-                          reminder_time: str, message: str) -> None:
+    async def handle_time(self, reminder_time: str) -> datetime.datetime:
         default_tz: datetime.timezone = datetime.timezone.utc
         today: datetime.datetime = datetime.datetime.now(default_tz)
         additional_validators: tuple = (self.validate_future_datetime,)
@@ -51,7 +81,7 @@ class Recaller(commands.Cog, Chronologist):
             reminder_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators, temporal_defaults=temporal_defaults
         )
-        Reminder.create_reminder_with(guild_id, mentionable, message, validated_datetime)
+        return validated_datetime
 
     @remind.error
     async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):
@@ -95,7 +125,7 @@ class Recaller(commands.Cog, Chronologist):
             elif isinstance(error, commands.MissingRequiredArgument):
                 error_embed = discord.Embed(
                     title='Error (Remind): Missing Required Argument',
-                    description=f'The given time zone is invalid.',
+                    description=f'A required argument is missing.',
                     color=ColorConstant.ERROR_RED
                 )
             else:

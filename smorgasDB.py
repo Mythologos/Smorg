@@ -147,7 +147,7 @@ class Reminder(Base, BaseAddition):
 
     # Methods:
     def __repr__(self) -> str:
-        return f'<Guild(guild_id: {self.guild_id}, mentionable: {self.mentionable}, ' \
+        return f'<Reminder(guild_id: {self.guild_id}, mentionable: {self.mentionable}, ' \
                f'reminder_datetime: {self.reminder_datetime}, reminder_text: {self.reminder_text}, ' \
                f'created_at: {self.created_at}, last_updated_at: {self.last_updated_at})>'
 
@@ -161,10 +161,39 @@ class Reminder(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
+    def update_reminder_with(method_session: Session, g_id: int, mention: str, old_r_datetime: datetime.datetime,
+                             new_r_datetime: datetime.datetime, new_r_text: str) -> None:
+        attributes_to_update: dict = {}
+        reminder_to_update: query = method_session.query(Reminder) \
+            .filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=old_r_datetime)
+        if new_r_datetime:
+            attributes_to_update["reminder_datetime"] = new_r_datetime
+        if new_r_text:
+            attributes_to_update["reminder_text"] = new_r_text
+        reminder_to_update.update(attributes_to_update)
+        method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
     def get_reminders_by(method_session: Session, g_id: int, mention: str) -> list:
         reminder_list: list = method_session.query(Reminder.reminder_datetime, Reminder.reminder_text) \
             .filter_by(guild_id=g_id, mentionable=mention)
         return reminder_list
+
+    @staticmethod
+    @BaseAddition.session_method
+    def has_reminder_at(method_session: Session, g_id: int, mention: str, scheduled_time: datetime.datetime) -> bool:
+        scheduled_reminder: Reminder = method_session.query(Reminder) \
+            .filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time).first()
+        return True if scheduled_reminder else False
+
+    @staticmethod
+    @BaseAddition.session_method
+    def delete_reminder_with(method_session: Session, g_id: int, mention: str,
+                             scheduled_time: datetime.datetime) -> None:
+        method_session.query(Reminder).filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time) \
+            .delete()
+        method_session.commit()
 
 
 class Guild(Base, BaseAddition):

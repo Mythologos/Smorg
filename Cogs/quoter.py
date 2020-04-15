@@ -1,8 +1,5 @@
 # TODO: documentation
-# TODO: synthesize quote and immortalize portions to reduce code duplication?
 # TODO: maybe change yoink's name to 'fetch'? add other things to it?
-# TODO: re-evaluate the method by which quotes are stored and retrieved per author. How do I want to handle author?
-# Can it only be roles? Can it be names? What's the best way to keep everything organized and retrievable?
 
 import discord
 from discord.ext import commands
@@ -19,30 +16,9 @@ class Quoter(commands.Cog):
         self.bot = bot
 
     @commands.command(description=HelpDescription.QUOTE)
-    async def quote(self, ctx: commands.Context, text: str,
-                    author: Union[discord.Member, str, None] = None) -> None:
-        """
-        This method receives a quotation and embeds it in its quotation chat.
-        :param ctx: The context from which the quotation came.
-        :param text: a quote to be embedded (a String).
-        :param author: TODO: REWRITE
-        :return: None.
-        """
-        quotation_channel_id = Guild.get_quotation_channel_by(ctx.guild.id)
-        current_channel = self.bot.get_channel(quotation_channel_id)
-        text = text.strip()
-        if author:
-            if isinstance(author, discord.Member):
-                author = author.name
-            else:
-                author = author.strip()
-        quote_response = discord.Embed(
-            title=f'The Words of {author if author else "An Anonymous Intellectual"}:',
-            description=text,
-            color=ColorConstant.DEEP_BLUE
-        )
-        await ctx.message.delete()
-        await current_channel.send(embed=quote_response)
+    async def quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None] = None) -> None:
+        text_author: str = await self.handle_author(author, "An Anonymous Genius")
+        await self.handle_quote(ctx, text, text_author, "The Words of ", ColorConstant.DEEP_BLUE)
 
     @quote.error
     async def quote_error(self, ctx: commands.Context, error: discord.DiscordException):
@@ -69,35 +45,13 @@ class Quoter(commands.Cog):
     @commands.command(description=HelpDescription.IMMORTALIZE)
     async def immortalize(self, ctx: commands.Context, text: str,
                           author: Union[discord.Member, str, None] = None) -> None:
-        """
-        This method receives a quotation and embeds it in its quotation chat.
-        It also stores this information in the database.
-        :param ctx: The context from which the quotation came.
-        :param text: a quote to be embedded (a String).
-        :param author: TODO: REWRITE
-        :return: None.
-        """
-        current_guild_id = ctx.guild.id
-        quotation_channel_id = Guild.get_quotation_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(quotation_channel_id)
-        text = text.strip()
-        if author:
-            if isinstance(author, discord.Member):
-                author = author.name
-            else:
-                author = author.strip()
-        quote_response = discord.Embed(
-            title=f'The Masterpiece of {author if author else "A True Legend"}:',
-            description=text,
-            color=ColorConstant.HEAVENLY_YELLOW
-        )
-        Quote.create_quote_with(current_guild_id, text, author)
-        await ctx.message.delete()
-        await current_channel.send(embed=quote_response)
+        text_author: str = await self.handle_author(author, "A True Legend")
+        await self.handle_quote(ctx, text, text_author, "The Masterpiece of ", ColorConstant.HEAVENLY_YELLOW)
+        Quote.create_quote_with(ctx.guild.id, text, text_author)
 
     @immortalize.error
     async def immortalize_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        # TODO: add more errors related to engrave's other behavior with the database?
+        # TODO: add more errors related to immortalize's other behavior with the database?
         if isinstance(error, commands.MissingRequiredArgument):
             error_embed = discord.Embed(
                 title='Error (Immortalize): Missing Quotation',
@@ -117,6 +71,30 @@ class Quoter(commands.Cog):
                 color=ColorConstant.ERROR_RED
             )
         await ctx.send(embed=error_embed)
+
+    async def handle_quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None],
+                           title_without_author: str, color: ColorConstant):
+        current_guild_id: int = ctx.guild.id
+        quotation_channel_id: int = Guild.get_quotation_channel_by(current_guild_id)
+        current_channel: discord.TextChannel = self.bot.get_channel(quotation_channel_id)
+        quote_response = discord.Embed(
+            title=title_without_author + author,
+            description=text,
+            color=color
+        )
+        await ctx.message.delete()
+        await current_channel.send(embed=quote_response)
+
+    @staticmethod
+    async def handle_author(author: Union[discord.Member, str, None], anonymous_default: str):
+        if author:
+            if isinstance(author, discord.Member):
+                author = author.name
+            else:
+                author = author.strip()
+        else:
+            author = anonymous_default
+        return author
 
     # TODO: add Enum for list access values
     @commands.command(description=HelpDescription.YOINK)

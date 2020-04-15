@@ -25,7 +25,9 @@ class ColorConstant(NamedConstant):
 
 
 class HelpDescription(NamedConstant):
-    DISPLAY = "WIP"  # TODO: finish
+    DISPLAY = "This command, when combined with various subcommands, relates information about Smorg's capabilities " \
+              "and its current state. " \
+              "Current subcommands include dice, functions, operators, quotes, reminders, and zones."
     FORGET = "This command allows someone to delete a reminder. To do so, it accepts arguments of a role and a time. " \
              "It deletes a reminder corresponding to that role and time."
     GOVERN = "This command tells Smorg what channel in which it should perform some task. " \
@@ -36,23 +38,21 @@ class HelpDescription(NamedConstant):
                   "It takes a quote and, optionally, an author as arguments."
     OBSERVE = "This command allows a Guild to change the prefix to which the bot will respond."
     PURGE = "This command deletes a specified number of messages prior to the given command."
-    QUOTE = "This command embeds a quote. " \
-            "It takes a quote (in quotation marks) and, optionally, an author as arguments."
+    QUOTE = "This command embeds a quote. It takes a quote and, optionally, an author as arguments. " \
+            "The author can be a mention or regular text."
     REMIND = "This command signals a role at a certain time with a certain message. " \
              "It takes arguments in the order of role, time, and an optional message. " \
-             "Time can be in terms of a twelve-hour or twenty-four-hour clock; " \
-             "however, if it is the former, it must be in quotes with an A.M. or P.M. accompanying it. " \
-             "Roles and messages consisting of multiple words should also be in quotes."
-    ROLL = "This command rolls dice. It currently can handle rolls of the form xdy(k/d)z(!)(+/-)a(>/<)b, " \
-           "where x, y, and z are nonnegative integers, and where a and b are integers. " \
-           "Regular dice, drop-keep syntax, exploding dice, challenge dice, " \
-           "and combinations of these are all supported. " \
-           "Mathematical modifiers using + (addition), - (subtraction), * (multiplication), / (division), " \
-           "^ (exponentiation), parentheses, floor(), ceiling(), abs(), and sqrt() are allowed. " \
-           "Quoted, a description of what the roll was for may be included next. " \
-           "The result is posted either in a set gamble channel or where the die was rolled."
-    REVISE = "WIP"  # TODO: finish
-    SUPPORT = "This command retrieves the menu below shown here."
+             "Time can be in terms of a twelve-hour or twenty-four-hour clock. " \
+             "Dates and times must be given as follows: '[time] [time zone]; [day] [month] [year]'. " \
+             "Messages consisting of multiple words should be in quotes."
+    ROLL = "This command rolls dice. See various display subcommand tables for die and modifier options. " \
+           "Next, if you want the roll to be sent to certain members rather than publicly displayed in a channel, " \
+           "you may mention those members that you want to receive the roll. " \
+           "The roller is not automatically included. " \
+           "You may also provide a description of the roll's purpose after these items. "
+    REVISE = "This command allows someone to edit a reminder's description. " \
+             "To do so, it accepts arguments of a role, a time, and a new description."
+    SUPPORT = "This command retrieves a help menu that lists information about all commands that Smorg supports."
     TRANSLATE = "This command translates text of one set of characters to another set of characters. " \
                 "Current sets of characters include the Latin alphabet (alphabet) and Morse code (morse)."
     YOINK = "This command retrieves and displays a random stored quote."

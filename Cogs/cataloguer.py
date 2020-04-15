@@ -46,7 +46,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str, counter: int) -> \
             tuple:
         name = f"Reminder {counter + 1}, Scheduled at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
-        value = f"{reminder_message}"
+        value = f"{reminder_message or '[No Message Provided]'}"
         inline: bool = False
         return name, value, inline
 

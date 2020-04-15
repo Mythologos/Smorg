@@ -39,7 +39,7 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @staticmethod
     async def initialize_support_field(command: commands.Command, current_prefix: str):
         name: str = f"{current_prefix}{command.name}"
-        description: str = f"{current_prefix}{command.description}"
+        description: str = f"{command.description}"
         inline: bool = False
         return name, description, inline
 
