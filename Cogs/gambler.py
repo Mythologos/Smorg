@@ -1,5 +1,4 @@
 # TODO: overall documentation
-# TODO: deck of cards.
 
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.

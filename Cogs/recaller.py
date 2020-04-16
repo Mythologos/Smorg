@@ -29,7 +29,7 @@ class Recaller(commands.Cog, Chronologist):
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
         Reminder.create_reminder_with(current_guild_id, mentionable.mention, message, validated_datetime)
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(reminder_channel_id)
+        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         await current_channel.send(
             "Your reminder has been successfully processed! It'll be sent at the specified time."
         )
@@ -44,7 +44,7 @@ class Recaller(commands.Cog, Chronologist):
             new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
             Reminder.update_reminder_with(current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message)
             reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-            current_channel = self.bot.get_channel(reminder_channel_id)
+            current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
             await current_channel.send(
                 "Your revision has been successfully processed!"
             )
@@ -57,7 +57,7 @@ class Recaller(commands.Cog, Chronologist):
         mention: str = mentionable.mention
         current_guild_id = ctx.guild.id
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(reminder_channel_id)
+        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
         if Reminder.has_reminder_at(current_guild_id, mention, validated_datetime):
             Reminder.delete_reminder_with(current_guild_id, mention, validated_datetime)

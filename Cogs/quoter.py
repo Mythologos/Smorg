@@ -76,7 +76,7 @@ class Quoter(commands.Cog):
                            title_without_author: str, color: ColorConstant):
         current_guild_id: int = ctx.guild.id
         quotation_channel_id: int = Guild.get_quotation_channel_by(current_guild_id)
-        current_channel: discord.TextChannel = self.bot.get_channel(quotation_channel_id)
+        current_channel: discord.TextChannel = self.bot.get_channel(quotation_channel_id) or ctx.message.channel
         quote_response = discord.Embed(
             title=title_without_author + author,
             description=text,
