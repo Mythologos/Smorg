@@ -2,7 +2,7 @@
 
 # Current Agenda:
 # TODO: warnings / safeguards against generating a message longer than 2000 characters.
-# TODO: exceptions for incorrect roll syntax.
+# TODO: exceptions for incorrect roll syntax. Note: is this done? Did I forget to remove this?
 
 import discord
 import re
@@ -10,6 +10,7 @@ import re
 from copy import deepcopy
 from discord.ext import commands
 from random import randint
+from typing import Union
 
 from smorgasDB import Guild
 from Cogs.Helpers.embedder import Embedder
@@ -198,53 +199,31 @@ class Gambler(commands.Cog, Embedder):
 
     @roll.error
     async def roll_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.ExpectedClosingQuoteError):
+        command_name: str = ctx.command.name.title()
+        error_embed: Union[discord.Embed, None] = None
+        if isinstance(error, DuplicateOperator):
             error_embed = discord.Embed(
-                title='Error (Roll): Missing Closing Quote',
-                description=f'You forgot to close the quotation on one of your arguments.',
+                title=f'Error ({command_name}): Duplicate Operator',
+                description=f'The roll contains a duplicate operator.',
                 color=ColorConstant.ERROR_RED
             )
-        elif isinstance(error, commands.UserInputError):
-            if isinstance(error, DuplicateOperator):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Duplicate Operator',
-                    description=f'The roll contains a duplicate operator.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, ImproperFunction):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Improper Function',
-                    description=f'A function in your roll is missing a starting parenthesis.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidRecipient):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Invalid Recipient',
-                    description=f'No individual matches the recipient name {error}.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, MissingParenthesis):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Missing Parenthesis',
-                    description=f'Your roll has imbalanced parentheses.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, commands.MissingRequiredArgument):
-                error_embed = discord.Embed(
-                    title='Error (Roll): Missing Required Argument',
-                    description=f'You didn\'t supply a roll.',
-                    color=ColorConstant.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Roll): User Input Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstant.ERROR_RED
-                )
-        else:
+        elif isinstance(error, ImproperFunction):
             error_embed = discord.Embed(
-                title='Error (Roll): Miscellaneous Error',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                title=f'Error ({command_name}): Improper Function',
+                description=f'A function in your roll is missing a starting parenthesis.',
                 color=ColorConstant.ERROR_RED
             )
-        await ctx.send(embed=error_embed)
+        elif isinstance(error, InvalidRecipient):
+            error_embed = discord.Embed(
+                title=f'Error ({command_name}): Invalid Recipient',
+                description=f'No individual matches the recipient name {error}.',
+                color=ColorConstant.ERROR_RED
+            )
+        elif isinstance(error, MissingParenthesis):
+            error_embed = discord.Embed(
+                title=f'Error ({command_name}): Missing Parenthesis',
+                description=f'Your roll has imbalanced parentheses.',
+                color=ColorConstant.ERROR_RED
+            )
+        if error_embed:
+            await ctx.send(embed=error_embed)

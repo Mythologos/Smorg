@@ -1,13 +1,11 @@
 # TODO: documentation
 
 import datetime
-import discord
 from discord.ext import commands
 from typing import Optional
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Guild
 
@@ -48,28 +46,6 @@ class Helper(Chronologist, commands.Cog, Embedder):
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
 
-    @observe.error
-    async def observe_error(self, ctx: commands.Context, error: discord.DiscordException):
-        if isinstance(error, commands.MissingRequiredArgument):
-            error_embed = discord.Embed(
-                title='Error (Observe): Missing Prefix',
-                description='You didn\'t supply a prefix.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.ExpectedClosingQuoteError):
-            error_embed = discord.Embed(
-                title='Error (Observe): Unfinished Quotation',
-                description='You forgot a closing quotation mark on your prefix.',
-                color=ColorConstant.ERROR_RED
-            )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Observe)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)
-
     @commands.command(description=HelpDescription.PURGE)
     async def purge(self, ctx: commands.Context, message_count: Optional[int], from_time: Optional[str],
                     to_time: Optional[str]):
@@ -108,76 +84,3 @@ class Helper(Chronologist, commands.Cog, Embedder):
             delete_count += 1
         else:
             await ctx.send(f"You've deleted up to {message_count or delete_count} messages just now.")
-
-    # TODO: figure out a way to combine some of these errors into a common handler.
-    # Perhaps use an dictionary?
-    @purge.error
-    async def purge_error(self, ctx: commands.Context, error: discord.DiscordException):
-        if isinstance(error, commands.MissingRequiredArgument):
-            error_embed = discord.Embed(
-                title='Error (Purge): Missing Required Argument',
-                description='WIP',  # TODO: error message
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.ExpectedClosingQuoteError):
-            error_embed = discord.Embed(
-                title='Error (Purge): Unfinished Quotation',
-                description='You forgot a closing quotation mark on one of your times.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.UserInputError):
-            if isinstance(error, InvalidDay):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Day',
-                    description=f'The given day is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidHour):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Hour',
-                    description=f'The given hour is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidMinute):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Minute',
-                    description=f'The given minute is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidMonth):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Month',
-                    description=f'The given month is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidTimeZone):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Time Zone',
-                    description=f'The given time zone is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidYear):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Invalid Year',
-                    description=f'The given year is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, commands.MissingRequiredArgument):
-                error_embed = discord.Embed(
-                    title='Error (Purge): Missing Required Argument',
-                    description=f'The given time zone is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Remind): User Input Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstant.ERROR_RED
-                )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Purge)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)

@@ -1,5 +1,5 @@
 # TODO: documentation
-# TODO: maybe change yoink's name to 'fetch'? add other things to it?
+# TODO: add more errors related to immortalize's database behavior?
 
 import discord
 from discord.ext import commands
@@ -20,57 +20,12 @@ class Quoter(commands.Cog):
         text_author: str = await self.handle_author(author, "An Anonymous Genius")
         await self.handle_quote(ctx, text, text_author, "The Words of ", ColorConstant.DEEP_BLUE)
 
-    @quote.error
-    async def quote_error(self, ctx: commands.Context, error: discord.DiscordException):
-        if isinstance(error, commands.MissingRequiredArgument):
-            error_embed = discord.Embed(
-                title='Error (Quote): Missing Quotation',
-                description='You didn\'t supply a quote.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.ExpectedClosingQuoteError):
-            error_embed = discord.Embed(
-                title='Error (Quote): Unfinished Quotation',
-                description='You forgot a closing quotation mark on your quote or author name.',
-                color=ColorConstant.ERROR_RED
-            )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Quote)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)
-
     @commands.command(description=HelpDescription.IMMORTALIZE)
     async def immortalize(self, ctx: commands.Context, text: str,
                           author: Union[discord.Member, str, None] = None) -> None:
         text_author: str = await self.handle_author(author, "A True Legend")
         await self.handle_quote(ctx, text, text_author, "The Masterpiece of ", ColorConstant.HEAVENLY_YELLOW)
         Quote.create_quote_with(ctx.guild.id, text, text_author)
-
-    @immortalize.error
-    async def immortalize_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        # TODO: add more errors related to immortalize's other behavior with the database?
-        if isinstance(error, commands.MissingRequiredArgument):
-            error_embed = discord.Embed(
-                title='Error (Immortalize): Missing Quotation',
-                description='You didn\'t supply a valid quote.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.ExpectedClosingQuoteError):
-            error_embed = discord.Embed(
-                title='Error (Immortalize): Unfinished Quotation',
-                description='You forgot a closing quotation mark on your quote or author name.',
-                color=ColorConstant.ERROR_RED
-            )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Immortalize)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)
 
     async def handle_quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None],
                            title_without_author: str, color: ColorConstant):
@@ -119,16 +74,13 @@ class Quoter(commands.Cog):
 
     @yoink.error
     async def yoink_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
+        command_name: str = ctx.command.name.title()
+        error_embed: Union[discord.Embed, None] = None
         if isinstance(error, commands.CheckFailure):
             error_embed = discord.Embed(
-                title='Error (Yoink): Invalid Request',
+                title=f'Error ({command_name}): Invalid Request',
                 description='Your server has no quotes.',
                 color=ColorConstant.ERROR_RED
             )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Yoink)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)
+        if error_embed:
+            await ctx.send(embed=error_embed)

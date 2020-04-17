@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import EmptyEmbed
+from Cogs.Helpers.exceptioner import EmptyEmbed, MissingSubcommand
 from Cogs.Helpers.Enumerators.croupier import RollMechanic
 from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
@@ -23,7 +23,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     @commands.group(description=HelpDescription.DISPLAY)
     async def display(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
-            raise commands.MissingRequiredArgument
+            raise MissingSubcommand
 
     @staticmethod
     async def initialize_zone_field(time_zone: TimeZone) -> tuple:
@@ -153,7 +153,6 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
         inline: bool = False
         return name, value, inline
 
-    # TODO: handle error where invalid subcommand argument is given (TypeError?)
     @dice.error
     @display.error
     @operators.error
@@ -161,29 +160,13 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     @quotes.error
     @zones.error
     async def display_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        if isinstance(error, commands.UserInputError):
-            if isinstance(error, commands.MissingRequiredArgument):
-                error_embed = discord.Embed(
-                    title='Error (Display): Missing Required Argument',
-                    description=f'A required argument is missing from your command.',  # TODO: improve message
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, EmptyEmbed):  # TODO: maybe change error type, not sure if it fits here
-                error_embed = discord.Embed(
-                    title='Error (Display): Empty Embed',
-                    description=f'The display that you requested has no data to fill it.',
-                    color=ColorConstant.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Display): User Input Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstant.ERROR_RED
-                )
-        else:
+        command_name: str = ctx.command.name.title()
+        error_embed: Union[discord.Embed, None] = None
+        if isinstance(error, EmptyEmbed):
             error_embed = discord.Embed(
-                title='Error (Display): Miscellaneous Error',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                title=f'Error ({command_name}): Empty Embed',
+                description=f'The display that you requested has no data to fill it.',
                 color=ColorConstant.ERROR_RED
             )
-        await ctx.send(embed=error_embed)
+        if error_embed:
+            await ctx.send(embed=error_embed)

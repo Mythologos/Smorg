@@ -5,7 +5,8 @@ from discord.ext import commands
 from typing import Callable
 
 from smorgasDB import Guild
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from Cogs.Helpers.exceptioner import MissingSubcommand
+from Cogs.Helpers.Enumerators.universalist import HelpDescription
 
 
 class Arranger(commands.Cog):
@@ -15,11 +16,7 @@ class Arranger(commands.Cog):
     @commands.group(description=HelpDescription.GOVERN)
     async def govern(self, ctx: commands.Context):
         if ctx.invoked_subcommand is None:
-            await ctx.send(embed=discord.Embed(
-                title='Error (Govern): Missing Domain',
-                description='You didn\'t supply a domain.',
-                color=ColorConstant.ERROR_RED
-            ))
+            raise MissingSubcommand
 
     @govern.command()
     async def quotation(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
@@ -61,33 +58,3 @@ class Arranger(commands.Cog):
         current_guild = ctx.guild
         table_update_method(current_guild.id, channel_id)
         await self.bot.get_channel(channel_id).send(govern_message)
-
-    @quotation.error
-    @reminder.error
-    @gamble.error
-    async def domain_error(self, ctx: commands.Context, error: discord.DiscordException):
-        if isinstance(error, commands.MissingRequiredArgument):
-            error_embed = discord.Embed(
-                title='Error (Govern): Missing Channel',
-                description='You didn\'t supply a channel.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.ExpectedClosingQuoteError):
-            error_embed = discord.Embed(
-                title='Error (Govern): Unfinished Channel Quotation',
-                description='You forgot a closing quotation mark on your channel name.',
-                color=ColorConstant.ERROR_RED
-            )
-        elif isinstance(error, commands.BadArgument):
-            error_embed = discord.Embed(
-                title='Error (Govern): Invalid Channel',
-                description='The channel name given was not found.',
-                color=ColorConstant.ERROR_RED
-            )
-        else:
-            error_embed = discord.Embed(
-                title='Error (Govern)',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
-                color=ColorConstant.ERROR_RED
-            )
-        await ctx.send(embed=error_embed)

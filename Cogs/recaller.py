@@ -1,8 +1,6 @@
 # TODO: documentation...
 # TODO: I think PostgreSQL is doing something with the datetimes. They get to the database intact,
 # but the database may handle them erroneously. This must be investigated.
-# TODO: error handling for revise, forget
-# TODO: should probably add "or ctx.channel" in cases where channels could be deleted
 
 
 import discord
@@ -12,7 +10,7 @@ from discord.ext import commands
 from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
-from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
+from Cogs.Helpers.exceptioner import MissingReminder
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Guild, Reminder
 
@@ -40,16 +38,16 @@ class Recaller(commands.Cog, Chronologist):
                      new_message: Optional[str] = None) -> None:
         current_guild_id = ctx.guild.id
         old_datetime: datetime.datetime = await self.handle_time(old_reminder_time)
+        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
+        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         if Reminder.has_reminder_at(current_guild_id, mentionable.mention, old_datetime):
             new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
             Reminder.update_reminder_with(current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message)
-            reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-            current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
             await current_channel.send(
                 "Your revision has been successfully processed!"
             )
         else:
-            raise ...  # fix this, specify exception to raise
+            raise MissingReminder
 
     @commands.command(description=HelpDescription.FORGET)
     async def forget(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
@@ -65,9 +63,7 @@ class Recaller(commands.Cog, Chronologist):
                 "Your deletion has been successfully processed!"
             )
         else:
-            await current_channel.send(
-                "There was no such reminder to delete."
-            )
+            raise MissingReminder
 
     async def handle_time(self, reminder_time: str) -> datetime.datetime:
         default_tz: datetime.timezone = datetime.timezone.utc
@@ -83,61 +79,16 @@ class Recaller(commands.Cog, Chronologist):
         )
         return validated_datetime
 
-    @remind.error
-    async def remind_error(self, ctx: commands.Context, error: discord.DiscordException):
-        if isinstance(error, commands.UserInputError):
-            if isinstance(error, InvalidDay):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Day',
-                    description=f'The given day is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidHour):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Hour',
-                    description=f'The given hour is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidMinute):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Minute',
-                    description=f'The given minute is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidMonth):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Month',
-                    description=f'The given month is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidTimeZone):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Time Zone',
-                    description=f'The given time zone is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, InvalidYear):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Invalid Year',
-                    description=f'The given year is invalid.',
-                    color=ColorConstant.ERROR_RED
-                )
-            elif isinstance(error, commands.MissingRequiredArgument):
-                error_embed = discord.Embed(
-                    title='Error (Remind): Missing Required Argument',
-                    description=f'A required argument is missing.',
-                    color=ColorConstant.ERROR_RED
-                )
-            else:
-                error_embed = discord.Embed(
-                    title='Error (Remind): User Input Error',
-                    description=f'The error type is: {error}. A better error message will be supplied soon.',
-                    color=ColorConstant.ERROR_RED
-                )
-        else:
+    @revise.error
+    @forget.error
+    async def reminder_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
+        command_name: str = ctx.command.name.title()
+        error_embed: Union[discord.Embed, None] = None
+        if isinstance(error, MissingReminder):
             error_embed = discord.Embed(
-                title='Error (Remind): Miscellaneous Error',
-                description=f'The error type is: {error}. A better error message will be supplied soon.',
+                title=f'Error ({command_name}): Missing Reminder',
+                description='Your server does not have a reminder scheduled for that time and mention.',
                 color=ColorConstant.ERROR_RED
             )
-        await ctx.send(embed=error_embed)
+        if error_embed:
+            await ctx.send(embed=error_embed)
