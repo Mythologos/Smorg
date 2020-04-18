@@ -42,7 +42,9 @@ class Recaller(commands.Cog, Chronologist):
         current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         if Reminder.has_reminder_at(current_guild_id, mentionable.mention, old_datetime):
             new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
-            Reminder.update_reminder_with(current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message)
+            Reminder.update_reminder_with(
+                current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message
+            )
             await current_channel.send(
                 "Your revision has been successfully processed!"
             )

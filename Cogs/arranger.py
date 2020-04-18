@@ -33,7 +33,7 @@ class Arranger(commands.Cog):
         This method allows users to alter the chat in which Smorg posts its reminders.
         See the handle_domain function for further details.
         """
-        govern_message = 'Congrats! You have successfully changed where I blare your noisiest pings.'
+        govern_message = 'Congrats! You have successfully changed where I blare your noisiest remembrances.'
         await self.handle_domain(ctx, Guild.update_reminder_channel, channel.id, govern_message)
 
     @govern.command()
@@ -42,7 +42,7 @@ class Arranger(commands.Cog):
         This method allows users to alter the chat in which Smorg posts its public gambles.
         See the handle_domain function for further details.
         """
-        govern_message = 'Congrats! You have successfully changed where you let the cards and dice fly.'
+        govern_message = 'Congrats! You have successfully changed where you let dice fly.'
         await self.handle_domain(ctx, Guild.update_gamble_channel, channel.id, govern_message)
 
     async def handle_domain(self, ctx: commands.Context, table_update_method: Callable, channel_id: int,
