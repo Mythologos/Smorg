@@ -1,4 +1,4 @@
-from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis
+from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis, InvalidSequence
 from Cogs.Helpers.Enumerators.tabulator import ComparisonOperator, MathematicalFunction, MathematicalOperator,\
     OperatorAssociativity
 
@@ -9,12 +9,9 @@ class YardShunter:
     def __init__(self):
         self.operator_stack: list = []
         self.output_queue: list = []
-        self.current_functions: list = []
-        for name, member in MathematicalFunction.__members__.items():
-            self.current_functions.append(member.representation)
-        self.current_operators: list = []
-        for name, member in MathematicalOperator.__members__.items():
-            self.current_operators.append(member.symbol)
+        self.current_functions: list = [member.representation for name, member
+                                        in MathematicalFunction.__members__.items()]
+        self.current_operators: list = [member.symbol for name, member in MathematicalOperator.__members__.items()]
         self.grouping_operators: tuple = ('(', ')')
         self.signs: tuple = ('+', '-')
 
@@ -99,22 +96,31 @@ class YardShunter:
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
 
+    # TODO: rewrite the below to deal with different #s of inputs to an operator or function.
+    # That'll get rid of the magic numbers.
     async def evaluate_input(self) -> Union[float, int]:
         output_stack: list = []
         for output in self.output_queue:
             if output in self.current_operators:
-                second_operand: int = output_stack.pop(0)
-                first_operand: int = output_stack.pop(0)
-                relevant_operator = await MathematicalOperator.get_by_symbol(output)
-                operation_result = await MathematicalOperator.evaluate_operator(
-                    relevant_operator.value, first_operand, second_operand
-                )
-                output_stack.insert(0, operation_result)
+                if len(output_stack) > 1:
+                    second_operand: int = output_stack.pop(0)
+                    first_operand: int = output_stack.pop(0)
+                    relevant_operator = await MathematicalOperator.get_by_symbol(output)
+                    operation_result = await MathematicalOperator.evaluate_operator(
+                        relevant_operator.value, first_operand, second_operand
+                    )
+                    output_stack.insert(0, operation_result)
+                else:
+                    raise InvalidSequence
             elif output in self.current_functions:
-                first_operand: int = output_stack.pop(0)
-                relevant_function = await MathematicalFunction.get_by_name(output)
-                operation_result = await MathematicalFunction.evaluate_function(relevant_function.value, first_operand)
-                output_stack.insert(0, operation_result)
+                if output_stack:
+                    first_operand: int = output_stack.pop(0)
+                    relevant_function = await MathematicalFunction.get_by_name(output)
+                    operation_result = await MathematicalFunction.evaluate_function(relevant_function.value,
+                                                                                    first_operand)
+                    output_stack.insert(0, operation_result)
+                else:
+                    raise InvalidSequence
             else:
                 output_stack.insert(0, output)
         return output_stack[0]

@@ -7,7 +7,7 @@
 from discord.ext import commands
 
 from Cogs.Helpers.exceptioner import MissingSubcommand
-from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
+from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription, MessageConstant
 
 
 class Encoder(commands.Cog):
@@ -162,11 +162,12 @@ class Encoder(commands.Cog):
     async def send_translation(self, ctx: commands.Context, translated_message: str, from_language: str,
                                to_language: str, split_separator: str = " ") -> None:
         message_introduction: str = f"The {to_language} translation of your {from_language} input is: \n"
-        if await self.message_fits(DiscordConstant.MAX_MESSAGE_LENGTH, translated_message, message_introduction):
+        if await self.message_does_fit(DiscordConstant.MAX_MESSAGE_LENGTH, translated_message, message_introduction):
             await ctx.send(f"{message_introduction}{translated_message}")
         else:
-            # TODO: replace '6' with a named constant for the length of the ellipsis.
-            safe_maximum_message_length: int = DiscordConstant.MAX_MESSAGE_LENGTH - (len(message_introduction) + 6)
+            safe_maximum_message_length: int = DiscordConstant.MAX_MESSAGE_LENGTH - (
+                    len(message_introduction) + MessageConstant.TRANSLATION_ADDITIONAL_CHARACTERS
+            )
             compact_messages: list = await self.condense(
                 translated_message, split_separator, safe_maximum_message_length
             )
@@ -179,7 +180,7 @@ class Encoder(commands.Cog):
                     await ctx.send(f". . . {message}")
 
     @staticmethod
-    async def message_fits(maximum_length: int, main_message: str, *additional_messages) -> bool:
+    async def message_does_fit(maximum_length: int, main_message: str, *additional_messages) -> bool:
         does_message_fit: bool = True
         if sum([len(message) for message in additional_messages], len(main_message)) > maximum_length:
             does_message_fit = False

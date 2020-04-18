@@ -10,12 +10,12 @@ from discord.ext import commands
 from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
-from Cogs.Helpers.exceptioner import MissingReminder
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from Cogs.Helpers.exceptioner import Exceptioner, MissingReminder
+from Cogs.Helpers.Enumerators.universalist import HelpDescription
 from smorgasDB import Guild, Reminder
 
 
-class Recaller(commands.Cog, Chronologist):
+class Recaller(commands.Cog, Chronologist, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
@@ -85,12 +85,10 @@ class Recaller(commands.Cog, Chronologist):
     @forget.error
     async def reminder_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         command_name: str = ctx.command.name.title()
-        error_embed: Union[discord.Embed, None] = None
+        error_name: str = await self.compose_error_name(error.__class__.__name__)
+        error_description: Union[str, None] = None
         if isinstance(error, MissingReminder):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Missing Reminder',
-                description='Your server does not have a reminder scheduled for that time and mention.',
-                color=ColorConstant.ERROR_RED
-            )
-        if error_embed:
+            error_description = 'Your server does not have a reminder scheduled for that time and mention.'
+        if error_description:
+            error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

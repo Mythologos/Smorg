@@ -7,7 +7,7 @@ from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import EmptyEmbed, MissingSubcommand
+from Cogs.Helpers.exceptioner import EmptyEmbed, Exceptioner, MissingSubcommand
 from Cogs.Helpers.Enumerators.croupier import RollMechanic
 from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
 from Cogs.Helpers.Enumerators.timekeeper import TimeZone
@@ -15,7 +15,7 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Quote, Reminder
 
 
-class Cataloguer(commands.Cog, Chronologist, Embedder):
+class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
@@ -161,12 +161,10 @@ class Cataloguer(commands.Cog, Chronologist, Embedder):
     @zones.error
     async def display_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         command_name: str = ctx.command.name.title()
-        error_embed: Union[discord.Embed, None] = None
+        error_name: str = await self.compose_error_name(error.__class__.__name__)
+        error_description: Union[str, None] = None
         if isinstance(error, EmptyEmbed):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Empty Embed',
-                description=f'The display that you requested has no data to fill it.',
-                color=ColorConstant.ERROR_RED
-            )
-        if error_embed:
+            error_description: str = 'The display that you requested has no data to fill it.'
+        if error_description:
+            error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

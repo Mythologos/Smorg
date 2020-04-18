@@ -1,7 +1,7 @@
 # TODO: overall documentation
 
 # Current Agenda:
-# TODO: warnings / safeguards against generating a message longer than 2000 characters.
+# TODO: warnings / safeguards against generating messages too long for Discord.
 # TODO: exceptions for incorrect roll syntax. Note: is this done? Did I forget to remove this?
 
 import discord
@@ -14,13 +14,14 @@ from typing import Union
 
 from smorgasDB import Guild
 from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, InvalidRecipient, MissingParenthesis
+from Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
+    MissingParenthesis, InvalidSequence
 from Cogs.Helpers.Enumerators.croupier import MatchContent
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from Cogs.Helpers.yard_shunter import YardShunter
 
 
-class Gambler(commands.Cog, Embedder):
+class Gambler(commands.Cog, Embedder, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.yard_shunter = YardShunter()
@@ -54,16 +55,28 @@ class Gambler(commands.Cog, Embedder):
     async def handle_roll(self, roll: str) -> tuple:
         raw_roll: str = roll.replace(' ', '')
         parsed_roll: list = await self.parse_roll(raw_roll)
-        verbose_dice: list = []
-        for match_index, match in enumerate(parsed_roll):
-            die_roll: str = match[MatchContent.DIE_ROLL]
-            if die_roll:
-                dice_result, unsorted_results, sorted_results = await self.handle_dice(die_roll)
-                verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
-                parsed_roll[match_index] = (str(dice_result),)
-        flat_matches: list = [item for match in parsed_roll for item in match if item]
-        roll_result = await self.yard_shunter.shunt_yard(flat_matches)
-        return flat_matches, verbose_dice, roll_result
+        roll_is_valid: bool = await self.is_roll_valid(raw_roll, parsed_roll)
+        if not roll_is_valid:
+            raise InvalidRoll
+        else:
+            verbose_dice: list = []
+            for match_index, match in enumerate(parsed_roll):
+                die_roll: str = match[MatchContent.DIE_ROLL]
+                if die_roll:
+                    dice_result, unsorted_results, sorted_results = await self.handle_dice(die_roll)
+                    verbose_dice.append((die_roll, unsorted_results, sorted_results, dice_result))
+                    parsed_roll[match_index] = (str(dice_result),)
+            flat_matches: list = [item for match in parsed_roll for item in match if item]
+            roll_result = await self.yard_shunter.shunt_yard(flat_matches)
+            return flat_matches, verbose_dice, roll_result
+
+    @staticmethod
+    async def is_roll_valid(raw_roll: str, parsed_roll: list) -> bool:
+        roll_validity: bool = False
+        parsed_roll_result: str = "".join([matched_item for match in parsed_roll for matched_item in match])
+        if raw_roll == parsed_roll_result:
+            roll_validity = True
+        return roll_validity
 
     async def handle_dice(self, die_roll: str) -> tuple:
         parsed_dice: dict = await self.parse_dice(die_roll)
@@ -200,30 +213,21 @@ class Gambler(commands.Cog, Embedder):
     @roll.error
     async def roll_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         command_name: str = ctx.command.name.title()
-        error_embed: Union[discord.Embed, None] = None
+        error_name: str = await self.compose_error_name(error.__class__.__name__)
+        error_description: Union[str, None] = None
         if isinstance(error, DuplicateOperator):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Duplicate Operator',
-                description=f'The roll contains a duplicate operator.',
-                color=ColorConstant.ERROR_RED
-            )
+            error_description = 'The roll contains a duplicate operator.'
         elif isinstance(error, ImproperFunction):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Improper Function',
-                description=f'A function in your roll is missing a starting parenthesis.',
-                color=ColorConstant.ERROR_RED
-            )
+            error_description = 'A function in your roll is missing a starting parenthesis.'
         elif isinstance(error, InvalidRecipient):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Invalid Recipient',
-                description=f'No individual matches the recipient name {error}.',
-                color=ColorConstant.ERROR_RED
-            )
+            error_description = f'No individual matches the recipient name {error}.'
         elif isinstance(error, MissingParenthesis):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Missing Parenthesis',
-                description=f'Your roll has imbalanced parentheses.',
-                color=ColorConstant.ERROR_RED
-            )
-        if error_embed:
+            error_description = 'Your roll has imbalanced parentheses.'
+        elif isinstance(error, InvalidRoll):
+            error_description = 'Your roll contains invalid characters or sequences of characters.'
+        elif isinstance(error, InvalidSequence):
+            error_description = 'Your roll does not contain the right amount of operands ' \
+                                'for your operators or functions.'
+        if error_description:
+            error_embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

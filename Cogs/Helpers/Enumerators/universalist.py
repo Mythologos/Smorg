@@ -56,3 +56,7 @@ class HelpDescription(NamedConstant):
     TRANSLATE = "This command translates text of one set of characters to another set of characters. " \
                 "Current sets of characters include the Latin alphabet (alphabet) and Morse code (morse)."
     YOINK = "This command retrieves and displays a random stored quote."
+
+
+class MessageConstant(NamedConstant):
+    TRANSLATION_ADDITIONAL_CHARACTERS = 6

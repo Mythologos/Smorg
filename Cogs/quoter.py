@@ -7,23 +7,24 @@ from random import randint
 from typing import Union
 
 from Cogs.Helpers.checker import Checker
+from Cogs.Helpers.exceptioner import Exceptioner
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
 from smorgasDB import Guild, Quote
 
 
-class Quoter(commands.Cog):
+class Quoter(commands.Cog, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
     @commands.command(description=HelpDescription.QUOTE)
     async def quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None] = None) -> None:
-        text_author: str = await self.handle_author(author, "An Anonymous Genius")
+        text_author: str = await self.handle_author(author, anonymous_default="An Anonymous Genius")
         await self.handle_quote(ctx, text, text_author, "The Words of ", ColorConstant.DEEP_BLUE)
 
     @commands.command(description=HelpDescription.IMMORTALIZE)
     async def immortalize(self, ctx: commands.Context, text: str,
                           author: Union[discord.Member, str, None] = None) -> None:
-        text_author: str = await self.handle_author(author, "A True Legend")
+        text_author: str = await self.handle_author(author, anonymous_default="A True Legend")
         await self.handle_quote(ctx, text, text_author, "The Masterpiece of ", ColorConstant.HEAVENLY_YELLOW)
         Quote.create_quote_with(ctx.guild.id, text, text_author)
 
@@ -75,12 +76,11 @@ class Quoter(commands.Cog):
     @yoink.error
     async def yoink_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
         command_name: str = ctx.command.name.title()
-        error_embed: Union[discord.Embed, None] = None
+        error_name: str = await self.compose_error_name(error.__class__.__name__)
+        error_description: Union[str, None] = None
         if isinstance(error, commands.CheckFailure):
-            error_embed = discord.Embed(
-                title=f'Error ({command_name}): Invalid Request',
-                description='Your server has no quotes.',
-                color=ColorConstant.ERROR_RED
-            )
-        if error_embed:
+            error_name: str = 'No Server Quotes'
+            error_description = 'Your server has no quotes.'
+        if error_description:
+            error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

@@ -1,5 +1,5 @@
 # Smorg
-**Last Updated:** 04/16/2020 (MM/DD/YYYY)
+**Last Updated:** 04/18/2020 (MM/DD/YYYY)
 
 Hello! Welcome to Smorg, a Discord bot with a variety of useful functions.
 

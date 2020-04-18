@@ -1,4 +1,4 @@
-# TODO: maybe add checks to each validate function to assure that defaults are appropriate?
+# TODO: documentation...
 
 import re
 import datetime
@@ -49,6 +49,7 @@ class Chronologist:
             r'(?:[\s](?P<time_zone>[\da-zA-Z+\-]{3,6}))?)'
         )
         return re.match(time_pattern, time_string).groupdict()
+    # TODO: test the above parsing methods
 
     async def validate_datetime(self, parsed_datetime: dict, default_hour: Union[int, None],
                                 default_minute: Union[int, None], default_tz: Union[datetime.timezone, None],
@@ -218,6 +219,7 @@ class Chronologist:
             else:
                 raise InvalidMinute
 
+    # TODO: if possible, combine with validate_future_datetime
     @staticmethod
     async def validate_past_datetime(valid_datetime: datetime.datetime) -> None:
         today = datetime.datetime.now(valid_datetime.tzinfo) if valid_datetime.tzinfo \
