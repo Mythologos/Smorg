@@ -7,6 +7,7 @@ import discord
 import datetime
 
 from discord.ext import commands
+from sqlalchemy.exc import DataError
 from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
@@ -45,9 +46,7 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
             Reminder.update_reminder_with(
                 current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message
             )
-            await current_channel.send(
-                "Your revision has been successfully processed!"
-            )
+            await current_channel.send("Your revision has been successfully processed!")
         else:
             raise MissingReminder
 
@@ -61,9 +60,7 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
         if Reminder.has_reminder_at(current_guild_id, mention, validated_datetime):
             Reminder.delete_reminder_with(current_guild_id, mention, validated_datetime)
-            await current_channel.send(
-                "Your deletion has been successfully processed!"
-            )
+            await current_channel.send("Your deletion has been successfully processed!")
         else:
             raise MissingReminder
 
@@ -81,13 +78,17 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         )
         return validated_datetime
 
+    @remind.error
     @revise.error
     @forget.error
-    async def reminder_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
+    async def reminder_error(self, ctx: commands.Context, error: Exception) -> None:
         command_name: str = ctx.command.name.title()
         error_name: str = await self.compose_error_name(error.__class__.__name__)
         error_description: Union[str, None] = None
-        if isinstance(error, MissingReminder):
+        if isinstance(error, commands.CommandInvokeError):
+            if isinstance(error.original, DataError):
+                error_description = 'The provided reminder is too long. Please limit your reminder to 1,024 characters.'
+        elif isinstance(error, MissingReminder):
             error_description = 'Your server does not have a reminder scheduled for that time and mention.'
         if error_description:
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)

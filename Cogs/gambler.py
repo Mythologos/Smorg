@@ -1,8 +1,5 @@
 # TODO: overall documentation
-
-# Current Agenda:
 # TODO: warnings / safeguards against generating messages too long for Discord.
-# TODO: exceptions for incorrect roll syntax. Note: is this done? Did I forget to remove this?
 
 import discord
 import re
@@ -28,7 +25,7 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
 
     @commands.command(description=HelpDescription.ROLL)
     async def roll(self, ctx: commands.Context, roll: str, recipients: commands.Greedy[discord.Member] = None, *,
-                   description: str = 'To Contend with Lady Luck') -> None:
+                   description: Union[str, None] = None) -> None:
         """
         The main method for the roll command.
         :param ctx: The context from which the request came.
@@ -88,7 +85,7 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
         await destination_channel.send(
             f"{ctx.message.author.mention}\n"
             f"Initial Roll: {roll}\n"
-            f"Reason: {description.strip()}"
+            f"Reason: {description}"
         )
         if verbose_dice:
             field_items = {"counter": None}
@@ -98,8 +95,8 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
             )
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         await destination_channel.send(
-            f"The evaluated roll was: {evaluated_roll}\n"
-            f"The final result of this roll is: {roll_result}"
+            f"Evaluated Roll: {evaluated_roll}\n"
+            f"Final Result: {roll_result}"
         )
 
     @staticmethod

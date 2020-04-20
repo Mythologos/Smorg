@@ -137,7 +137,7 @@ class Reminder(Base, BaseAddition):
     guild_id = Column(BigInteger, ForeignKey('guilds.guild_id'), primary_key=True, nullable=False)
     mentionable = Column(String(100), primary_key=True, nullable=False)
     reminder_datetime = Column(DateTime(timezone=True), primary_key=True, nullable=False)
-    reminder_text = Column(String(DiscordConstant.MAX_MESSAGE_LENGTH), nullable=True)
+    reminder_text = Column(String(DiscordConstant.MAX_EMBED_FIELD_VALUE), nullable=True)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())
