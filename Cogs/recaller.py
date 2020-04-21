@@ -12,7 +12,7 @@ from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.exceptioner import Exceptioner, MissingReminder
-from Cogs.Helpers.Enumerators.universalist import HelpDescription
+from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
 from smorgasDB import Guild, Reminder
 
 
@@ -82,14 +82,18 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     @revise.error
     @forget.error
     async def reminder_error(self, ctx: commands.Context, error: Exception) -> None:
-        command_name: str = ctx.command.name.title()
+        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
+        error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)
         error_description: Union[str, None] = None
-        if isinstance(error, commands.CommandInvokeError):
-            if isinstance(error.original, DataError):
-                error_description = 'The provided reminder is too long. Please limit your reminder to 1,024 characters.'
+        if isinstance(error, DataError):
+            error_description = f'The provided reminder is too long. Please limit your reminder to ' \
+                                f'{DiscordConstant.MAX_EMBED_FIELD_VALUE} characters.'
         elif isinstance(error, MissingReminder):
             error_description = 'Your server does not have a reminder scheduled for that time and mention.'
+        elif not isinstance(error, discord.DiscordException):
+            error_description = f'The error is a non-Discord error. It has the following message: {error}. ' \
+                                f'It should be added and handled properly as soon as possible.'
         if error_description:
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

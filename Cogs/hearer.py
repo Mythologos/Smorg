@@ -1,12 +1,8 @@
 # TODO: documentation
-# TODO: is there any way to automate how I retrieve the errors in passable_errors beyond commands.CommandNotFound?
-# TODO: moreover, I'm not sure about the behavior for errors that aren't my own or CommandNotFound.
-# Is there a way to make it so they only are passed when I do, in fact, handle them previously?
 
 
 from discord import Embed, TextChannel
 from discord.ext import commands
-from sqlalchemy.exc import DataError
 
 from Cogs.Helpers.exceptioner import *
 from smorgasDB import BaseAddition, Guild
@@ -16,9 +12,8 @@ class Hearer(commands.Cog, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.passable_errors: tuple = (
-            commands.CommandNotFound, DataError,
-            DuplicateOperator, ImproperFunction, MissingParenthesis, InvalidRecipient,
-            MissingReminder, InvalidRoll, InvalidSequence
+            commands.CommandNotFound, commands.CheckFailure, DuplicateOperator, ImproperFunction, MissingParenthesis,
+            InvalidRecipient, MissingReminder, InvalidRoll, InvalidSequence
         )
         self.reset_database_on_start = True
 
@@ -53,9 +48,9 @@ class Hearer(commands.Cog, Exceptioner):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
-        if not isinstance(error, self.passable_errors) and (isinstance(error, commands.CommandInvokeError) and
-                                                            not isinstance(error.original, self.passable_errors)):
-            command_name: str = ctx.command.name.title()
+        error = getattr(error, "original", error)
+        if not isinstance(error, self.passable_errors) and isinstance(error, discord.DiscordException):
+            command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
             error_name: str = await self.compose_error_name(error.__class__.__name__)
             if isinstance(error, commands.UserInputError):
                 if isinstance(error, MissingSubcommand):
@@ -68,7 +63,7 @@ class Hearer(commands.Cog, Exceptioner):
                 elif isinstance(error, commands.BadArgument):
                     error_description = 'One of your arguments (likely a Discord-related item) is invalid.'
                 elif isinstance(error, commands.BadUnionArgument):
-                    error_description = f'The argument {error.param} could not be converted to a valid value ' \
+                    error_description = f'The argument {error.param.name} could not be converted to a valid value ' \
                                         f'for one of this command\'s arguments.'
                 elif isinstance(error, commands.UnexpectedQuoteError):
                     error_description = 'You added an unexpected quotation mark that inhibits parsing.'
@@ -97,6 +92,6 @@ class Hearer(commands.Cog, Exceptioner):
                 error_description = 'There was an invalid conversion in processing your command.'
             else:
                 error_name = 'Miscellaneous Error'
-                error_description = f'The error type is: {error}. A better error message will be supplied soon.'
+                error_description = f'The error type is: {error} A better error message will be supplied soon.'
             error_embed: Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

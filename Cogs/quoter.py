@@ -74,13 +74,17 @@ class Quoter(commands.Cog, Exceptioner):
         await ctx.send(embed=yoink_response)
 
     @yoink.error
-    async def yoink_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        command_name: str = ctx.command.name.title()
+    async def yoink_error(self, ctx: commands.Context, error: Exception) -> None:
+        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
+        error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)
         error_description: Union[str, None] = None
         if isinstance(error, commands.CheckFailure):
             error_name: str = 'No Server Quotes'
             error_description = 'Your server has no quotes.'
+        elif not isinstance(error, discord.DiscordException):
+            error_description = f'The error is a non-Discord error. It has the following message: {error}. ' \
+                                f'It should be added and handled properly as soon as possible.'
         if error_description:
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

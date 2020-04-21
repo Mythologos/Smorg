@@ -208,8 +208,9 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
         return roll_result
 
     @roll.error
-    async def roll_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        command_name: str = ctx.command.name.title()
+    async def roll_error(self, ctx: commands.Context, error: Exception) -> None:
+        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
+        error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)
         error_description: Union[str, None] = None
         if isinstance(error, DuplicateOperator):
@@ -225,6 +226,9 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
         elif isinstance(error, InvalidSequence):
             error_description = 'Your roll does not contain the right amount of operands ' \
                                 'for your operators or functions.'
+        elif not isinstance(error, discord.DiscordException):
+            error_description = f'The error is a non-Discord error. It has the following message: {error}. ' \
+                                f'It should be added and handled properly as soon as possible.'
         if error_description:
             error_embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

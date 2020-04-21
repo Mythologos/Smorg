@@ -159,12 +159,16 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @reminders.error
     @quotes.error
     @zones.error
-    async def display_error(self, ctx: commands.Context, error: discord.DiscordException) -> None:
-        command_name: str = ctx.command.name.title()
+    async def display_error(self, ctx: commands.Context, error: Exception) -> None:
+        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
+        error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)
         error_description: Union[str, None] = None
         if isinstance(error, EmptyEmbed):
             error_description: str = 'The display that you requested has no data to fill it.'
+        elif not isinstance(error, discord.DiscordException):
+            error_description = f'The error is a non-Discord error. It has the following message: {error}. ' \
+                                f'It should be added and handled properly as soon as possible.'
         if error_description:
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)
