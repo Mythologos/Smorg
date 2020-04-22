@@ -1,5 +1,4 @@
 # TODO: overall documentation
-# TODO: warnings / safeguards against generating messages too long for Discord.
 
 import discord
 import re
@@ -10,15 +9,16 @@ from random import randint
 from typing import Union
 
 from smorgasDB import Guild
+from Cogs.Helpers.condenser import Condenser
 from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
     MissingParenthesis, InvalidSequence
 from Cogs.Helpers.Enumerators.croupier import MatchContent
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant
 from Cogs.Helpers.yard_shunter import YardShunter
 
 
-class Gambler(commands.Cog, Embedder, Exceptioner):
+class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.yard_shunter = YardShunter()
@@ -82,11 +82,10 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
 
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
                         description: str, destination_channel: discord.TextChannel):
-        await destination_channel.send(
-            f"{ctx.message.author.mention}\n"
-            f"Initial Roll: {roll}\n"
-            f"Reason: {description}"
-        )
+        introduction_message: str = f"{ctx.message.author.mention}\n" \
+                                    f"Initial Roll: {roll}\n" \
+                                    f"Reason: {description}"
+        await self.send_condensed_message(destination_channel, introduction_message, DiscordConstant.MAX_MESSAGE_LENGTH)
         if verbose_dice:
             field_items = {"counter": None}
             await self.embed(
@@ -94,10 +93,9 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
                 initialize_field=self.initialize_dice_field, field_items=field_items
             )
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
-        await destination_channel.send(
-            f"Evaluated Roll: {evaluated_roll}\n"
-            f"Final Result: {roll_result}"
-        )
+        conclusion_message: str = f"Evaluated Roll: {evaluated_roll}\n" \
+                                  f"Final Result: {roll_result}"
+        await self.send_condensed_message(destination_channel, conclusion_message, DiscordConstant.MAX_MESSAGE_LENGTH)
 
     @staticmethod
     async def initialize_dice_embed(page_number: int = 1):
@@ -115,10 +113,21 @@ class Gambler(commands.Cog, Embedder, Exceptioner):
     @staticmethod
     async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list, dice_result: int,
                                     counter: int) -> tuple:
-        name = f"Dice Roll {counter + 1}: {raw_roll}"
-        value = f"**Raw Dice Result:** {unsorted_result}\n" \
-                f"**Final Dice Result:** {sorted_result}\n" \
-                f"**Sum:** {dice_result}"
+        name: str = f"Dice Roll {counter + 1}: {raw_roll}"
+        sum_string: str = str(dice_result)
+        sorted_result_string: str = str(sorted_result)
+        unsorted_result_string: str = str(unsorted_result)
+        safe_field_length: int = (DiscordConstant.MAX_EMBED_FIELD_VALUE -
+                                  (MessageConstant.DIE_ROLL_CHARACTERS + MessageConstant.DIE_TRUNCATION_CHARACTERS))
+        if (len(sum_string) + len(sorted_result_string)) <= safe_field_length:
+            if (len(sum_string) + len(sorted_result_string) + len(unsorted_result_string)) > safe_field_length:
+                unsorted_result_string = "[...]"
+        else:
+            sorted_result_string = "[...]"
+            unsorted_result_string = "[...]"
+        value = f"**Raw Dice Result:** {unsorted_result_string}\n" \
+                f"**Final Dice Result:** {sorted_result_string}\n" \
+                f"**Sum:** {sum_string}"
         inline = False
         return name, value, inline
 

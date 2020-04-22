@@ -1,16 +1,28 @@
 # TODO: documentation...
 
+from discord import TextChannel
+
+from Cogs.Helpers.Enumerators.universalist import MessageConstant
+
 
 class Condenser:
-    @staticmethod
-    async def message_does_fit(maximum_length: int, main_message: str, *additional_messages) -> bool:
-        does_message_fit: bool = True
-        if sum([len(message) for message in additional_messages], len(main_message)) > maximum_length:
-            does_message_fit = False
-        return does_message_fit
+    async def send_condensed_message(self, destination_channel: TextChannel, message: str, maximum_length: int,
+                                     split_separator: str = " ") -> None:
+        if len(message) <= maximum_length:
+            await destination_channel.send(message)
+        else:
+            safe_maximum_message_length: int = maximum_length - MessageConstant.CONDENSE_CHARACTERS
+            compact_messages: list = await self.condense(message, split_separator, safe_maximum_message_length)
+            for index, message_segment in enumerate(compact_messages, start=1):
+                if index == 1:
+                    await destination_channel.send(f"{message_segment} . . .")
+                elif index != len(compact_messages):
+                    await destination_channel.send(f". . . {message_segment} . . .")
+                else:
+                    await destination_channel.send(f". . . {message_segment}")
 
     async def condense(self, message: str, split_separator: str, maximum_length: int) -> list:
-        if split_separator in message:
+        if await self.is_efficient_separator(message, split_separator, maximum_length):
             compact_messages: list = await self.guided_condense(message, split_separator, maximum_length)
             for index, component_message in enumerate(compact_messages):
                 if len(component_message) > maximum_length:
@@ -22,6 +34,18 @@ class Condenser:
         else:
             compact_messages: list = await self.automated_condense(message, maximum_length)
         return compact_messages
+
+    @staticmethod
+    async def is_efficient_separator(message: str, split_separator: str, maximum_length: int) -> bool:
+        first_index: int = 0
+        separator_is_efficient: bool = True
+        while first_index != MessageConstant.NOT_FOUND_INDEX:
+            second_index = message.find(split_separator, first_index + 1)
+            if second_index != MessageConstant.NOT_FOUND_INDEX and (second_index - first_index) > maximum_length:
+                separator_is_efficient = False
+                break
+            first_index = second_index
+        return separator_is_efficient
 
     @staticmethod
     async def guided_condense(message: str, split_separator: str, maximum_length: int) -> list:

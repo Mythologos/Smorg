@@ -7,7 +7,7 @@ from discord.ext import commands
 
 from Cogs.Helpers.condenser import Condenser
 from Cogs.Helpers.exceptioner import MissingSubcommand
-from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription, MessageConstant
+from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
 
 
 class Encoder(commands.Cog, Condenser):
@@ -133,7 +133,7 @@ class Encoder(commands.Cog, Condenser):
 
     @from_alphabet.command(name='morse')
     async def to_morse(self, ctx: commands.Context, quote: str) -> None:
-        morse_quote: str = ''
+        morse_quote: str = 'The morse translation of your alphabetical input is: \n'
         for index, character in enumerate(quote.lower()):
             try:
                 morse_quote += self.alphabet_to_morse[character]
@@ -141,7 +141,7 @@ class Encoder(commands.Cog, Condenser):
                     morse_quote += '   '
             except KeyError:
                 morse_quote += self.alphabet_to_morse['[ERROR]']
-        await self.send_translation(ctx, morse_quote, "alphabetical", "morse", "/")
+        await self.send_condensed_message(ctx.channel, morse_quote, DiscordConstant.MAX_MESSAGE_LENGTH, "/")
 
     @translate.group(name='morse')
     async def from_morse(self, ctx: commands.Context) -> None:
@@ -150,33 +150,11 @@ class Encoder(commands.Cog, Condenser):
 
     @from_morse.command(name='alphabet')
     async def to_alphabet(self, ctx: commands.Context, quote: str) -> None:
-        alphabetical_quote: str = ''
+        alphabetical_quote: str = 'The alphabetical translation of your morse input is: \n'
         spaced_quote: list = quote.split('  /  ')
         for word in spaced_quote:
             characters = word.split('   ')
             for character in characters:
                 alphabetical_quote += self.morse_to_alphabet[character]
             alphabetical_quote += ' '
-        await self.send_translation(ctx, alphabetical_quote, "morse", "alphabetical")
-
-    # TODO: rewrite this method so that it can work with gambler and encoder in sending
-    # appropriately-sized messages. It's not far from what it needs to be, but it still needs abstraction.
-    async def send_translation(self, ctx: commands.Context, translated_message: str, from_language: str,
-                               to_language: str, split_separator: str = " ") -> None:
-        message_introduction: str = f"The {to_language} translation of your {from_language} input is: \n"
-        if await self.message_does_fit(DiscordConstant.MAX_MESSAGE_LENGTH, translated_message, message_introduction):
-            await ctx.send(f"{message_introduction}{translated_message}")
-        else:
-            safe_maximum_message_length: int = DiscordConstant.MAX_MESSAGE_LENGTH - (
-                    len(message_introduction) + MessageConstant.TRANSLATION_ADDITIONAL_CHARACTERS
-            )
-            compact_messages: list = await self.condense(
-                translated_message, split_separator, safe_maximum_message_length
-            )
-            for index, message in enumerate(compact_messages, start=1):
-                if index == 1:
-                    await ctx.send(f"{message_introduction}{message} . . .")
-                elif index != len(compact_messages):
-                    await ctx.send(f". . . {message} . . .")
-                else:
-                    await ctx.send(f". . . {message}")
+        await self.send_condensed_message(ctx.channel, alphabetical_quote, DiscordConstant.MAX_MESSAGE_LENGTH)

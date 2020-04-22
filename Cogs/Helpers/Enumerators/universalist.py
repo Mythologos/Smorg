@@ -59,4 +59,7 @@ class HelpDescription(NamedConstant):
 
 
 class MessageConstant(NamedConstant):
-    TRANSLATION_ADDITIONAL_CHARACTERS = 6
+    NOT_FOUND_INDEX = -1
+    CONDENSE_CHARACTERS = 12
+    DIE_ROLL_CHARACTERS = 48
+    DIE_TRUNCATION_CHARACTERS = 10

@@ -1,10 +1,6 @@
 from aenum import Enum, NamedConstant
 
 
-class MessageConstant(NamedConstant):
-    DEFAULT_MSG_CHARACTERS = 47
-
-
 class MatchContent(NamedConstant):
     DIE_ROLL = 0
     REGULAR_OPERATOR = 1
