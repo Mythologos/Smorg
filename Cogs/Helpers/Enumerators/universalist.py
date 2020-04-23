@@ -63,3 +63,4 @@ class MessageConstant(NamedConstant):
     CONDENSE_CHARACTERS = 12
     DIE_ROLL_CHARACTERS = 48
     DIE_TRUNCATION_CHARACTERS = 10
+    LIST_TRUNCATION_TEXT = "[...]"

@@ -1,12 +1,10 @@
 # TODO: documentation...
-# TODO: I think PostgreSQL is doing something with the datetimes. They get to the database intact,
-# but the database may handle them erroneously. This must be investigated.
-
+# TODO: see if the check_reminders and on_reminder database processing can be made sleeker.
 
 import discord
 import datetime
 
-from discord.ext import commands
+from discord.ext import commands, tasks
 from sqlalchemy.exc import DataError
 from typing import Optional, Union
 
@@ -20,12 +18,14 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
+        self.check_reminders.start()
 
     @commands.command(description=HelpDescription.REMIND)
     async def remind(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
                      reminder_time: str, message: str = "") -> None:
         current_guild_id = ctx.guild.id
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
+        print(validated_datetime)
         Reminder.create_reminder_with(current_guild_id, mentionable.mention, message, validated_datetime)
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
@@ -41,7 +41,7 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         old_datetime: datetime.datetime = await self.handle_time(old_reminder_time)
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
-        if Reminder.has_reminder_at(current_guild_id, mentionable.mention, old_datetime):
+        if Reminder.has_reminder_with(current_guild_id, mentionable.mention, old_datetime):
             new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
             Reminder.update_reminder_with(
                 current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message
@@ -58,23 +58,21 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
         current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
-        if Reminder.has_reminder_at(current_guild_id, mention, validated_datetime):
+        if Reminder.has_reminder_with(current_guild_id, mention, validated_datetime):
             Reminder.delete_reminder_with(current_guild_id, mention, validated_datetime)
             await current_channel.send("Your deletion has been successfully processed!")
         else:
             raise MissingReminder
 
     async def handle_time(self, reminder_time: str) -> datetime.datetime:
-        default_tz: datetime.timezone = datetime.timezone.utc
-        today: datetime.datetime = datetime.datetime.now(default_tz)
         additional_validators: tuple = (self.validate_future_datetime,)
         temporal_defaults: dict = {
-            "default_hour": None, "default_minute": 0, "default_tz": default_tz, "default_day": today.day,
-            "default_month": today.month, "default_year": today.year
+            "default_hour": None, "default_minute": 0
         }
         validated_datetime: datetime.datetime = await self.process_temporality(
             reminder_time, self.parse_datetime, self.validate_datetime,
-            additional_validators=additional_validators, temporal_defaults=temporal_defaults
+            additional_validators=additional_validators, default_generator=self.generate_dt_defaults_from_tz,
+            manual_defaults=temporal_defaults
         )
         return validated_datetime
 
@@ -97,3 +95,18 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         if error_description:
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)
+
+    @tasks.loop(minutes=1)
+    async def check_reminders(self):
+        current_time: datetime.datetime = datetime.datetime.now().replace(microsecond=0)
+        current_reminders: list = Reminder.pop_reminders_at(current_time)
+        for reminder in current_reminders:
+            await self.on_reminder(reminder.guild_id, reminder.mentionable, reminder.reminder_text)
+
+    @check_reminders.before_loop
+    async def before_checking_reminders(self):
+        await self.bot.wait_until_ready()
+
+    async def on_reminder(self, guild_id: int, mention: str, message: str):
+        reminder_channel = self.bot.get_channel(Guild.get_reminder_channel_by(guild_id))
+        await reminder_channel.send(f"Reminder for {mention}: {message}")

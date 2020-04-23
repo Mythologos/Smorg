@@ -121,10 +121,10 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
                                   (MessageConstant.DIE_ROLL_CHARACTERS + MessageConstant.DIE_TRUNCATION_CHARACTERS))
         if (len(sum_string) + len(sorted_result_string)) <= safe_field_length:
             if (len(sum_string) + len(sorted_result_string) + len(unsorted_result_string)) > safe_field_length:
-                unsorted_result_string = "[...]"
+                unsorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
         else:
-            sorted_result_string = "[...]"
-            unsorted_result_string = "[...]"
+            sorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
+            unsorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
         value = f"**Raw Dice Result:** {unsorted_result_string}\n" \
                 f"**Final Dice Result:** {sorted_result_string}\n" \
                 f"**Sum:** {sum_string}"

@@ -51,17 +51,16 @@ class Chronologist:
         return re.match(time_pattern, time_string).groupdict()
     # TODO: test the above parsing methods
 
-    async def validate_datetime(self, parsed_datetime: dict, default_hour: Union[int, None],
-                                default_minute: Union[int, None], default_tz: Union[datetime.timezone, None],
-                                default_day: Union[int, None], default_month: Union[int, None],
-                                default_year: Union[int, None]) -> datetime.datetime:
+    async def validate_datetime(self, parsed_datetime: dict,
+                                time_zone: datetime.timezone, default_hour: Union[int, None],
+                                default_minute: Union[int, None], default_day: Union[int, None],
+                                default_month: Union[int, None], default_year: Union[int, None]) -> datetime.datetime:
         period: int = await self.validate_period(parsed_datetime['post'], parsed_datetime['ante'])
         month: int = await self.validate_month(parsed_datetime['month'], default_month)
         year: int = await self.validate_year(parsed_datetime['year'], default_year)
         day: int = await self.validate_day(parsed_datetime['day'], month, year, default_day)
         hour: int = await self.validate_hour(parsed_datetime['hour'], period, default_hour)
         minute: int = await self.validate_minute(parsed_datetime['minute'], default_minute)
-        time_zone: datetime.timezone = await self.validate_time_zone(parsed_datetime['time_zone'], default_tz)
         return datetime.datetime(minute=minute, hour=hour, day=day, month=month, year=year, tzinfo=time_zone)
 
     async def validate_hour(self, hour_value: Union[str, None], period: int, default: Union[int, None]):
@@ -202,7 +201,6 @@ class Chronologist:
                 break
         return selected_time_zone
 
-    # TODO: if possible, combine with validate_past_datetime
     @staticmethod
     async def validate_future_datetime(valid_datetime: datetime.datetime) -> None:
         today = datetime.datetime.now(valid_datetime.tzinfo) if valid_datetime.tzinfo \
@@ -219,7 +217,6 @@ class Chronologist:
             else:
                 raise InvalidMinute
 
-    # TODO: if possible, combine with validate_future_datetime
     @staticmethod
     async def validate_past_datetime(valid_datetime: datetime.datetime) -> None:
         today = datetime.datetime.now(valid_datetime.tzinfo) if valid_datetime.tzinfo \
@@ -241,13 +238,26 @@ class Chronologist:
                                         time_zone: datetime.timezone = datetime.timezone.utc) -> datetime.datetime:
         return valid_datetime.astimezone(time_zone).replace(tzinfo=None)
 
+    async def generate_dt_defaults_from_tz(self, parsed_datetime: dict, manual_defaults: dict):
+        validated_time_zone: datetime.timezone = await self.validate_time_zone(
+            parsed_datetime['time_zone'], manual_defaults.pop("default_tz", datetime.timezone.utc)
+        )
+        current_datetime: datetime.datetime = datetime.datetime.now(tz=validated_time_zone)
+        return {
+            "time_zone": manual_defaults.pop("default_tz", current_datetime.tzinfo),
+            "default_minute": manual_defaults.pop("default_minute", current_datetime.minute),
+            "default_hour": manual_defaults.pop("default_hour", current_datetime.hour),
+            "default_day": manual_defaults.pop("default_day", current_datetime.day),
+            "default_month": manual_defaults.pop("default_month", current_datetime.month),
+            "default_year": manual_defaults.pop("default_year", current_datetime.year),
+        }
+
     @staticmethod
     async def process_temporality(temporal_string: str, temporal_parser: Callable, temporal_validator: Callable,
-                                  additional_validators: tuple, temporal_defaults: dict = None) -> datetime:
-        if not temporal_defaults:
-            temporal_defaults = {"default_hour": None, "default_minute": None, "default_tz": None, "default_day": None,
-                                 "default_month": None, "default_year": None}
+                                  additional_validators: tuple, default_generator: Callable,
+                                  manual_defaults: dict = None) -> datetime:
         parsed_temporality: dict = await temporal_parser(temporal_string)
+        temporal_defaults: dict = await default_generator(parsed_temporality, manual_defaults)
         valid_temporality: datetime = await temporal_validator(parsed_temporality, **temporal_defaults)
         for validator in additional_validators:
             await validator(valid_temporality)

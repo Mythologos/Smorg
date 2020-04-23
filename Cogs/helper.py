@@ -49,19 +49,18 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @commands.command(description=HelpDescription.PURGE)
     async def purge(self, ctx: commands.Context, message_count: Optional[int], from_time: Optional[str],
                     to_time: Optional[str]):
-        today: datetime.datetime = datetime.datetime.today()
         additional_validators: tuple = (self.validate_past_datetime,)
-        datetime_defaults: dict = {'default_minute': None, 'default_hour': None, 'default_day': today.day,
-                                   'default_month': today.month, 'default_year': today.year,
-                                   'default_tz': None}
+        datetime_defaults: dict = {'default_minute': None, 'default_hour': None}
         start_time: datetime.datetime = await self.process_temporality(
             from_time, self.parse_datetime, self.validate_datetime,
-            additional_validators=additional_validators, temporal_defaults=datetime_defaults
+            additional_validators=additional_validators,
+            default_generator=self.generate_dt_defaults_from_tz, manual_defaults=datetime_defaults
         ) if from_time else None
 
         end_time: datetime.datetime = await self.process_temporality(
             to_time, self.parse_datetime, self.validate_datetime,
-            additional_validators=additional_validators, temporal_defaults=datetime_defaults
+            additional_validators=additional_validators,
+            default_generator=self.generate_dt_defaults_from_tz, manual_defaults=datetime_defaults
         ) if to_time else None
 
         history_args: dict = {}

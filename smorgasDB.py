@@ -182,7 +182,18 @@ class Reminder(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def has_reminder_at(method_session: Session, g_id: int, mention: str, scheduled_time: datetime.datetime) -> bool:
+    def pop_reminders_at(method_session: Session, current_datetime: datetime.datetime):
+        reminder_list: list = method_session.query(Reminder) \
+            .filter(Reminder.reminder_datetime <= current_datetime).all()
+        for reminder in reminder_list:
+            Reminder.delete_reminder_with(
+                g_id=reminder.guild_id, mention=reminder.mentionable, scheduled_time=reminder.reminder_datetime
+            )
+        return reminder_list
+
+    @staticmethod
+    @BaseAddition.session_method
+    def has_reminder_with(method_session: Session, g_id: int, mention: str, scheduled_time: datetime.datetime) -> bool:
         scheduled_reminder: Reminder = method_session.query(Reminder) \
             .filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time).first()
         return True if scheduled_reminder else False
