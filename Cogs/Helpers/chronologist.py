@@ -11,9 +11,7 @@ from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, Inv
 
 class Chronologist:
     def __init__(self):
-        self.time_zones: list = []
-        for i in range(TimeZone.get_lowest_zone_value(), TimeZone.get_highest_zone_value() + 1):
-            self.time_zones.append(TimeZone(i))
+        self.time_zones: list = TimeZone.list_time_zones()
 
     @staticmethod
     async def parse_datetime(datetime_string: str) -> dict:
@@ -29,7 +27,6 @@ class Chronologist:
         )
         return re.match(datetime_pattern, datetime_string).groupdict()
 
-    # TODO: test the following parsing methods
     @staticmethod
     async def parse_date(date_string: str) -> dict:
         date_pattern: Pattern = re.compile(
@@ -49,7 +46,6 @@ class Chronologist:
             r'(?:[\s](?P<time_zone>[\da-zA-Z+\-]{3,6}))?)'
         )
         return re.match(time_pattern, time_string).groupdict()
-    # TODO: test the above parsing methods
 
     async def validate_datetime(self, parsed_datetime: dict,
                                 time_zone: datetime.timezone, default_hour: Union[int, None],
@@ -63,7 +59,7 @@ class Chronologist:
         minute: int = await self.validate_minute(parsed_datetime['minute'], default_minute)
         return datetime.datetime(minute=minute, hour=hour, day=day, month=month, year=year, tzinfo=time_zone)
 
-    async def validate_hour(self, hour_value: Union[str, None], period: int, default: Union[int, None]):
+    async def validate_hour(self, hour_value: Union[str, None], period: int, default: Union[int, None]) -> int:
         if not hour_value:
             if default is not None:
                 hour: int = default
@@ -255,10 +251,12 @@ class Chronologist:
     @staticmethod
     async def process_temporality(temporal_string: str, temporal_parser: Callable, temporal_validator: Callable,
                                   additional_validators: tuple, default_generator: Callable,
-                                  manual_defaults: dict = None) -> datetime:
+                                  manual_defaults: dict = None) -> \
+            Union[datetime.datetime, datetime.time, datetime.date]:
         parsed_temporality: dict = await temporal_parser(temporal_string)
         temporal_defaults: dict = await default_generator(parsed_temporality, manual_defaults)
-        valid_temporality: datetime = await temporal_validator(parsed_temporality, **temporal_defaults)
+        valid_temporality: Union[datetime.datetime, datetime.time, datetime.date] = \
+            await temporal_validator(parsed_temporality, **temporal_defaults)
         for validator in additional_validators:
             await validator(valid_temporality)
         return valid_temporality

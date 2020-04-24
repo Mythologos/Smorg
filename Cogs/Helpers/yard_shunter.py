@@ -13,13 +13,12 @@ class YardShunter:
                                         in MathematicalFunction.__members__.items()]
         self.current_operators: list = [member.symbol for name, member in MathematicalOperator.__members__.items()]
         self.grouping_operators: tuple = ('(', ')')
-        self.signs: tuple = ('+', '-')
 
     async def shunt_yard(self, flat_tokens: list) -> Union[float, int]:
         await self.flush_stacks()
         complete_tokens: list = await self.consolidate_tokens(flat_tokens)
         await self.process_input(complete_tokens)
-        final_result = await self.evaluate_input()
+        final_result: Union[float, int] = await self.evaluate_input()
         return final_result
 
     async def flush_stacks(self):
@@ -43,12 +42,14 @@ class YardShunter:
                     elif next_token not in self.current_operators:
                         flattened_tokens[index] = -1
                         flattened_tokens.insert(1, '*')
+                    else:
+                        raise DuplicateOperator
                 elif not previous_is_operator:
                     previous_is_operator = True
                 else:
                     raise DuplicateOperator
             elif current_token in self.current_functions:
-                if next_token and next_token in self.grouping_operators:
+                if next_token in self.grouping_operators:
                     index += 1
                 else:
                     raise ImproperFunction
@@ -96,8 +97,6 @@ class YardShunter:
                 else:
                     self.output_queue.append(self.operator_stack.pop(0))
 
-    # TODO: rewrite the below to deal with different #s of inputs to an operator or function.
-    # That'll get rid of the magic numbers.
     async def evaluate_input(self) -> Union[float, int]:
         output_stack: list = []
         for output in self.output_queue:
@@ -105,8 +104,8 @@ class YardShunter:
                 if len(output_stack) > 1:
                     second_operand: int = output_stack.pop(0)
                     first_operand: int = output_stack.pop(0)
-                    relevant_operator = await MathematicalOperator.get_by_symbol(output)
-                    operation_result = await MathematicalOperator.evaluate_operator(
+                    relevant_operator: MathematicalOperator = await MathematicalOperator.get_by_symbol(output)
+                    operation_result: Union[int, float] = await MathematicalOperator.evaluate_operator(
                         relevant_operator.value, first_operand, second_operand
                     )
                     output_stack.insert(0, operation_result)
@@ -115,9 +114,10 @@ class YardShunter:
             elif output in self.current_functions:
                 if output_stack:
                     first_operand: int = output_stack.pop(0)
-                    relevant_function = await MathematicalFunction.get_by_name(output)
-                    operation_result = await MathematicalFunction.evaluate_function(relevant_function.value,
-                                                                                    first_operand)
+                    relevant_function: MathematicalFunction = await MathematicalFunction.get_by_name(output)
+                    operation_result: Union[int, float] = await MathematicalFunction.evaluate_function(
+                        relevant_function.value, first_operand
+                    )
                     output_stack.insert(0, operation_result)
                 else:
                     raise InvalidSequence

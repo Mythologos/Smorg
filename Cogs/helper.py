@@ -16,23 +16,19 @@ class Helper(Chronologist, commands.Cog, Embedder):
         super().__init__()
 
     @commands.command(name='help', description=HelpDescription.SUPPORT)
-    async def support(self, ctx: commands.Context):
+    async def support(self, ctx: commands.Context) -> None:
         """
         This method displays Smorg's help menu.
         :param ctx: The context from which the quotation came.
-        :return: None.
+        :return: None
         """
-        sorted_commands = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
-        embed_items: dict = {
-            "items": "commands",
-            "color": ColorConstant.VIBRANT_PURPLE,
-        }
-        field_items: dict = {
-            "current_prefix": ctx.prefix
-        }
-        await self.embed(ctx.channel, sorted_commands, initialize_embed=self.initialize_itemized_embed,
-                         initialize_field=self.initialize_support_field,
-                         embed_items=embed_items, field_items=field_items)
+        sorted_commands: list = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
+        embed_items: dict = {"items": "commands", "color": ColorConstant.VIBRANT_PURPLE}
+        field_items: dict = {"current_prefix": ctx.prefix}
+        await self.embed(
+            ctx.channel, sorted_commands, initialize_embed=self.initialize_itemized_embed,
+            initialize_field=self.initialize_support_field, embed_items=embed_items, field_items=field_items
+        )
 
     @staticmethod
     async def initialize_support_field(command: commands.Command, current_prefix: str):

@@ -6,7 +6,7 @@ from typing import Callable
 
 from smorgasDB import Guild
 from Cogs.Helpers.exceptioner import MissingSubcommand
-from Cogs.Helpers.Enumerators.universalist import HelpDescription
+from Cogs.Helpers.Enumerators.universalist import HelpDescription, StaticText
 
 
 class Arranger(commands.Cog):
@@ -14,7 +14,7 @@ class Arranger(commands.Cog):
         self.bot = bot
 
     @commands.group(description=HelpDescription.GOVERN)
-    async def govern(self, ctx: commands.Context):
+    async def govern(self, ctx: commands.Context) -> None:
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand
 
@@ -24,8 +24,7 @@ class Arranger(commands.Cog):
         This method allows users to alter the chat in which Smorg embeds its quotes.
         See the handle_domain function for further details.
         """
-        govern_message = 'Congrats! You have successfully changed where I engrave your greatest sayings.'
-        await self.handle_domain(ctx, Guild.update_quotation_channel, channel.id, govern_message)
+        await self.handle_domain(ctx, Guild.update_quotation_channel, channel.id, StaticText.GOVERN_QUOTATION_TEXT)
 
     @govern.command()
     async def reminder(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
@@ -33,8 +32,7 @@ class Arranger(commands.Cog):
         This method allows users to alter the chat in which Smorg posts its reminders.
         See the handle_domain function for further details.
         """
-        govern_message = 'Congrats! You have successfully changed where I blare your noisiest remembrances.'
-        await self.handle_domain(ctx, Guild.update_reminder_channel, channel.id, govern_message)
+        await self.handle_domain(ctx, Guild.update_reminder_channel, channel.id, StaticText.GOVERN_REMINDER_TEXT)
 
     @govern.command()
     async def gamble(self, ctx: commands.Context, channel: discord.TextChannel) -> None:
@@ -42,11 +40,10 @@ class Arranger(commands.Cog):
         This method allows users to alter the chat in which Smorg posts its public gambles.
         See the handle_domain function for further details.
         """
-        govern_message = 'Congrats! You have successfully changed where you let dice fly.'
-        await self.handle_domain(ctx, Guild.update_gamble_channel, channel.id, govern_message)
+        await self.handle_domain(ctx, Guild.update_gamble_channel, channel.id, StaticText.GOVERN_GAMBLE_TEXT)
 
     async def handle_domain(self, ctx: commands.Context, table_update_method: Callable, channel_id: int,
-                            govern_message: str):
+                            govern_message: str) -> None:
         """
         This method allows users to alter the chats in which Smorg posts information.
         :param ctx: The context from which the request came.
@@ -55,6 +52,6 @@ class Arranger(commands.Cog):
         :param channel_id: The ID of the channel which the user wants to designate as a domain for Smorg's messages.
         :return: None.
         """
-        current_guild = ctx.guild
+        current_guild: discord.Guild = ctx.guild
         table_update_method(current_guild.id, channel_id)
         await self.bot.get_channel(channel_id).send(govern_message)

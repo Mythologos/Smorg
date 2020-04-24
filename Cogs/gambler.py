@@ -6,7 +6,7 @@ import re
 from copy import deepcopy
 from discord.ext import commands
 from random import randint
-from typing import Union
+from typing import Pattern, Union
 
 from smorgasDB import Guild
 from Cogs.Helpers.condenser import Condenser
@@ -14,7 +14,8 @@ from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
     MissingParenthesis, InvalidSequence
 from Cogs.Helpers.Enumerators.croupier import MatchContent
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant
+from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant, \
+    StaticText
 from Cogs.Helpers.yard_shunter import YardShunter
 
 
@@ -41,12 +42,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
             for recipient in recipients:
                 if not recipient.dm_channel:
                     await self.bot.get_user(recipient.id).create_dm()
-                await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description,
-                                     recipient.dm_channel)
+                await self.send_roll(
+                    ctx, roll, flat_tokens, verbose_dice, roll_result, description, recipient.dm_channel
+                )
         else:
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
-            current_channel = self.bot.get_channel(gamble_channel_id) if self.bot.get_channel(gamble_channel_id) \
-                else ctx.message.channel
+            current_channel: discord.TextChannel = self.bot.get_channel(gamble_channel_id) or ctx.message.channel
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
     async def handle_roll(self, roll: str) -> tuple:
@@ -69,11 +70,8 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def is_roll_valid(raw_roll: str, parsed_roll: list) -> bool:
-        roll_validity: bool = False
         parsed_roll_result: str = "".join([matched_item for match in parsed_roll for matched_item in match])
-        if raw_roll == parsed_roll_result:
-            roll_validity = True
-        return roll_validity
+        return raw_roll == parsed_roll_result
 
     async def handle_dice(self, die_roll: str) -> tuple:
         parsed_dice: dict = await self.parse_dice(die_roll)
@@ -81,7 +79,7 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         return await self.evaluate_roll(processed_dice)
 
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
-                        description: str, destination_channel: discord.TextChannel):
+                        description: str, destination_channel: discord.TextChannel) -> None:
         introduction_message: str = f"{ctx.message.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
@@ -98,7 +96,7 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         await self.send_condensed_message(destination_channel, conclusion_message, DiscordConstant.MAX_MESSAGE_LENGTH)
 
     @staticmethod
-    async def initialize_dice_embed(page_number: int = 1):
+    async def initialize_dice_embed(page_number: int = 1) -> discord.Embed:
         if page_number == 1:
             desc: str = "The results of the individual dice roll(s) are as follows:"
         else:
@@ -121,34 +119,34 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
                                   (MessageConstant.DIE_ROLL_CHARACTERS + MessageConstant.DIE_TRUNCATION_CHARACTERS))
         if (len(sum_string) + len(sorted_result_string)) <= safe_field_length:
             if (len(sum_string) + len(sorted_result_string) + len(unsorted_result_string)) > safe_field_length:
-                unsorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
+                unsorted_result_string = StaticText.LIST_TRUNCATION_TEXT
         else:
-            sorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
-            unsorted_result_string = MessageConstant.LIST_TRUNCATION_TEXT
-        value = f"**Raw Dice Result:** {unsorted_result_string}\n" \
-                f"**Final Dice Result:** {sorted_result_string}\n" \
-                f"**Sum:** {sum_string}"
-        inline = False
+            sorted_result_string = StaticText.LIST_TRUNCATION_TEXT
+            unsorted_result_string = StaticText.LIST_TRUNCATION_TEXT
+        value: str = f"**Raw Dice Result:** {unsorted_result_string}\n" \
+                     f"**Final Dice Result:** {sorted_result_string}\n" \
+                     f"**Sum:** {sum_string}"
+        inline: bool = False
         return name, value, inline
 
     @staticmethod
     async def parse_roll(raw_roll: str) -> list:
-        roll_pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
-                                  r'(?P<regular_operator>[+\-*/^])|'
-                                  r'(?P<grouping_operator>[()])|'
-                                  r'(?P<function>abs|floor|ceiling|sqrt)|'
-                                  r'(?P<constant>[+-]?[\d]+))')
+        roll_pattern: Pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
+                                           r'(?P<regular_operator>[+\-*/^])|'
+                                           r'(?P<grouping_operator>[()])|'
+                                           r'(?P<function>abs|floor|ceiling|sqrt)|'
+                                           r'(?P<constant>[+-]?[\d]+))')
         return re.findall(roll_pattern, raw_roll)
 
     @staticmethod
     async def parse_dice(raw_dice: str) -> dict:
-        dice_pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
-                                  r'(?P<die_size>[\d]+)'
-                                  r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
-                                  r'(?(drop_keep_sign)(?P<drop_keep_value>[\d]+))?'
-                                  r'(?P<explosion_sign>!)?'
-                                  r'(?P<challenge_sign>[><])?'
-                                  r'(?(challenge_sign)(?P<challenge_value>[+-]?[\d]+))')
+        dice_pattern: Pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
+                                           r'(?P<die_size>[\d]+)'
+                                           r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
+                                           r'(?(drop_keep_sign)(?P<drop_keep_value>[\d]+))?'
+                                           r'(?P<explosion_sign>!)?'
+                                           r'(?P<challenge_sign>[><])?'
+                                           r'(?(challenge_sign)(?P<challenge_value>[+-]?[\d]+))')
         return re.match(dice_pattern, raw_dice).groupdict()
 
     @staticmethod

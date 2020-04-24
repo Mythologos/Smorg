@@ -1,4 +1,16 @@
+# TODO: documentation...
+
 from aenum import NamedConstant
+
+
+class ColorConstant(NamedConstant):
+    ERROR_RED = 0xB80000
+    HEAVENLY_YELLOW = 0xFFE066
+    DEEP_BLUE = 0x001A66
+    HOT_PINK = 0xFF3385
+    NEUTRAL_ORANGE = 0xFF6600
+    VIBRANT_PURPLE = 0xA901DB
+    CALM_GREEN = 0x0CCC3F
 
 
 class DiscordConstant(NamedConstant):
@@ -12,16 +24,6 @@ class DiscordConstant(NamedConstant):
     MAX_EMBED_FIELD_VALUE = 1024
     MAX_EMBED_FOOTER = 2048
     MAX_EMBED_AUTHOR = 256
-
-
-class ColorConstant(NamedConstant):
-    ERROR_RED = 0xB80000
-    HEAVENLY_YELLOW = 0xFFE066
-    DEEP_BLUE = 0x001A66
-    HOT_PINK = 0xFF3385
-    NEUTRAL_ORANGE = 0xFF6600
-    VIBRANT_PURPLE = 0xA901DB
-    CALM_GREEN = 0x0CCC3F
 
 
 class HelpDescription(NamedConstant):
@@ -63,4 +65,18 @@ class MessageConstant(NamedConstant):
     CONDENSE_CHARACTERS = 12
     DIE_ROLL_CHARACTERS = 48
     DIE_TRUNCATION_CHARACTERS = 10
+
+
+class StaticText(NamedConstant):
+    ERROR_ON_READY_TEXT = "Smorg is online, but your Guild currently has no text channels. " \
+                          "Please remove Smorg from your Guild and add Smorg back once there is a text channel."
+    NEW_ON_READY_TEXT = "Hello! Smorg is online! To view commands, please use the 'help' command " \
+                        "with the appropriate prefix. If this is your first time using this bot, '.' is your prefix."
+    REGULAR_ON_READY_TEXT = "Smorg is online!"
+    GOVERN_GAMBLE_TEXT = "Congrats! You have successfully changed where you let dice fly."
+    GOVERN_QUOTATION_TEXT = "Congrats! You have successfully changed where I engrave your greatest sayings."
+    GOVERN_REMINDER_TEXT = "Congrats! You have successfully changed where I blare your noisiest remembrances."
+    REMINDER_NOTIFICATION = "Your reminder has been successfully processed! It'll be sent at the specified time."
+    REVISED_REMINDER_NOTIFICATION = "Your reminder revision has been successfully processed!"
+    FORGOTTEN_REMINDER_NOTIFICATION = "Your reminder deletion has been successfully processed!"
     LIST_TRUNCATION_TEXT = "[...]"

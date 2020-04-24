@@ -1,10 +1,9 @@
-from aenum import Enum, NamedConstant
-from typing import Union
-
-
+# TODO: documentation...
 # note: enum names dictate military time zone name, if it exists
-# sites used: https://www.timeanddate.com/time/zones/ and
-# https://greenwichmeantime.com/time-zone/definition/
+
+from aenum import Enum, NamedConstant
+
+
 class TimeZone(Enum, init='value aliases'):
     A = 1, ("BST", "CET", "MET", "MEZ", "WAT", "WETDST")
     B = 2, ("BDST", "CEST", "CETDST", "EET", "IST", "MEST", "MESZ", "METDST", "SAST")
@@ -93,6 +92,13 @@ class TimeZone(Enum, init='value aliases'):
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         highest_zone_value = sorted_zones_by_enum[-1].value
         return highest_zone_value
+
+    @classmethod
+    def list_time_zones(cls) -> list:
+        time_zone_list: list = []
+        for i in range(cls.get_lowest_zone_value(), cls.get_highest_zone_value() + 1):
+            time_zone_list.append(TimeZone(i))
+        return time_zone_list
 
 
 class DateConstant(NamedConstant):

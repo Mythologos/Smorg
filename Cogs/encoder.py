@@ -1,7 +1,5 @@
 # TODO: overall documentation
-# TODO: perhaps transition dictionaries into default_dicts?
-# TODO: add easier way to write morse-like code with period and dash characters
-# The morse code is based on: http://ascii-table.com/morse-code.php
+# Morse Code based on: http://ascii-table.com/morse-code.php
 
 from discord.ext import commands
 

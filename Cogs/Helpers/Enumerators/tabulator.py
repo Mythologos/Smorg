@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import math
-
 from aenum import Enum, NamedConstant
+from math import floor, ceil, sqrt
 
 
 class ComparisonOperator(NamedConstant):
@@ -103,11 +102,11 @@ class MathematicalFunction(Enum, init='value representation'):
     @staticmethod
     async def evaluate_function(associated_value, first_operand):
         if associated_value == MathematicalFunction.SQUARE_ROOT.value:
-            evaluated_value = math.sqrt(first_operand)
+            evaluated_value = sqrt(first_operand)
         elif associated_value == MathematicalFunction.FLOOR.value:
-            evaluated_value = math.floor(first_operand)
+            evaluated_value = floor(first_operand)
         elif associated_value == MathematicalFunction.CEILING.value:
-            evaluated_value = math.ceil(first_operand)
+            evaluated_value = ceil(first_operand)
         elif associated_value == MathematicalFunction.ABSOLUTE_VALUE.value:
             evaluated_value = abs(first_operand)
         else:

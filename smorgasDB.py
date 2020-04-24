@@ -1,6 +1,4 @@
 # TODO: MODULAR DOCUMENTATION
-# TODO: handle deleted channels case for various tables here
-# TODO: use query for type hints (as items retrieved are query.Query items)
 
 from __future__ import annotations
 
@@ -49,9 +47,8 @@ class BaseAddition:
     @staticmethod
     def reset_database() -> None:
         """
-        TODO -- should this be placed somewhere else?
         This method resets the database down to the structure based upon the classes described above.
-        :return: None.
+        :return: None
         """
         Base.metadata.drop_all()
         Base.metadata.create_all()
@@ -59,7 +56,7 @@ class BaseAddition:
 
 class Quote(BaseAddition, Base):
     """
-    This class represents a quote stored from a server.
+    This class represents a quote stored from a Guild.
     """
     __tablename__ = 'quotes'
 
@@ -69,8 +66,8 @@ class Quote(BaseAddition, Base):
     quote_id = Column(SmallInteger, primary_key=True, autoincrement=True, nullable=False)
     text = Column(String, nullable=False)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
-    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
-                             nullable=False, onupdate=sqlalchemy.sql.func.now())
+    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False,
+                             onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
     guild = relationship("Guild", back_populates="quotes")
@@ -119,7 +116,7 @@ class Quote(BaseAddition, Base):
 
     @staticmethod
     @BaseAddition.session_method
-    def get_random_quote_by(method_session: Session, g_id: int, q_number: int) -> str:
+    def get_random_quote_by(method_session: Session, g_id: int, q_number: int) -> Quote:
         """
         This method retrieves a random quote from a given server from the database.
         :param method_session: a Session database connection.
@@ -127,7 +124,7 @@ class Quote(BaseAddition, Base):
         :param q_number: a random number less than the maximum number of quotes that a server has.
         :return: a Quote's author and text, in that order, in a Tuple.
         """
-        quote = method_session.query(Quote.author, Quote.text).filter_by(guild_id=g_id)[q_number]
+        quote = method_session.query(Quote).filter_by(guild_id=g_id)[q_number]
         return quote
 
 
@@ -139,8 +136,8 @@ class Reminder(Base, BaseAddition):
     reminder_datetime = Column(DateTime(timezone=True), primary_key=True, nullable=False)
     reminder_text = Column(String(DiscordConstant.MAX_EMBED_FIELD_VALUE), nullable=True)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
-    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
-                             nullable=False, onupdate=sqlalchemy.sql.func.now())
+    last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False,
+                             onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
     guild = relationship("Guild", back_populates="reminders")
@@ -164,8 +161,9 @@ class Reminder(Base, BaseAddition):
     def update_reminder_with(method_session: Session, g_id: int, mention: str, old_r_datetime: datetime.datetime,
                              new_r_datetime: datetime.datetime, new_r_text: str) -> None:
         attributes_to_update: dict = {}
-        reminder_to_update: query = method_session.query(Reminder) \
-            .filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=old_r_datetime)
+        reminder_to_update: query = method_session.query(Reminder).filter_by(
+            guild_id=g_id, mentionable=mention, reminder_datetime=old_r_datetime
+        )
         if new_r_datetime:
             attributes_to_update["reminder_datetime"] = new_r_datetime
         if new_r_text:
@@ -176,8 +174,9 @@ class Reminder(Base, BaseAddition):
     @staticmethod
     @BaseAddition.session_method
     def get_reminders_by(method_session: Session, g_id: int, mention: str) -> list:
-        reminder_list: list = method_session.query(Reminder.reminder_datetime, Reminder.reminder_text) \
-            .filter_by(guild_id=g_id, mentionable=mention)
+        reminder_list: list = method_session.query(Reminder.reminder_datetime, Reminder.reminder_text).filter_by(
+            guild_id=g_id, mentionable=mention
+        )
         return reminder_list
 
     @staticmethod
@@ -194,16 +193,18 @@ class Reminder(Base, BaseAddition):
     @staticmethod
     @BaseAddition.session_method
     def has_reminder_with(method_session: Session, g_id: int, mention: str, scheduled_time: datetime.datetime) -> bool:
-        scheduled_reminder: Reminder = method_session.query(Reminder) \
-            .filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time).first()
+        scheduled_reminder: Reminder = method_session.query(Reminder).filter_by(
+            guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time
+        ).first()
         return True if scheduled_reminder else False
 
     @staticmethod
     @BaseAddition.session_method
     def delete_reminder_with(method_session: Session, g_id: int, mention: str,
                              scheduled_time: datetime.datetime) -> None:
-        method_session.query(Reminder).filter_by(guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time) \
-            .delete()
+        method_session.query(Reminder).filter_by(
+            guild_id=g_id, mentionable=mention, reminder_datetime=scheduled_time
+        ).delete()
         method_session.commit()
 
 
@@ -217,16 +218,17 @@ class Guild(Base, BaseAddition):
     guild_id = Column(BigInteger, primary_key=True, nullable=False)
     gamble_channel_id = Column(BigInteger, unique=True, nullable=True)
     guild_prefix = Column(String, default='.', nullable=False)
-    quotation_channel_id = Column(BigInteger, unique=True, nullable=False)
-    reminder_channel_id = Column(BigInteger, unique=True, nullable=False)
+    quotation_channel_id = Column(BigInteger, unique=True, nullable=True)
+    reminder_channel_id = Column(BigInteger, unique=True, nullable=True)
     created_at = Column(DateTime, default=sqlalchemy.sql.func.now(), nullable=False)
     last_updated_at = Column(DateTime, default=sqlalchemy.sql.func.now(),
                              nullable=False, onupdate=sqlalchemy.sql.func.now())
 
     # Relationships:
-    quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild")
-    reminders = relationship("Reminder", order_by=[Reminder.reminder_datetime],
-                             back_populates="guild")
+    quotes = relationship("Quote", order_by=Quote.quote_id, back_populates="guild", cascade="delete")
+    reminders = relationship(
+        "Reminder", order_by=Reminder.reminder_datetime, back_populates="guild", cascade="delete"
+    )
 
     # Methods:
     def __repr__(self):
@@ -263,7 +265,7 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
-    def create_guild_with(method_session: Session, g_id: int, c_id: int):
+    def create_guild_with(method_session: Session, g_id: int, c_id: Union[int, None]):
         """
         This method creates a Guild and stores it in the database.
         :param method_session: a Session database connection.
@@ -277,6 +279,12 @@ class Guild(Base, BaseAddition):
 
     @staticmethod
     @BaseAddition.session_method
+    def delete_guild_with(method_session: Session, g_id: int):
+        method_session.query(Guild).filter_by(guild_id=g_id).delete()
+        method_session.commit()
+
+    @staticmethod
+    @BaseAddition.session_method
     def update_quotation_channel(method_session: Session, g_id: int, c_id: int):
         """
         This method retrieves a Guild and updates its quotation channel.
@@ -285,9 +293,7 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        method_session.query(Guild) \
-                      .filter_by(guild_id=g_id) \
-                      .update({"quotation_channel_id": c_id})
+        method_session.query(Guild).filter_by(guild_id=g_id).update({"quotation_channel_id": c_id})
         method_session.commit()
 
     @staticmethod
@@ -312,9 +318,7 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        method_session.query(Guild) \
-                      .filter_by(guild_id=g_id) \
-                      .update({"reminder_channel_id": c_id})
+        method_session.query(Guild).filter_by(guild_id=g_id).update({"reminder_channel_id": c_id})
         method_session.commit()
 
     @staticmethod
@@ -339,9 +343,7 @@ class Guild(Base, BaseAddition):
         :param c_id: a Discord Channel ID (Integer).
         :return: None.
         """
-        method_session.query(Guild) \
-                      .filter_by(guild_id=g_id) \
-                      .update({"gamble_channel_id": c_id})
+        method_session.query(Guild).filter_by(guild_id=g_id).update({"gamble_channel_id": c_id})
         method_session.commit()
 
     @staticmethod
@@ -354,7 +356,5 @@ class Guild(Base, BaseAddition):
     @staticmethod
     @BaseAddition.session_method
     def update_prefix(method_session: Session, g_id: int, new_prefix: str):
-        method_session.query(Guild) \
-                      .filter_by(guild_id=g_id) \
-                      .update({"guild_prefix": new_prefix})
+        method_session.query(Guild).filter_by(guild_id=g_id).update({"guild_prefix": new_prefix})
         method_session.commit()

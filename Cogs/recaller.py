@@ -1,5 +1,4 @@
 # TODO: documentation...
-# TODO: see if the check_reminders and on_reminder database processing can be made sleeker.
 
 import discord
 import datetime
@@ -10,7 +9,7 @@ from typing import Optional, Union
 
 from Cogs.Helpers.chronologist import Chronologist
 from Cogs.Helpers.exceptioner import Exceptioner, MissingReminder
-from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
+from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription, StaticText
 from smorgasDB import Guild, Reminder
 
 
@@ -27,11 +26,9 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
         print(validated_datetime)
         Reminder.create_reminder_with(current_guild_id, mentionable.mention, message, validated_datetime)
-        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
-        await current_channel.send(
-            "Your reminder has been successfully processed! It'll be sent at the specified time."
-        )
+        reminder_channel_id: Union[int, None] = Guild.get_reminder_channel_by(current_guild_id)
+        current_channel: discord.TextChannel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
+        await current_channel.send(StaticText.REMINDER_NOTIFICATION)
 
     @commands.command(description=HelpDescription.REVISE)
     async def revise(self, ctx: commands.Context, mentionable: Union[discord.Member, discord.Role],
@@ -39,14 +36,14 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
                      new_message: Optional[str] = None) -> None:
         current_guild_id = ctx.guild.id
         old_datetime: datetime.datetime = await self.handle_time(old_reminder_time)
-        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
+        reminder_channel_id: Union[int, None] = Guild.get_reminder_channel_by(current_guild_id)
+        current_channel: discord.TextChannel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         if Reminder.has_reminder_with(current_guild_id, mentionable.mention, old_datetime):
             new_datetime: datetime.datetime = await self.handle_time(new_reminder_time)
             Reminder.update_reminder_with(
                 current_guild_id, mentionable.mention, old_datetime, new_datetime, new_message
             )
-            await current_channel.send("Your revision has been successfully processed!")
+            await current_channel.send(StaticText.REVISED_REMINDER_NOTIFICATION)
         else:
             raise MissingReminder
 
@@ -55,20 +52,18 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
                      reminder_time: str) -> None:
         mention: str = mentionable.mention
         current_guild_id = ctx.guild.id
-        reminder_channel_id = Guild.get_reminder_channel_by(current_guild_id)
-        current_channel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
+        reminder_channel_id: Union[int, None] = Guild.get_reminder_channel_by(current_guild_id)
+        current_channel: discord.TextChannel = self.bot.get_channel(reminder_channel_id) or ctx.message.channel
         validated_datetime: datetime.datetime = await self.handle_time(reminder_time)
         if Reminder.has_reminder_with(current_guild_id, mention, validated_datetime):
             Reminder.delete_reminder_with(current_guild_id, mention, validated_datetime)
-            await current_channel.send("Your deletion has been successfully processed!")
+            await current_channel.send(StaticText.FORGOTTEN_REMINDER_NOTIFICATION)
         else:
             raise MissingReminder
 
     async def handle_time(self, reminder_time: str) -> datetime.datetime:
         additional_validators: tuple = (self.validate_future_datetime,)
-        temporal_defaults: dict = {
-            "default_hour": None, "default_minute": 0
-        }
+        temporal_defaults: dict = {"default_hour": None, "default_minute": 0}
         validated_datetime: datetime.datetime = await self.process_temporality(
             reminder_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators, default_generator=self.generate_dt_defaults_from_tz,

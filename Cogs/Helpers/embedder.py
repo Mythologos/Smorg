@@ -49,8 +49,8 @@ class Embedder:
         return itemized_embed
 
     @staticmethod
-    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstant, page_number: int = 1) -> \
-            discord.Embed:
+    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstant,
+                                        page_number: int = 1) -> discord.Embed:
         if page_number == 1:
             desc: str = f'{items.title()} by {item_author} include:'
         else:

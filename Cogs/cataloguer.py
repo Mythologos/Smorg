@@ -27,33 +27,35 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_zone_field(time_zone: TimeZone) -> tuple:
-        name = f"Zone {time_zone.value}"
-        value = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
+        name: str = f"Zone {time_zone.value}"
+        value: str = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
         inline: bool = False
         return name, value, inline
 
     @display.command()
     async def zones(self, ctx: commands.Context) -> None:
-        sorted_time_zones = sorted(self.time_zones, key=lambda tz: tz.value)
+        sorted_time_zones: list = sorted(self.time_zones, key=lambda tz: tz.value)
         embed_items: dict = {
             "items": "time zones",
             "color": ColorConstant.NEUTRAL_ORANGE
         }
-        await self.embed(ctx.channel, sorted_time_zones, initialize_embed=self.initialize_itemized_embed,
-                         initialize_field=self.initialize_zone_field, embed_items=embed_items)
+        await self.embed(
+            ctx.channel, sorted_time_zones, initialize_embed=self.initialize_itemized_embed,
+            initialize_field=self.initialize_zone_field, embed_items=embed_items
+        )
 
     @staticmethod
-    async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str, counter: int) -> \
-            tuple:
-        name = f"Reminder {counter + 1}, Scheduled at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
-        value = f"{reminder_message or '[No Message Provided]'}"
+    async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str,
+                                        counter: int) -> tuple:
+        name: str = f"Reminder {counter + 1}, Scheduled at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
+        value: str = f"{reminder_message or '[No Message Provided]'}"
         inline: bool = False
         return name, value, inline
 
     @display.command()
     async def reminders(self, ctx: commands.Context,
                         mentionable: Optional[Union[discord.Member, discord.Role]] = None) -> None:
-        mention = mentionable.mention if mentionable else ctx.message.author.mention
+        mention: str = mentionable.mention if mentionable else ctx.message.author.mention
         reminder_name: str = mentionable.name if mentionable else ctx.message.author.name
         reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
         embed_items: dict = {
@@ -68,14 +70,15 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_quote_field(quote_author: str, quote: str, overall_author: str, counter: int) -> tuple:
-        name = f"Quote {counter + 1}"
-        value = f"\"{quote}\" -- {quote_author if quote_author != overall_author else (overall_author or 'Anonymous')}"
+        name: str = f"Quote {counter + 1}"
+        value: str = f"\"{quote}\" -- " \
+                     f"{quote_author if quote_author != overall_author else (overall_author or 'Anonymous')}"
         inline: bool = False
         return name, value, inline
 
     @display.command()
     async def quotes(self, ctx: commands.Context, author: Union[discord.Member, str, None]) -> None:
-        overall_name = author.name if isinstance(author, discord.Member) else author
+        overall_name: str = author.name if isinstance(author, discord.Member) else author
         quote_list: list = Quote.get_quotes_by(g_id=ctx.guild.id, auth=overall_name)
         embed_items: dict = {
             "item_author": overall_name or ctx.guild.name,
@@ -91,8 +94,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_arithmetic_field(name: str, representation: str) -> tuple:
-        name = f"{name.title().replace('_', ' ')}"
-        value = f"Symbol: {representation}"
+        name: str = f"{name.title().replace('_', ' ')}"
+        value: str = f"Symbol: {representation}"
         if representation.isalpha():
             value += '()'
         inline: bool = False
@@ -124,8 +127,10 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def dice(self, ctx: commands.Context):
-        dice_mechanic_list: list = [(item.name, item.representation, item.value_range, item.description)
-                                    for item in RollMechanic.__members__.values()]
+        dice_mechanic_list: list = [
+            (item.name, item.representation, item.value_range, item.description) for item in
+            RollMechanic.__members__.values()
+        ]
         await self.embed(
             ctx.channel, dice_mechanic_list, initialize_embed=self.initialize_dice_embed,
             initialize_field=self.initialize_dice_field

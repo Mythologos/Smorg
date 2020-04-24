@@ -1,6 +1,4 @@
 # TODO: MODULAR DOCUMENTATION
-# TODO: would it be possible to combine various multi-field embed output methods
-# into one mix-in method with different inputs?
 
 from discord.ext import commands
 

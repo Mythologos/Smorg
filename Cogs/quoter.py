@@ -1,5 +1,4 @@
 # TODO: documentation
-# TODO: add more errors related to immortalize's database behavior?
 
 import discord
 from discord.ext import commands
@@ -31,7 +30,7 @@ class Quoter(commands.Cog, Exceptioner):
     async def handle_quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None],
                            title_without_author: str, color: ColorConstant):
         current_guild_id: int = ctx.guild.id
-        quotation_channel_id: int = Guild.get_quotation_channel_by(current_guild_id)
+        quotation_channel_id: Union[int, None] = Guild.get_quotation_channel_by(current_guild_id)
         current_channel: discord.TextChannel = self.bot.get_channel(quotation_channel_id) or ctx.message.channel
         quote_response = discord.Embed(
             title=title_without_author + author,
@@ -45,14 +44,13 @@ class Quoter(commands.Cog, Exceptioner):
     async def handle_author(author: Union[discord.Member, str, None], anonymous_default: str):
         if author:
             if isinstance(author, discord.Member):
-                author = author.name
+                author: str = author.name
             else:
                 author = author.strip()
         else:
             author = anonymous_default
         return author
 
-    # TODO: add Enum for list access values
     @commands.command(description=HelpDescription.YOINK)
     @commands.check(Checker.is_yoinkable)
     async def yoink(self, ctx: commands.Context) -> None:
@@ -60,15 +58,14 @@ class Quoter(commands.Cog, Exceptioner):
         This method retrieves a random Quote formed by the calling Guild in the database.
         It also lets the user know whether a Quote even exists.
         :param ctx: The context from which the quotation came.
-        :return: None.
+        :return: None
         """
-        current_guild_id = ctx.guild.id
-        maximum = Quote.count_quotes(current_guild_id) - 1
-        yoinked_quote = Quote.get_random_quote_by(current_guild_id, randint(0, maximum))
-        author = yoinked_quote[0] if yoinked_quote[0] else 'A Forgotten Prodigy'
-        yoink_response = discord.Embed(
-            title=f'The Legendary Words of {author}',
-            description=yoinked_quote[1],
+        current_guild_id: int = ctx.guild.id
+        maximum: int = Quote.count_quotes(current_guild_id) - 1
+        yoinked_quote: Quote = Quote.get_random_quote_by(current_guild_id, randint(0, maximum))
+        yoink_response: discord.Embed = discord.Embed(
+            title=f'The Legendary Words of {yoinked_quote.author or "A Forgotten Prodigy"}',
+            description=yoinked_quote.text,
             color=ColorConstant.HOT_PINK
         )
         await ctx.send(embed=yoink_response)

@@ -6,7 +6,6 @@ from discord.ext.commands import UserInputError
 from Cogs.Helpers.Enumerators.universalist import ColorConstant
 
 
-# TODO: keep as class in this file, or change name and move to its own file?
 class Exceptioner:
     @staticmethod
     async def initialize_error_embed(command_name: str, error_name: str, error_description: str) -> discord.Embed:

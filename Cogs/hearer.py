@@ -1,10 +1,11 @@
 # TODO: documentation
 
-
 from discord import Embed, TextChannel
 from discord.ext import commands
+from typing import Union
 
 from Cogs.Helpers.exceptioner import *
+from Cogs.Helpers.Enumerators.universalist import StaticText
 from smorgasDB import BaseAddition, Guild
 
 
@@ -19,32 +20,40 @@ class Hearer(commands.Cog, Exceptioner):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
-        """
-        This method is called Smorg is connected to Discord.
-        It assures that it has stored Guild information for every Guild that it is a part of.
-        This is important because it must know in which channel it should perform some of its functions.
-        :return: None.
-        """
         if self.reset_database_on_start:
             BaseAddition.reset_database()
         for guild in self.bot.guilds:
-            if Guild.exists_with(guild.id):
-                channel_id: int = Guild.get_reminder_channel_by(guild.id)
-                ready_channel: TextChannel = self.bot.get_channel(channel_id)
+            await self.signal_ready(guild)
+
+    async def signal_ready(self, guild: discord.Guild):
+        if Guild.exists_with(guild.id):
+            channel_id: int = Guild.get_reminder_channel_by(guild.id)
+            ready_channel: TextChannel = self.bot.get_channel(channel_id)
+            await ready_channel.send(StaticText.REGULAR_ON_READY_TEXT)
+        elif guild.text_channels:
+            general_channels: list = [channel for channel in guild.text_channels if channel.name == 'general']
+            if general_channels or len(guild.text_channels) > 0:
+                default_channel_id: Union[int, None] = general_channels[0].id
             else:
-                general_channels = [channel for channel in guild.text_channels if channel.name == 'general']
-                if general_channels:
-                    default_channel_id: int = general_channels[0].id
-                elif len(guild.text_channels) > 0:
-                    default_channel_id = guild.text_channels[0].id
-                else:
-                    raise ...  # TODO raise actual error: no text channels
-                Guild.create_guild_with(guild.id, default_channel_id)
-                # ready_channel = self.bot.get_channel(default_channel_id)
-            # await ready_channel.send(
-            #    "Hello! Smorg is online! To view commands, please use the 'help' command with the appropriate prefix. "
-            #    "If this is your first time using this bot, '.' is your prefix."
-            # )
+                default_channel_id = guild.text_channels[0].id
+            Guild.create_guild_with(guild.id, default_channel_id)
+            ready_channel = self.bot.get_channel(default_channel_id)
+            await ready_channel.send(StaticText.NEW_ON_READY_TEXT)
+        else:
+            Guild.create_guild_with(guild.id, None)
+            guild_owner: discord.Member = guild.owner
+            if not guild_owner.dm_channel:
+                await self.bot.get_user(guild_owner.id).create_dm()
+            ready_channel = guild_owner.dm_channel
+            await ready_channel.send(StaticText.ERROR_ON_READY_TEXT)
+
+    @commands.Cog.listener()
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        await self.signal_ready(guild)
+
+    @commands.Cog.listener()
+    async def on_guild_remove(self, guild: discord.Guild) -> None:
+        Guild.delete_guild_with(guild.id)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
