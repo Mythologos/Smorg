@@ -1,4 +1,6 @@
-# TODO: documentation
+"""
+...
+"""
 
 from discord import Embed, TextChannel
 from discord.ext import commands
@@ -10,6 +12,9 @@ from smorgasDB import BaseAddition, Guild
 
 
 class Hearer(commands.Cog, Exceptioner):
+    """
+    ...
+    """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.passable_errors: tuple = (
@@ -20,12 +25,21 @@ class Hearer(commands.Cog, Exceptioner):
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
+        """
+        ...
+        :return:
+        """
         if self.reset_database_on_start:
             BaseAddition.reset_database()
         for guild in self.bot.guilds:
             await self.signal_ready(guild)
 
     async def signal_ready(self, guild: discord.Guild):
+        """
+        ...
+        :param guild:
+        :return:
+        """
         if Guild.exists_with(guild.id):
             channel_id: int = Guild.get_reminder_channel_by(guild.id)
             ready_channel: TextChannel = self.bot.get_channel(channel_id)
@@ -49,14 +63,30 @@ class Hearer(commands.Cog, Exceptioner):
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
+        """
+        ...
+        :param guild:
+        :return:
+        """
         await self.signal_ready(guild)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild) -> None:
+        """
+        ...
+        :param guild:
+        :return:
+        """
         Guild.delete_guild_with(guild.id)
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
+        """
+        ...
+        :param ctx:
+        :param error:
+        :return:
+        """
         error = getattr(error, "original", error)
         if not isinstance(error, self.passable_errors) and isinstance(error, discord.DiscordException):
             command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()

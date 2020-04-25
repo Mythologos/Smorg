@@ -1,7 +1,14 @@
+"""
+...
+"""
+
 from aenum import Enum, NamedConstant
 
 
 class MatchContent(NamedConstant):
+    """
+    ...
+    """
     DIE_ROLL = 0
     REGULAR_OPERATOR = 1
     GROUPING_OPERATOR = 2
@@ -10,6 +17,9 @@ class MatchContent(NamedConstant):
 
 
 class RollMechanic(Enum, init='representation value_range description'):
+    """
+    ...
+    """
     NUMBER_OF_DICE = ("x", "This value can be any positive integer.",
                       "This value represents the number of dice that are rolled.")
     ROLL_NOTIFIER = ("d", "This symbol can be 'd' or 'D'.", "This symbol indicates that dice are being rolled.")

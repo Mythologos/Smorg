@@ -1,9 +1,14 @@
-# TODO: documentation...
+"""
+...
+"""
 
 from aenum import NamedConstant
 
 
 class ColorConstant(NamedConstant):
+    """
+    This class holds constants for hexadecimal color values used throughout Smorg.
+    """
     ERROR_RED = 0xB80000
     HEAVENLY_YELLOW = 0xFFE066
     DEEP_BLUE = 0x001A66
@@ -14,6 +19,9 @@ class ColorConstant(NamedConstant):
 
 
 class DiscordConstant(NamedConstant):
+    """
+    ...
+    """
     MAX_MEMBER_NAME_LENGTH = 32
     MAX_ROLE_LENGTH = 100
     MAX_MESSAGE_LENGTH = 2000
@@ -27,6 +35,9 @@ class DiscordConstant(NamedConstant):
 
 
 class HelpDescription(NamedConstant):
+    """
+    ...
+    """
     DISPLAY = "This command, when combined with various subcommands, relates information about Smorg's capabilities " \
               "and its current state. " \
               "Current subcommands include dice, functions, operators, quotes, reminders, and zones."
@@ -61,6 +72,9 @@ class HelpDescription(NamedConstant):
 
 
 class MessageConstant(NamedConstant):
+    """
+    ...
+    """
     NOT_FOUND_INDEX = -1
     CONDENSE_CHARACTERS = 12
     DIE_ROLL_CHARACTERS = 48
@@ -68,6 +82,9 @@ class MessageConstant(NamedConstant):
 
 
 class StaticText(NamedConstant):
+    """
+    ...
+    """
     ERROR_ON_READY_TEXT = "Smorg is online, but your Guild currently has no text channels. " \
                           "Please remove Smorg from your Guild and add Smorg back once there is a text channel."
     NEW_ON_READY_TEXT = "Hello! Smorg is online! To view commands, please use the 'help' command " \

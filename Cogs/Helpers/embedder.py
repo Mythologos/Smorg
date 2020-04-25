@@ -1,4 +1,6 @@
-# TODO: documentation
+"""
+...
+"""
 
 import discord
 from typing import Any, Callable, Iterable, List, Union
@@ -8,10 +10,23 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant
 
 
 class Embedder:
+    """
+    ...
+    """
     @staticmethod
     async def embed(destination_channel: discord.TextChannel, sorted_data: List[Any], initialize_embed: Callable,
                     initialize_field: Callable, embed_items: Union[dict, None] = None,
                     field_items: Union[dict, None] = None) -> None:
+        """
+        ...
+        :param destination_channel:
+        :param sorted_data:
+        :param initialize_embed:
+        :param initialize_field:
+        :param embed_items:
+        :param field_items:
+        :return:
+        """
         if not embed_items:
             embed_items = {}
         if not field_items:
@@ -37,6 +52,13 @@ class Embedder:
 
     @staticmethod
     async def initialize_itemized_embed(items: str, color: ColorConstant, page_number: int = 1) -> discord.Embed:
+        """
+        ...
+        :param items:
+        :param color:
+        :param page_number:
+        :return:
+        """
         if page_number == 1:
             desc: str = f'The {items} supported by Smorg include:'
         else:
@@ -49,8 +71,16 @@ class Embedder:
         return itemized_embed
 
     @staticmethod
-    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstant,
-                                        page_number: int = 1) -> discord.Embed:
+    async def initialize_authored_embed(item_author: str, items: str, color: ColorConstant, page_number: int = 1) \
+            -> discord.Embed:
+        """
+        ...
+        :param item_author:
+        :param items:
+        :param color:
+        :param page_number:
+        :return:
+        """
         if page_number == 1:
             desc: str = f'{items.title()} by {item_author} include:'
         else:

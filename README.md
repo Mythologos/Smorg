@@ -16,3 +16,5 @@ This description is a work-in-progress! Thank you for visiting this repository.
 5. Revive the idea behind `disambiguator.py` as some kind of polling feature.
 6. Let `yard_shunter.py` and `tabulator.py` work with functions or operators that have varied numbers of operands (e.g. `!` being an operator that takes one operand as opposed to two).
 7. Implement a test suite to assure that features don't break as I tinker with, optimize, and abstract older methods.
+8. Synthesize database methods to make database processing sleeker.
+9. Add more character sets for encoder to translate between.

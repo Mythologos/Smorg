@@ -1,4 +1,6 @@
-# TODO: overall documentation
+"""
+...
+"""
 
 import discord
 import re
@@ -20,6 +22,9 @@ from Cogs.Helpers.yard_shunter import YardShunter
 
 
 class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
+    """
+    ...
+    """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.yard_shunter = YardShunter()
@@ -28,14 +33,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def roll(self, ctx: commands.Context, roll: str, recipients: commands.Greedy[discord.Member] = None, *,
                    description: Union[str, None] = None) -> None:
         """
-        The main method for the roll command.
-        :param ctx: The context from which the request came.
-        :param roll: The roll which the user gives for the bot to simulate.
-        See HelpDescription.ROLL for a description of a dice roll's format.
-        :param description: A string description of what the roll is meant for.
-        :param recipients: A list of names or nicknames of individuals from a Guild that
-        the requester wants to which the requester wants to send results.
-        :return: None.
+        ...
+        :param ctx:
+        :param roll:
+        :param recipients:
+        :param description:
+        :return:
         """
         flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
         if recipients:
@@ -51,6 +54,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
     async def handle_roll(self, roll: str) -> tuple:
+        """
+        ...
+        :param roll:
+        :return:
+        """
         raw_roll: str = roll.replace(' ', '')
         parsed_roll: list = await self.parse_roll(raw_roll)
         roll_is_valid: bool = await self.is_roll_valid(raw_roll, parsed_roll)
@@ -70,16 +78,38 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def is_roll_valid(raw_roll: str, parsed_roll: list) -> bool:
+        """
+        ...
+        :param raw_roll:
+        :param parsed_roll:
+        :return:
+        """
         parsed_roll_result: str = "".join([matched_item for match in parsed_roll for matched_item in match])
         return raw_roll == parsed_roll_result
 
     async def handle_dice(self, die_roll: str) -> tuple:
+        """
+        ...
+        :param die_roll:
+        :return:
+        """
         parsed_dice: dict = await self.parse_dice(die_roll)
         processed_dice: dict = await self.process_dice(parsed_dice)
         return await self.evaluate_roll(processed_dice)
 
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
                         description: str, destination_channel: discord.TextChannel) -> None:
+        """
+        ...
+        :param ctx:
+        :param roll:
+        :param flat_tokens:
+        :param verbose_dice:
+        :param roll_result:
+        :param description:
+        :param destination_channel:
+        :return:
+        """
         introduction_message: str = f"{ctx.message.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
@@ -97,6 +127,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_dice_embed(page_number: int = 1) -> discord.Embed:
+        """
+        ...
+        :param page_number:
+        :return:
+        """
         if page_number == 1:
             desc: str = "The results of the individual dice roll(s) are as follows:"
         else:
@@ -111,6 +146,15 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list, dice_result: int,
                                     counter: int) -> tuple:
+        """
+        ...
+        :param raw_roll:
+        :param unsorted_result:
+        :param sorted_result:
+        :param dice_result:
+        :param counter:
+        :return:
+        """
         name: str = f"Dice Roll {counter + 1}: {raw_roll}"
         sum_string: str = str(dice_result)
         sorted_result_string: str = str(sorted_result)
@@ -131,6 +175,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def parse_roll(raw_roll: str) -> list:
+        """
+        ...
+        :param raw_roll:
+        :return:
+        """
         roll_pattern: Pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
                                            r'(?P<regular_operator>[+\-*/^])|'
                                            r'(?P<grouping_operator>[()])|'
@@ -140,6 +189,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def parse_dice(raw_dice: str) -> dict:
+        """
+        ...
+        :param raw_dice:
+        :return:
+        """
         dice_pattern: Pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                            r'(?P<die_size>[\d]+)'
                                            r'(?P<drop_keep_sign>(?P<drop_sign>[dD])|(?P<keep_sign>[kK]))?'
@@ -151,6 +205,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def process_dice(matched_dice) -> dict:
+        """
+        ...
+        :param matched_dice:
+        :return:
+        """
         number_of_dice: int = int(matched_dice['number_of_dice'])
         die_size: int = int(matched_dice['die_size'])
         drop_keep_value: int = int(matched_dice['drop_keep_value']) if matched_dice['drop_keep_value'] else None
@@ -167,6 +226,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         }
 
     async def evaluate_roll(self, processed_roll) -> tuple:
+        """
+        ...
+        :param processed_roll:
+        :return:
+        """
         roll_results: list = await self.roll_dice(
             processed_roll['number_of_dice'], processed_roll['die_size'], processed_roll['explosion_sign']
         )
@@ -182,6 +246,13 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def roll_dice(number_of_dice: int, die_size: int, explosion_sign: str) -> list:
+        """
+        ...
+        :param number_of_dice:
+        :param die_size:
+        :param explosion_sign:
+        :return:
+        """
         roll_list: list = []
         roll_index: int = 0
         while roll_index < number_of_dice:
@@ -193,6 +264,14 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def select_dice(roll_list: list, drop_sign: str, keep_sign: str, drop_keep_value: int) -> list:
+        """
+        ...
+        :param roll_list:
+        :param drop_sign:
+        :param keep_sign:
+        :param drop_keep_value:
+        :return:
+        """
         if drop_sign:
             del roll_list[(len(roll_list) - drop_keep_value):]
         elif keep_sign:
@@ -201,6 +280,13 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @staticmethod
     async def analyze_roll(roll_list: list, challenge_sign: str, challenge_value: int) -> int:
+        """
+        ...
+        :param roll_list:
+        :param challenge_sign:
+        :param challenge_value:
+        :return:
+        """
         roll_result: int = 0
         if challenge_sign:
             if challenge_sign == '>':
@@ -216,6 +302,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     @roll.error
     async def roll_error(self, ctx: commands.Context, error: Exception) -> None:
+        """
+        ...
+        :param ctx:
+        :param error:
+        :return:
+        """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)

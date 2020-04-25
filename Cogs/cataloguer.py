@@ -1,7 +1,9 @@
-# TODO: documentation
+"""
+...
+"""
 
-import datetime
 import discord
+from datetime import datetime
 from discord.ext import commands
 from typing import Optional, Union
 
@@ -16,17 +18,30 @@ from smorgasDB import Quote, Reminder
 
 
 class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
+    """
+    ...
+    """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         super().__init__()
 
     @commands.group(description=HelpDescription.DISPLAY)
     async def display(self, ctx: commands.Context) -> None:
+        """
+        ...
+        :param ctx:
+        :return:
+        """
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand
 
     @staticmethod
     async def initialize_zone_field(time_zone: TimeZone) -> tuple:
+        """
+        ...
+        :param time_zone:
+        :return:
+        """
         name: str = f"Zone {time_zone.value}"
         value: str = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
         inline: bool = False
@@ -34,6 +49,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def zones(self, ctx: commands.Context) -> None:
+        """
+        ...
+        :param ctx:
+        :return:
+        """
         sorted_time_zones: list = sorted(self.time_zones, key=lambda tz: tz.value)
         embed_items: dict = {
             "items": "time zones",
@@ -45,8 +65,14 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
         )
 
     @staticmethod
-    async def initialize_reminder_field(reminder_datetime: datetime.datetime, reminder_message: str,
-                                        counter: int) -> tuple:
+    async def initialize_reminder_field(reminder_datetime: datetime, reminder_message: str, counter: int) -> tuple:
+        """
+        ...
+        :param reminder_datetime:
+        :param reminder_message:
+        :param counter:
+        :return:
+        """
         name: str = f"Reminder {counter + 1}, Scheduled at {reminder_datetime.strftime(r'%H:%M UTC%Z on %d %b %Y')}"
         value: str = f"{reminder_message or '[No Message Provided]'}"
         inline: bool = False
@@ -55,6 +81,12 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @display.command()
     async def reminders(self, ctx: commands.Context,
                         mentionable: Optional[Union[discord.Member, discord.Role]] = None) -> None:
+        """
+        ...
+        :param ctx:
+        :param mentionable:
+        :return:
+        """
         mention: str = mentionable.mention if mentionable else ctx.message.author.mention
         reminder_name: str = mentionable.name if mentionable else ctx.message.author.name
         reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
@@ -70,6 +102,14 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_quote_field(quote_author: str, quote: str, overall_author: str, counter: int) -> tuple:
+        """
+        ...
+        :param quote_author:
+        :param quote:
+        :param overall_author:
+        :param counter:
+        :return:
+        """
         name: str = f"Quote {counter + 1}"
         value: str = f"\"{quote}\" -- " \
                      f"{quote_author if quote_author != overall_author else (overall_author or 'Anonymous')}"
@@ -78,6 +118,12 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def quotes(self, ctx: commands.Context, author: Union[discord.Member, str, None]) -> None:
+        """
+        ...
+        :param ctx:
+        :param author:
+        :return:
+        """
         overall_name: str = author.name if isinstance(author, discord.Member) else author
         quote_list: list = Quote.get_quotes_by(g_id=ctx.guild.id, auth=overall_name)
         embed_items: dict = {
@@ -94,6 +140,12 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_arithmetic_field(name: str, representation: str) -> tuple:
+        """
+        ...
+        :param name:
+        :param representation:
+        :return:
+        """
         name: str = f"{name.title().replace('_', ' ')}"
         value: str = f"Symbol: {representation}"
         if representation.isalpha():
@@ -103,6 +155,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def operators(self, ctx: commands.Context) -> None:
+        """
+        ...
+        :param ctx:
+        :return:
+        """
         operator_list: list = [(item.name, item.symbol) for item in MathematicalOperator.__members__.values()]
         embed_items: dict = {
             "items": "operators",
@@ -115,6 +172,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def functions(self, ctx: commands.Context) -> None:
+        """
+        ...
+        :param ctx:
+        :return:
+        """
         function_list: list = [(item.name, item.representation) for item in MathematicalFunction.__members__.values()]
         embed_items: dict = {
             "items": "functions",
@@ -127,6 +189,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @display.command()
     async def dice(self, ctx: commands.Context):
+        """
+        ...
+        :param ctx:
+        :return:
+        """
         dice_mechanic_list: list = [
             (item.name, item.representation, item.value_range, item.description) for item in
             RollMechanic.__members__.values()
@@ -138,6 +205,11 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_dice_embed(page_number: int = 1) -> discord.Embed:
+        """
+        ...
+        :param page_number:
+        :return:
+        """
         if page_number == 1:
             desc: str = f'The form of the dice roll can be represented by \'x[dD]y[kKdD]z![<>]a\',' \
                         f'where the only required components are x, one of d or D, and y. The breakdown of each item ' \
@@ -153,6 +225,14 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @staticmethod
     async def initialize_dice_field(name: str, representation: str, value_range: str, description: str) -> tuple:
+        """
+        ...
+        :param name:
+        :param representation:
+        :param value_range:
+        :param description:
+        :return:
+        """
         name: str = f"{name.title().replace('_', ' ')}, Representation: {representation}"
         value: str = f"{value_range} {description}"
         inline: bool = False
@@ -165,6 +245,12 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @quotes.error
     @zones.error
     async def display_error(self, ctx: commands.Context, error: Exception) -> None:
+        """
+        ...
+        :param ctx:
+        :param error:
+        :return:
+        """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)

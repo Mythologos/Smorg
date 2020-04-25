@@ -1,11 +1,18 @@
+"""
+...
+"""
+
+from typing import Union
+
 from Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis, InvalidSequence
 from Cogs.Helpers.Enumerators.tabulator import ComparisonOperator, MathematicalFunction, MathematicalOperator,\
     OperatorAssociativity
 
-from typing import Union
-
 
 class YardShunter:
+    """
+    ...
+    """
     def __init__(self):
         self.operator_stack: list = []
         self.output_queue: list = []
@@ -15,6 +22,11 @@ class YardShunter:
         self.grouping_operators: tuple = ('(', ')')
 
     async def shunt_yard(self, flat_tokens: list) -> Union[float, int]:
+        """
+        ...
+        :param flat_tokens:
+        :return:
+        """
         await self.flush_stacks()
         complete_tokens: list = await self.consolidate_tokens(flat_tokens)
         await self.process_input(complete_tokens)
@@ -22,10 +34,19 @@ class YardShunter:
         return final_result
 
     async def flush_stacks(self):
+        """
+        ...
+        :return:
+        """
         self.operator_stack.clear()
         self.output_queue.clear()
 
     async def consolidate_tokens(self, flattened_tokens: list) -> list:
+        """
+        ...
+        :param flattened_tokens:
+        :return:
+        """
         index: int = 0
         previous_is_operator: bool = False
         while index < len(flattened_tokens):
@@ -57,6 +78,11 @@ class YardShunter:
         return flattened_tokens
 
     async def process_input(self, complete_tokens: list) -> None:
+        """
+        ...
+        :param complete_tokens:
+        :return:
+        """
         index: int = 0
         while index < len(complete_tokens):
             if isinstance(complete_tokens[index], int):
@@ -98,6 +124,10 @@ class YardShunter:
                     self.output_queue.append(self.operator_stack.pop(0))
 
     async def evaluate_input(self) -> Union[float, int]:
+        """
+        ...
+        :return:
+        """
         output_stack: list = []
         for output in self.output_queue:
             if output in self.current_operators:

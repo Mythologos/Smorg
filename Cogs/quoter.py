@@ -1,4 +1,6 @@
-# TODO: documentation
+"""
+...
+"""
 
 import discord
 from discord.ext import commands
@@ -12,23 +14,49 @@ from smorgasDB import Guild, Quote
 
 
 class Quoter(commands.Cog, Exceptioner):
+    """
+    ...
+    """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
 
     @commands.command(description=HelpDescription.QUOTE)
     async def quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None] = None) -> None:
+        """
+        ...
+        :param ctx:
+        :param text:
+        :param author:
+        :return:
+        """
         text_author: str = await self.handle_author(author, anonymous_default="An Anonymous Genius")
         await self.handle_quote(ctx, text, text_author, "The Words of ", ColorConstant.DEEP_BLUE)
 
     @commands.command(description=HelpDescription.IMMORTALIZE)
     async def immortalize(self, ctx: commands.Context, text: str,
                           author: Union[discord.Member, str, None] = None) -> None:
+        """
+        ...
+        :param ctx:
+        :param text:
+        :param author:
+        :return:
+        """
         text_author: str = await self.handle_author(author, anonymous_default="A True Legend")
         await self.handle_quote(ctx, text, text_author, "The Masterpiece of ", ColorConstant.HEAVENLY_YELLOW)
         Quote.create_quote_with(ctx.guild.id, text, text_author)
 
     async def handle_quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None],
                            title_without_author: str, color: ColorConstant):
+        """
+        ...
+        :param ctx:
+        :param text:
+        :param author:
+        :param title_without_author:
+        :param color:
+        :return:
+        """
         current_guild_id: int = ctx.guild.id
         quotation_channel_id: Union[int, None] = Guild.get_quotation_channel_by(current_guild_id)
         current_channel: discord.TextChannel = self.bot.get_channel(quotation_channel_id) or ctx.message.channel
@@ -42,6 +70,12 @@ class Quoter(commands.Cog, Exceptioner):
 
     @staticmethod
     async def handle_author(author: Union[discord.Member, str, None], anonymous_default: str):
+        """
+        ...
+        :param author:
+        :param anonymous_default:
+        :return:
+        """
         if author:
             if isinstance(author, discord.Member):
                 author: str = author.name
@@ -56,8 +90,7 @@ class Quoter(commands.Cog, Exceptioner):
     async def yoink(self, ctx: commands.Context) -> None:
         """
         This method retrieves a random Quote formed by the calling Guild in the database.
-        It also lets the user know whether a Quote even exists.
-        :param ctx: The context from which the quotation came.
+        :param ctx:
         :return: None
         """
         current_guild_id: int = ctx.guild.id
@@ -72,6 +105,12 @@ class Quoter(commands.Cog, Exceptioner):
 
     @yoink.error
     async def yoink_error(self, ctx: commands.Context, error: Exception) -> None:
+        """
+        ...
+        :param ctx:
+        :param error:
+        :return:
+        """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)
         error_name: str = await self.compose_error_name(error.__class__.__name__)

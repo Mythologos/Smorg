@@ -1,6 +1,8 @@
-# TODO: documentation
+"""
+...
+"""
 
-import datetime
+from datetime import datetime
 from discord.ext import commands
 from typing import Optional
 
@@ -11,6 +13,9 @@ from smorgasDB import Guild
 
 
 class Helper(Chronologist, commands.Cog, Embedder):
+    """
+    ...
+    """
     def __init__(self, bot):
         self.bot = bot
         super().__init__()
@@ -18,9 +23,9 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @commands.command(name='help', description=HelpDescription.SUPPORT)
     async def support(self, ctx: commands.Context) -> None:
         """
-        This method displays Smorg's help menu.
-        :param ctx: The context from which the quotation came.
-        :return: None
+        ...
+        :param ctx:
+        :return:
         """
         sorted_commands: list = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
         embed_items: dict = {"items": "commands", "color": ColorConstant.VIBRANT_PURPLE}
@@ -32,6 +37,12 @@ class Helper(Chronologist, commands.Cog, Embedder):
 
     @staticmethod
     async def initialize_support_field(command: commands.Command, current_prefix: str):
+        """
+        ...
+        :param command:
+        :param current_prefix:
+        :return:
+        """
         name: str = f"{current_prefix}{command.name}"
         description: str = f"{command.description}"
         inline: bool = False
@@ -39,26 +50,38 @@ class Helper(Chronologist, commands.Cog, Embedder):
 
     @commands.command(description=HelpDescription.OBSERVE)
     async def observe(self, ctx: commands.Context, new_prefix: str) -> None:
+        """
+        ...
+        :param ctx:
+        :param new_prefix:
+        :return:
+        """
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
 
     @commands.command(description=HelpDescription.PURGE)
     async def purge(self, ctx: commands.Context, message_count: Optional[int], from_time: Optional[str],
-                    to_time: Optional[str]):
+                    to_time: Optional[str]) -> None:
+        """
+        ...
+        :param ctx:
+        :param message_count:
+        :param from_time:
+        :param to_time:
+        :return:
+        """
         additional_validators: tuple = (self.validate_past_datetime,)
         datetime_defaults: dict = {'default_minute': None, 'default_hour': None}
-        start_time: datetime.datetime = await self.process_temporality(
+        start_time: datetime = await self.process_temporality(
             from_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators,
             default_generator=self.generate_dt_defaults_from_tz, manual_defaults=datetime_defaults
         ) if from_time else None
-
-        end_time: datetime.datetime = await self.process_temporality(
+        end_time: datetime = await self.process_temporality(
             to_time, self.parse_datetime, self.validate_datetime,
             additional_validators=additional_validators,
             default_generator=self.generate_dt_defaults_from_tz, manual_defaults=datetime_defaults
         ) if to_time else None
-
         history_args: dict = {}
         if start_time:
             start_time = await self.convert_to_naive_timezone(start_time)
@@ -71,7 +94,6 @@ class Helper(Chronologist, commands.Cog, Embedder):
         elif not (start_time and end_time) and not message_count:
             message_count = 1
             history_args["limit"] = message_count
-
         delete_count: int = 0
         await ctx.message.delete()
         async for message in ctx.message.channel.history(**history_args):
