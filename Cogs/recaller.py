@@ -106,9 +106,9 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     @forget.error
     async def reminder_error(self, ctx: commands.Context, error: Exception) -> None:
         """
-        ...
-        :param ctx:
-        :param error:
+        This method handles errors exclusive to the reminder Command.
+        :param commands.Context ctx: the context from which the command was made
+        :param Exception error: the error raised by some method called to fulfill a reminder request
         :return: None
         """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()

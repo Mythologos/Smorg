@@ -82,12 +82,12 @@ class Hearer(commands.Cog, Exceptioner):
     @commands.Cog.listener()
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         """
-        ...
-        :param ctx:
-        :param error:
-        :return:
+        This method handles all non-Cog-exclusive Discord errors, creating and outputting a suitable Embed.
+        :param commands.Context ctx: the context from which the command was made
+        :param Exception error: the error raised by some method called to fulfill a request
+        :return: None
         """
-        error = getattr(error, "original", error)
+        error = getattr(error, "original", error)  # unwraps CommandInvoke errors
         if not isinstance(error, self.passable_errors) and isinstance(error, discord.DiscordException):
             command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
             error_name: str = await self.compose_error_name(error.__class__.__name__)

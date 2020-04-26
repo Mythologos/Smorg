@@ -18,3 +18,5 @@ This description is a work-in-progress! Thank you for visiting this repository.
 7. Implement a test suite to assure that features don't break as I tinker with, optimize, and abstract older methods.
 8. Synthesize database methods to make database processing sleeker.
 9. Add more character sets for encoder to translate between.
+10. Condense the universal error-handling in hearer.py by using a dictionary to relate errors and error descriptions.
+11. Add multilingual support for Smorg commands (storing aliases in polyglot.py?).

@@ -1,5 +1,6 @@
 """
-...
+This module contains the Cataloguer Cog. Centered around the display Command and making heavy use of
+the Embedder module, it outputs various information about the bot's functionality and its current state.
 """
 
 import discord
@@ -19,7 +20,9 @@ from smorgasDB import Quote, Reminder
 
 class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     """
-    ...
+    This Cog centers around the display Command. It displays information about Smorg as a companion to the Helper Cog
+    and also lists information relevant to a given Member or Guild. It uses various other classes--especially
+    Embedder--to do so.
     """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
@@ -28,9 +31,10 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @commands.group(description=HelpDescription.DISPLAY)
     async def display(self, ctx: commands.Context) -> None:
         """
-        ...
-        :param ctx:
-        :return:
+        This method is the main Command of the module. Its behavior is described in more detail in its subcommands,
+        which are as follows: dice, operators, reminders, quotes, and zones.
+        :param commands.Context ctx: the context from which the command was made
+        :return: None
         """
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand
@@ -38,9 +42,9 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @staticmethod
     async def initialize_zone_field(time_zone: TimeZone) -> tuple:
         """
-        ...
-        :param time_zone:
-        :return:
+        This method creates the main attributes of a field for an Embed object to display time zones.
+        :param TimeZone time_zone: a time zone whose information will be listed in an Embed field.
+        :return tuple: two strings and a Boolean for the three keyword arguments of an Embed field.
         """
         name: str = f"Zone {time_zone.value}"
         value: str = ", ".join(time_zone.aliases) if time_zone.aliases else "None"
@@ -51,8 +55,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     async def zones(self, ctx: commands.Context) -> None:
         """
         ...
-        :param ctx:
-        :return:
+        :param ctx: the context from which the command was made
+        :return: None
         """
         sorted_time_zones: list = sorted(self.time_zones, key=lambda tz: tz.value)
         embed_items: dict = {
@@ -83,9 +87,9 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
                         mentionable: Optional[Union[discord.Member, discord.Role]] = None) -> None:
         """
         ...
-        :param ctx:
+        :param ctx: the context from which the command was made
         :param mentionable:
-        :return:
+        :return: None
         """
         mention: str = mentionable.mention if mentionable else ctx.message.author.mention
         reminder_name: str = mentionable.name if mentionable else ctx.message.author.name
@@ -120,9 +124,9 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     async def quotes(self, ctx: commands.Context, author: Union[discord.Member, str, None]) -> None:
         """
         ...
-        :param ctx:
+        :param ctx: the context from which the command was made
         :param author:
-        :return:
+        :return: None
         """
         overall_name: str = author.name if isinstance(author, discord.Member) else author
         quote_list: list = Quote.get_quotes_by(g_id=ctx.guild.id, auth=overall_name)
@@ -157,8 +161,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     async def operators(self, ctx: commands.Context) -> None:
         """
         ...
-        :param ctx:
-        :return:
+        :param ctx: the context from which the command was made
+        :return: None
         """
         operator_list: list = [(item.name, item.symbol) for item in MathematicalOperator.__members__.values()]
         embed_items: dict = {
@@ -174,8 +178,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     async def functions(self, ctx: commands.Context) -> None:
         """
         ...
-        :param ctx:
-        :return:
+        :param ctx: the context from which the command was made
+        :return: None
         """
         function_list: list = [(item.name, item.representation) for item in MathematicalFunction.__members__.values()]
         embed_items: dict = {
@@ -191,8 +195,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     async def dice(self, ctx: commands.Context):
         """
         ...
-        :param ctx:
-        :return:
+        :param ctx: the context from which the command was made
+        :return: None
         """
         dice_mechanic_list: list = [
             (item.name, item.representation, item.value_range, item.description) for item in
@@ -246,10 +250,10 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
     @zones.error
     async def display_error(self, ctx: commands.Context, error: Exception) -> None:
         """
-        ...
-        :param ctx:
-        :param error:
-        :return:
+        This method handles errors exclusive to the display Command.
+        :param commands.Context ctx: the context from which the command was made
+        :param Exception error: the error raised by some method called to fulfill a display request
+        :return: None
         """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)

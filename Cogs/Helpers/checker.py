@@ -13,7 +13,7 @@ class Checker:
     async def is_yoinkable(ctx: Context) -> bool:
         """
         ...
-        :param ctx:
+        :param ctx: the context from which the command was made
         :return bool: ...
         """
         return (Quote.count_quotes(ctx.guild.id) - 1) >= 0

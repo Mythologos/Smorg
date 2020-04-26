@@ -1,5 +1,6 @@
 """
-...
+This module contains Enums and NamedConstant classes that are used by the gambler module or are relevant to it.
+The MatchContent class does the former, whereas the RollMechanic class does the latter.
 """
 
 from aenum import Enum, NamedConstant
@@ -7,7 +8,8 @@ from aenum import Enum, NamedConstant
 
 class MatchContent(NamedConstant):
     """
-    ...
+    This Class contains constants related to how the gambler class delineates
+    individually-tagged groups to indexed locations in a Match.
     """
     DIE_ROLL = 0
     REGULAR_OPERATOR = 1
@@ -18,7 +20,9 @@ class MatchContent(NamedConstant):
 
 class RollMechanic(Enum, init='representation value_range description'):
     """
-    ...
+    This Enum holds information related to an overall abstract format for rolls: xdy[dk]z![<>]a.
+    Each element of this is explained below, corresponding each individual character with its symbolic or
+    numerical range and its purpose.
     """
     NUMBER_OF_DICE = ("x", "This value can be any positive integer.",
                       "This value represents the number of dice that are rolled.")

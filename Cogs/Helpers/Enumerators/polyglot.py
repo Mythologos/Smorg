@@ -1,5 +1,6 @@
 """
-...
+This module contains items related to translation between multiple languages.
+Currently, it only contains AlphabetDictionary, which is used with the encoder Cog.
 """
 
 from aenum import NamedConstant
@@ -7,7 +8,8 @@ from aenum import NamedConstant
 
 class AlphabetDictionary(NamedConstant):
     """
-    ...
+    This Class contains NamedConstant dictionaries that list how one set of characters correlate to another.
+    It is used by the encoder Cog to translate between certain character sets.
     """
     MORSE_TO_ALPHABET = {
         '• −': 'a',

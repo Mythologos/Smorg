@@ -1,5 +1,6 @@
 """
-...
+This module contains various NamedConstant items that are widely used throughout Smorg's Cogs and Helpers.
+The classes in this file are: ColorConstant, DiscordConstant, HelpDescription, MessageConstant, and StaticText.
 """
 
 from aenum import NamedConstant
@@ -20,7 +21,7 @@ class ColorConstant(NamedConstant):
 
 class DiscordConstant(NamedConstant):
     """
-    ...
+    This class holds constants related to Discord limitations, especially those related to character limits.
     """
     MAX_MEMBER_NAME_LENGTH = 32
     MAX_ROLE_LENGTH = 100
@@ -36,7 +37,7 @@ class DiscordConstant(NamedConstant):
 
 class HelpDescription(NamedConstant):
     """
-    ...
+    This class holds constants of help strings related to each overarching Smorg command. Subcommands are not included.
     """
     DISPLAY = "This command, when combined with various subcommands, relates information about Smorg's capabilities " \
               "and its current state. " \
@@ -73,7 +74,8 @@ class HelpDescription(NamedConstant):
 
 class MessageConstant(NamedConstant):
     """
-    ...
+    This class holds numerical constants that relate to behaviors of Smorg's generated messages.
+    They may also be numbers convenient to abstract based on the way Python functions.
     """
     NOT_FOUND_INDEX = -1
     CONDENSE_CHARACTERS = 12
@@ -83,7 +85,7 @@ class MessageConstant(NamedConstant):
 
 class StaticText(NamedConstant):
     """
-    ...
+    This class holds textual constants that relate to common, static messages that Smorg outputs.
     """
     ERROR_ON_READY_TEXT = "Smorg is online, but your Guild currently has no text channels. " \
                           "Please remove Smorg from your Guild and add Smorg back once there is a text channel."

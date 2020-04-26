@@ -106,10 +106,10 @@ class Quoter(commands.Cog, Exceptioner):
     @yoink.error
     async def yoink_error(self, ctx: commands.Context, error: Exception) -> None:
         """
-        ...
-        :param ctx:
-        :param error:
-        :return:
+        This method handles errors exclusive to the yoink Command.
+        :param commands.Context ctx: the context from which the command was made
+        :param Exception error: the error raised by some method called to fulfill a yoink request
+        :return: None
         """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)
