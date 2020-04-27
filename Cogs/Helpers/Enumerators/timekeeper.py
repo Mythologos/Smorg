@@ -93,7 +93,8 @@ class TimeZone(Enum, init='value aliases'):
     def get_lowest_zone_value() -> int:
         """
         ...
-        :return:
+
+        :return int:
         """
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         lowest_zone_value = sorted_zones_by_enum[0].value
@@ -103,7 +104,8 @@ class TimeZone(Enum, init='value aliases'):
     def get_highest_zone_value() -> int:
         """
         ...
-        :return:
+
+        :return int:
         """
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         highest_zone_value = sorted_zones_by_enum[-1].value
@@ -113,7 +115,8 @@ class TimeZone(Enum, init='value aliases'):
     def list_time_zones(cls) -> list:
         """
         ...
-        :return:
+
+        :return list:
         """
         time_zone_list: list = []
         for i in range(cls.get_lowest_zone_value(), cls.get_highest_zone_value() + 1):

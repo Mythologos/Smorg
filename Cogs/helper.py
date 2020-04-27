@@ -24,8 +24,8 @@ class Helper(Chronologist, commands.Cog, Embedder):
     async def support(self, ctx: commands.Context) -> None:
         """
         ...
-        :param ctx:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
         """
         sorted_commands: list = sorted(self.bot.commands, key=lambda smorg_command: smorg_command.name)
         embed_items: dict = {"items": "commands", "color": ColorConstant.VIBRANT_PURPLE}
@@ -36,12 +36,13 @@ class Helper(Chronologist, commands.Cog, Embedder):
         )
 
     @staticmethod
-    async def initialize_support_field(command: commands.Command, current_prefix: str):
+    async def initialize_support_field(command: commands.Command, current_prefix: str) -> tuple:
         """
         ...
-        :param command:
-        :param current_prefix:
-        :return:
+
+        :param commands.Command command:
+        :param str current_prefix:
+        :return tuple:
         """
         name: str = f"{current_prefix}{command.name}"
         description: str = f"{command.description}"
@@ -52,9 +53,9 @@ class Helper(Chronologist, commands.Cog, Embedder):
     async def observe(self, ctx: commands.Context, new_prefix: str) -> None:
         """
         ...
-        :param ctx:
-        :param new_prefix:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str new_prefix:
         """
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
@@ -64,11 +65,11 @@ class Helper(Chronologist, commands.Cog, Embedder):
                     to_time: Optional[str]) -> None:
         """
         ...
-        :param ctx:
-        :param message_count:
-        :param from_time:
-        :param to_time:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Optional[int] message_count:
+        :param Optional[str] from_time:
+        :param Optional[str] to_time:
         """
         additional_validators: tuple = (self.validate_past_datetime,)
         datetime_defaults: dict = {'default_minute': None, 'default_hour': None}

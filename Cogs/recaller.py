@@ -28,11 +28,11 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
                      message: str = "") -> None:
         """
         ...
-        :param ctx:
-        :param mentionable:
-        :param reminder_time:
-        :param message:
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Union[Member, Role] mentionable:
+        :param str reminder_time:
+        :param str message:
         """
         current_guild_id = ctx.guild.id
         validated_datetime: datetime = await self.handle_time(reminder_time)
@@ -46,12 +46,13 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
                      new_reminder_time: Optional[str] = None, new_message: Optional[str] = None) -> None:
         """
         ...
-        :param ctx:
-        :param mentionable:
-        :param old_reminder_time:
-        :param new_reminder_time:
-        :param new_message:
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Union[Member, Role] mentionable:
+        :param str old_reminder_time:
+        :param Optional[str] new_reminder_time:
+        :param Optional[str] new_message:
+
         """
         current_guild_id = ctx.guild.id
         old_datetime: datetime = await self.handle_time(old_reminder_time)
@@ -70,10 +71,10 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     async def forget(self, ctx: commands.Context, mentionable: Union[Member, Role], reminder_time: str) -> None:
         """
         ...
-        :param ctx:
-        :param mentionable:
-        :param reminder_time:
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Union[Member, Role] mentionable:
+        :param str reminder_time:
         """
         mention: str = mentionable.mention
         current_guild_id = ctx.guild.id
@@ -89,8 +90,9 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     async def handle_time(self, reminder_time: str) -> datetime:
         """
         ...
-        :param reminder_time:
-        :return datetime: ...
+
+        :param str reminder_time:
+        :return datetime:
         """
         additional_validators: tuple = (self.validate_future_datetime,)
         temporal_defaults: dict = {"default_hour": None, "default_minute": 0}
@@ -107,9 +109,9 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     async def reminder_error(self, ctx: commands.Context, error: Exception) -> None:
         """
         This method handles errors exclusive to the reminder Command.
-        :param commands.Context ctx: the context from which the command was made
-        :param Exception error: the error raised by some method called to fulfill a reminder request
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Exception error: the error raised by some method called to fulfill a reminder request.
         """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)
@@ -131,7 +133,6 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     async def check_reminders(self) -> None:
         """
         ...
-        :return: None
         """
         current_time: datetime = datetime.now().replace(microsecond=0)
         current_reminders: list = Reminder.pop_reminders_at(current_time)
@@ -142,17 +143,15 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
     async def before_checking_reminders(self) -> None:
         """
         ...
-        :return: None
         """
         await self.bot.wait_until_ready()
 
     async def on_reminder(self, guild_id: int, mention: str, message: str) -> None:
         """
         ...
-        :param guild_id:
-        :param mention:
-        :param message:
-        :return: None
+        :param int guild_id:
+        :param str mention:
+        :param str message:
         """
         reminder_channel = self.bot.get_channel(Guild.get_reminder_channel_by(guild_id))
         await reminder_channel.send(f"Reminder for {mention}: {message}")

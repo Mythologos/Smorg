@@ -4,7 +4,7 @@
 
 import re
 import datetime
-from typing import Callable, Pattern, Union
+from typing import Callable, Pattern, Tuple, Union
 
 from Cogs.Helpers.Enumerators.timekeeper import DateConstant, MonthAliases, MonthConstant, PeriodConstant,\
     TimeConstant, TimeZone
@@ -22,8 +22,9 @@ class Chronologist:
     async def parse_datetime(datetime_string: str) -> dict:
         """
         ...
-        :param datetime_string:
-        :return:
+
+        :param str datetime_string:
+        :return dict:
         """
         datetime_pattern: Pattern = re.compile(
             r'(?:(?P<time>'
@@ -41,8 +42,9 @@ class Chronologist:
     async def parse_date(date_string: str) -> dict:
         """
         ...
-        :param date_string:
-        :return:
+
+        :param str date_string:
+        :return dict:
         """
         date_pattern: Pattern = re.compile(
             r'(?P<date>(?P<day>[0123]?[\d])'
@@ -56,8 +58,9 @@ class Chronologist:
     async def parse_time(time_string: str) -> dict:
         """
         ...
-        :param time_string:
-        :return:
+
+        :param str time_string:
+        :return dict:
         """
         time_pattern: Pattern = re.compile(
             r'(?:(?P<time>(?P<hour>[012]?[\d])'
@@ -73,14 +76,15 @@ class Chronologist:
                                 default_year: Union[int, None]) -> datetime.datetime:
         """
         ...
-        :param parsed_datetime:
-        :param time_zone:
-        :param default_hour:
-        :param default_minute:
-        :param default_day:
-        :param default_month:
-        :param default_year:
-        :return:
+
+        :param dict parsed_datetime:
+        :param datetime.timezone time_zone:
+        :param Union[int, None] default_hour:
+        :param Union[int, None] default_minute:
+        :param Union[int, None] default_day:
+        :param Union[int, None] default_month:
+        :param Union[int, None] default_year:
+        :return datetime.datetime:
         """
         period: int = await self.validate_period(parsed_datetime['post'], parsed_datetime['ante'])
         month: int = await self.validate_month(parsed_datetime['month'], default_month)
@@ -93,10 +97,11 @@ class Chronologist:
     async def validate_hour(self, hour_value: Union[str, None], period: int, default: Union[int, None]) -> int:
         """
         ...
-        :param hour_value:
-        :param period:
-        :param default:
-        :return:
+
+        :param Union[str, None] hour_value:
+        :param int period:
+        :param Union[int, None] default:
+        :return int:
         """
         if not hour_value:
             if default is not None:
@@ -117,9 +122,10 @@ class Chronologist:
     async def validate_minute(minute_value: Union[str, None], default: Union[int, None]) -> int:
         """
         ...
-        :param minute_value:
-        :param default:
-        :return:
+
+        :param Union[str, None] minute_value:
+        :param Union[int, None] default:
+        :return int:
         """
         if not minute_value:
             if default is not None:
@@ -136,9 +142,10 @@ class Chronologist:
     async def validate_period(post_value: Union[str, None], ante_value: Union[str, None]) -> int:
         """
         ...
-        :param post_value:
-        :param ante_value:
-        :return:
+
+        :param Union[str, None] post_value:
+        :param Union[str, None] ante_value:
+        :return int:
         """
         if not (post_value or ante_value):
             period = PeriodConstant.SINE_MERIDIEM
@@ -152,9 +159,10 @@ class Chronologist:
             -> datetime.timezone:
         """
         ...
-        :param time_zone_value:
-        :param default:
-        :return:
+
+        :param Union[str, None] time_zone_value:
+        :param Union[datetime.timezone, None] default:
+        :return datetime.timezone:
         """
         if not time_zone_value:
             time_zone: datetime.timezone = default
@@ -171,11 +179,12 @@ class Chronologist:
     async def validate_day(day_value: Union[str, None], month: int, year: int, default: Union[int, None]) -> int:
         """
         ...
-        :param day_value:
-        :param month:
-        :param year:
-        :param default:
-        :return:
+
+        :param Union[str, None] day_value:
+        :param int month:
+        :param int year:
+        :param Union[int, None] default:
+        :return int:
         """
         if not day_value:
             if default is not None:
@@ -198,9 +207,10 @@ class Chronologist:
     async def validate_month(month_value: Union[str, None], default: Union[int, None]) -> int:
         """
         ...
-        :param month_value:
-        :param default:
-        :return:
+
+        :param Union[str, None] month_value:
+        :param Union[int, None] default:
+        :return int:
         """
         if not month_value:
             if default is not None:
@@ -239,9 +249,10 @@ class Chronologist:
     async def validate_year(year_value: Union[str, None], default: Union[int, None]) -> int:
         """
         ...
-        :param year_value:
-        :param default:
-        :return:
+
+        :param Union[str, None] year_value:
+        :param Union[int, None] default:
+        :return int:
         """
         if not year_value:
             if default is not None:
@@ -256,9 +267,10 @@ class Chronologist:
     async def convert_to_24_hour_time(hour: int, period: int) -> int:
         """
         ...
-        :param hour:
-        :param period:
-        :return:
+
+        :param int hour:
+        :param int period:
+        :return int:
         """
         if TimeConstant.START_MERIDIEM_HOUR <= hour <= TimeConstant.END_MERIDIEM_HOUR:
             if period == PeriodConstant.ANTE_MERIDIEM:
@@ -274,8 +286,9 @@ class Chronologist:
     async def get_time_zone_by_alias(self, given_alias: str) -> TimeZone:
         """
         ...
-        :param given_alias:
-        :return:
+
+        :param str given_alias:
+        :return TimeZone:
         """
         selected_time_zone: Union[TimeZone, None] = None
         for zone in self.time_zones:
@@ -288,8 +301,8 @@ class Chronologist:
     async def validate_future_datetime(valid_datetime: datetime.datetime) -> None:
         """
         ...
-        :param valid_datetime:
-        :return:
+
+        :param datetime.datetime valid_datetime:
         """
         today = datetime.datetime.now(valid_datetime.tzinfo) \
             if valid_datetime.tzinfo else datetime.datetime.utcnow()
@@ -309,8 +322,8 @@ class Chronologist:
     async def validate_past_datetime(valid_datetime: datetime.datetime) -> None:
         """
         ...
-        :param valid_datetime:
-        :return:
+
+        :param datetime.datetime valid_datetime:
         """
         today = datetime.datetime.now(valid_datetime.tzinfo) if valid_datetime.tzinfo \
             else datetime.datetime.utcnow()
@@ -331,9 +344,10 @@ class Chronologist:
                                         time_zone: datetime.timezone = datetime.timezone.utc) -> datetime.datetime:
         """
         ...
-        :param valid_datetime:
-        :param time_zone:
-        :return:
+
+        :param datetime.datetime valid_datetime:
+        :param datetime.timezone time_zone:
+        :return datetime.datetime:
         """
         return valid_datetime.astimezone(time_zone).replace(tzinfo=None)
 
@@ -353,18 +367,19 @@ class Chronologist:
 
     @staticmethod
     async def process_temporality(temporal_string: str, temporal_parser: Callable, temporal_validator: Callable,
-                                  additional_validators: tuple, default_generator: Callable,
+                                  additional_validators: Tuple[Callable], default_generator: Callable,
                                   manual_defaults: dict = None) -> \
             Union[datetime.datetime, datetime.time, datetime.date]:
         """
         ...
-        :param temporal_string:
-        :param temporal_parser:
-        :param temporal_validator:
-        :param additional_validators:
-        :param default_generator:
-        :param manual_defaults:
-        :return:
+
+        :param str temporal_string:
+        :param Callable temporal_parser:
+        :param Callable temporal_validator:
+        :param Tuple[Callable] additional_validators:
+        :param Callable default_generator:
+        :param dict manual_defaults:
+        :return Union[datetime.datetime, datetime.time, datetime.date]:
         """
         parsed_temporality: dict = await temporal_parser(temporal_string)
         temporal_defaults: dict = await default_generator(parsed_temporality, manual_defaults)

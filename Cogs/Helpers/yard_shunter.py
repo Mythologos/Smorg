@@ -24,8 +24,9 @@ class YardShunter:
     async def shunt_yard(self, flat_tokens: list) -> Union[float, int]:
         """
         ...
-        :param flat_tokens:
-        :return:
+
+        :param list flat_tokens:
+        :return Union[float, int]:
         """
         await self.flush_stacks()
         complete_tokens: list = await self.consolidate_tokens(flat_tokens)
@@ -33,10 +34,10 @@ class YardShunter:
         final_result: Union[float, int] = await self.evaluate_input()
         return final_result
 
-    async def flush_stacks(self):
+    async def flush_stacks(self) -> None:
         """
-        ...
-        :return:
+        This function clears operator_stack and output_queue so that future uses of yard_shunter aren't impacted
+        by previous uses.
         """
         self.operator_stack.clear()
         self.output_queue.clear()
@@ -44,6 +45,7 @@ class YardShunter:
     async def consolidate_tokens(self, flattened_tokens: list) -> list:
         """
         ...
+
         :param flattened_tokens:
         :return:
         """
@@ -80,8 +82,8 @@ class YardShunter:
     async def process_input(self, complete_tokens: list) -> None:
         """
         ...
+
         :param complete_tokens:
-        :return:
         """
         index: int = 0
         while index < len(complete_tokens):
@@ -126,7 +128,8 @@ class YardShunter:
     async def evaluate_input(self) -> Union[float, int]:
         """
         ...
-        :return:
+
+        :return Union[float, int]:
         """
         output_stack: list = []
         for output in self.output_queue:

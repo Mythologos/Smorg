@@ -20,3 +20,6 @@ This description is a work-in-progress! Thank you for visiting this repository.
 9. Add more character sets for encoder to translate between.
 10. Condense the universal error-handling in hearer.py by using a dictionary to relate errors and error descriptions.
 11. Add multilingual support for Smorg commands (storing aliases in polyglot.py?).
+12. Find a better way to access dictionary constants, especially for encoder.py's character set translations.
+13. Change the to_target_language methods in the encoder Cog to be flexible to the from_language argument.
+14. Differentiate some nomenclature (e.g. discord.Guild vs. Guild database table) to help improve import optimization.

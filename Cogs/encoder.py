@@ -1,7 +1,9 @@
 """
-...
+This module contains the encoder Cog. It revolves around the translate Command and, with this command,
+it translates items of one character set into another character set.
+
+The morse code in the encoder Cog is based on: http://ascii-table.com/morse-code.php
 """
-# Morse Code based on: http://ascii-table.com/morse-code.php
 
 from discord.ext import commands
 
@@ -13,19 +15,27 @@ from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescripti
 
 class Encoder(commands.Cog, Condenser):
     """
-    ...
+    This class centers around the translate method, declaring AlphabetDictionary constants for translation purposes
+    and using the Condenser class to translate a message of one character set into one of another character set
+    and send it without defying Discord's message size limitations.
     """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
-        self.morse_to_alphabet = AlphabetDictionary.MORSE_TO_ALPHABET
-        self.alphabet_to_morse = AlphabetDictionary.ALPHABET_TO_MORSE
+        # Dictionaries don't seem to unpack for natural use from their NamedConstant-subclassed objects.
+        # Not completely sure why this is, but their values can be accessed from the protected attribute _value_.
+        # I avoided direct access on principle, but I still don't like this idiom.
+        self.alphabet_to_morse = AlphabetDictionary.ALPHABET_TO_MORSE.__getattribute__('_value_')
+        self.morse_to_alphabet = AlphabetDictionary.MORSE_TO_ALPHABET.__getattribute__('_value_')
 
     @commands.group(description=HelpDescription.TRANSLATE)
     async def translate(self, ctx: commands.Context) -> None:
         """
-        ...
-        :param ctx:
-        :return:
+        This method is the central Command for this Cog, translating one set of characters into another.
+        It has two layers of subcommands, each of which consist of the same items.
+        The first is the character set of the given text; the second is the character set of the output text.
+        Valid subcommands include alphabet and morse.
+
+        :param commands.Context ctx: the context from which the command was made.
         """
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand
@@ -33,9 +43,10 @@ class Encoder(commands.Cog, Condenser):
     @translate.group(name='alphabet')
     async def from_alphabet(self, ctx: commands.Context) -> None:
         """
-        ...
-        :param ctx:
-        :return:
+        This is a first subcommand of the translate Command. It indicates that alphabet is the starting character set
+        for the translation.
+
+        :param commands.Context ctx: the context from which the command was made.
         """
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand(2)
@@ -43,10 +54,11 @@ class Encoder(commands.Cog, Condenser):
     @from_alphabet.command(name='morse')
     async def to_morse(self, ctx: commands.Context, quote: str) -> None:
         """
-        ...
-        :param ctx:
-        :param quote:
-        :return:
+        This is a second subcommand of the translate Command. It indicates that morse is the target character set
+        for translation.
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str quote: the text which is to be transferred from one character set to morse.
         """
         morse_quote: str = 'The morse translation of your alphabetical input is: \n'
         for index, character in enumerate(quote.lower()):
@@ -61,9 +73,10 @@ class Encoder(commands.Cog, Condenser):
     @translate.group(name='morse')
     async def from_morse(self, ctx: commands.Context) -> None:
         """
-        ...
-        :param ctx:
-        :return:
+        This is a first subcommand of the translate Command. It indicates that morse is the starting character set
+        for the translation.
+
+        :param commands.Context ctx: the context from which the command was made.
         """
         if ctx.invoked_subcommand is None:
             raise MissingSubcommand(2)
@@ -71,10 +84,11 @@ class Encoder(commands.Cog, Condenser):
     @from_morse.command(name='alphabet')
     async def to_alphabet(self, ctx: commands.Context, quote: str) -> None:
         """
-        ...
-        :param ctx:
-        :param quote:
-        :return:
+        This is a second subcommand of the translate Command. It indicates that alphabet is the target character set
+        for translation.
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str quote: the text which is to be transferred from one character set to the alphabet.
         """
         alphabetical_quote: str = 'The alphabetical translation of your morse input is: \n'
         spaced_quote: list = quote.split('  /  ')

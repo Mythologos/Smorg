@@ -1,5 +1,6 @@
 """
-...
+This module contains the gambler Cog. It is based around the roll Command, which rolls dice with expansive syntax
+and displays illustrative results.
 """
 
 import discord
@@ -10,20 +11,23 @@ from discord.ext import commands
 from random import randint
 from typing import Pattern, Union
 
-from smorgasDB import Guild
 from Cogs.Helpers.condenser import Condenser
 from Cogs.Helpers.embedder import Embedder
 from Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
     MissingParenthesis, InvalidSequence
+from Cogs.Helpers.yard_shunter import YardShunter
 from Cogs.Helpers.Enumerators.croupier import MatchContent
 from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant, \
     StaticText
-from Cogs.Helpers.yard_shunter import YardShunter
+from smorgasDB import Guild
 
 
 class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     """
-    ...
+    This class is centered around the roll command and, with the help of the YardShunter class (and many others),
+    calculates and displays a variety of results to a die roll. It frequently has functions that break down
+    into handling the whole roll and individual die rolls, as rolls can contain multiple dice and dice
+    require individualized handling.
     """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
@@ -33,12 +37,14 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def roll(self, ctx: commands.Context, roll: str, recipients: commands.Greedy[discord.Member] = None, *,
                    description: Union[str, None] = None) -> None:
         """
-        ...
-        :param ctx:
-        :param roll:
-        :param recipients:
-        :param description:
-        :return:
+        This command performs a die roll, sends it either to the assigned gamble channel, the channel where the die
+        was rolled, or certain recipient DM channels, and describes the roll alongside an optional description.
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str roll: the actual roll that is to be performed.
+        :param commands.Greedy[discord.Member] recipients: some number of recipients to the roll, each of whom will be
+        directly messaged with the roll's results; this does not include the roll's author automatically.
+        :param Union[str, None] description: a description of the roll's purpose, if desired.
         """
         flat_tokens, verbose_dice, roll_result = await self.handle_roll(roll)
         if recipients:
@@ -55,9 +61,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
 
     async def handle_roll(self, roll: str) -> tuple:
         """
-        ...
-        :param roll:
-        :return:
+        This method parses a roll, assures its validity, rolls dice if they exist, and calculates
+        the overall roll result.
+
+        :param str roll: the actual roll that is to be performed.
+        :return tuple: a list of all items matched from roll, a tuple of the full results of each die roll,
+        and a float or integer that represents the final result of the roll.
         """
         raw_roll: str = roll.replace(' ', '')
         parsed_roll: list = await self.parse_roll(raw_roll)
@@ -79,36 +88,45 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def is_roll_valid(raw_roll: str, parsed_roll: list) -> bool:
         """
-        ...
-        :param raw_roll:
-        :param parsed_roll:
-        :return:
+        This method determines whether all items from the original roll were kept in the parsing.
+        If not, the roll is deemed to be invalid and False is returned.
+
+        :param str raw_roll: the actual roll that is to be performed with spaces removed.
+        :param str parsed_roll: the roll having been parsed by the parse_roll() function.
+        :return bool: True if raw_roll and a concatenation of all matches in parsed_roll are the same; otherwise, False.
         """
         parsed_roll_result: str = "".join([matched_item for match in parsed_roll for matched_item in match])
         return raw_roll == parsed_roll_result
 
     async def handle_dice(self, die_roll: str) -> tuple:
         """
-        ...
-        :param die_roll:
-        :return:
+        This method evaluates dice rolls, parsing them and subsequently processing them to return
+        information on the summed result, the unsorted individual results of each die,
+        and the sorted result of each die.
+
+        :param str die_roll: a die roll having been parsed out by the parse_roll() method.
+        :return tuple: the result of evaluate_roll(), which is a collection of three different pieces of information
+        about a roll--the unsorted die rolls, the sorted die rolls, and the sum of the die results.
         """
         parsed_dice: dict = await self.parse_dice(die_roll)
         processed_dice: dict = await self.process_dice(parsed_dice)
         return await self.evaluate_roll(processed_dice)
 
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
-                        description: str, destination_channel: discord.TextChannel) -> None:
+                        description: Union[str, None], destination_channel: discord.TextChannel) -> None:
         """
-        ...
-        :param ctx:
-        :param roll:
-        :param flat_tokens:
-        :param verbose_dice:
-        :param roll_result:
-        :param description:
-        :param destination_channel:
-        :return:
+        This method sends detailed roll results to a target channel. All relevant information is determined before
+        this method is used; this method only handles the formatting and disclosure of such information.
+        It employs Embedder and Condenser to do so.
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str roll: the actual roll that is to be performed.
+        :param list flat_tokens: the roll that was evaluated with die rolls exchanged for their summed results.
+        :param list verbose_dice: a collection of tuples that contain varying information on a die roll,
+        including unsorted results, sorted results, and the summed dice result.
+        :param int roll_result: the final result of the roll.
+        :param Union[str, None] description: a description of the roll's purpose, if desired.
+        :param discord.TextChannel destination_channel: the location where the roll results will be outputted.
         """
         introduction_message: str = f"{ctx.message.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
@@ -117,8 +135,8 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         if verbose_dice:
             field_items = {"counter": None}
             await self.embed(
-                destination_channel, verbose_dice, initialize_embed=self.initialize_dice_embed,
-                initialize_field=self.initialize_dice_field, field_items=field_items
+                destination_channel, verbose_dice, initialize_embed=self.initialize_roll_embed,
+                initialize_field=self.initialize_roll_field, field_items=field_items
             )
         evaluated_roll: str = "".join([str(token) for token in flat_tokens])
         conclusion_message: str = f"Evaluated Roll: {evaluated_roll}\n" \
@@ -126,11 +144,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         await self.send_condensed_message(destination_channel, conclusion_message, DiscordConstant.MAX_MESSAGE_LENGTH)
 
     @staticmethod
-    async def initialize_dice_embed(page_number: int = 1) -> discord.Embed:
+    async def initialize_roll_embed(page_number: int = 1) -> discord.Embed:
         """
-        ...
-        :param page_number:
-        :return:
+        This method creates a Discord Embed that dice roll results.
+
+        :param int page_number: the number indicating that the nth Embed is being created.
+        :return discord.Embed: an Embed used to store and to output information on dice roll results.
         """
         if page_number == 1:
             desc: str = "The results of the individual dice roll(s) are as follows:"
@@ -144,16 +163,18 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         return dice_embed
 
     @staticmethod
-    async def initialize_dice_field(raw_roll: str, unsorted_result: list, sorted_result: list, dice_result: int,
+    async def initialize_roll_field(raw_roll: str, unsorted_result: list, sorted_result: list, dice_result: int,
                                     counter: int) -> tuple:
         """
-        ...
-        :param raw_roll:
-        :param unsorted_result:
-        :param sorted_result:
-        :param dice_result:
-        :param counter:
-        :return:
+        This method creates the main attributes of a field for an Embed object to display dice result information.
+        It truncates fields appropriately to prevent overflow.
+
+        :param str raw_roll: the base dice roll performed.
+        :param list unsorted_result: the results of the dice roll, left unsorted.
+        :param list sorted_result: the results of the dice roll, sorted.
+        :param int dice_result: the summed result of the dice roll.
+        :param int counter: a number representing the position of the item in its data structure.
+        :return: two strings and a Boolean for the three keyword arguments of an Embed field.
         """
         name: str = f"Dice Roll {counter + 1}: {raw_roll}"
         sum_string: str = str(dice_result)
@@ -177,8 +198,9 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def parse_roll(raw_roll: str) -> list:
         """
         ...
-        :param raw_roll:
-        :return:
+
+        :param str raw_roll:
+        :return list:
         """
         roll_pattern: Pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
                                            r'(?P<regular_operator>[+\-*/^])|'
@@ -191,8 +213,9 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def parse_dice(raw_dice: str) -> dict:
         """
         ...
-        :param raw_dice:
-        :return:
+
+        :param str raw_dice:
+        :return dict:
         """
         dice_pattern: Pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                            r'(?P<die_size>[\d]+)'
@@ -204,11 +227,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         return re.match(dice_pattern, raw_dice).groupdict()
 
     @staticmethod
-    async def process_dice(matched_dice) -> dict:
+    async def process_dice(matched_dice: dict) -> dict:
         """
         ...
-        :param matched_dice:
-        :return:
+
+        :param dict matched_dice:
+        :return dict:
         """
         number_of_dice: int = int(matched_dice['number_of_dice'])
         die_size: int = int(matched_dice['die_size'])
@@ -225,11 +249,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
             'challenge_value': challenge_value,
         }
 
-    async def evaluate_roll(self, processed_roll) -> tuple:
+    async def evaluate_roll(self, processed_roll: dict) -> tuple:
         """
         ...
-        :param processed_roll:
-        :return:
+
+        :param dict processed_roll:
+        :return tuple:
         """
         roll_results: list = await self.roll_dice(
             processed_roll['number_of_dice'], processed_roll['die_size'], processed_roll['explosion_sign']
@@ -248,10 +273,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def roll_dice(number_of_dice: int, die_size: int, explosion_sign: str) -> list:
         """
         ...
-        :param number_of_dice:
-        :param die_size:
-        :param explosion_sign:
-        :return:
+
+        :param int number_of_dice:
+        :param int die_size:
+        :param str explosion_sign:
+        :return list:
         """
         roll_list: list = []
         roll_index: int = 0
@@ -266,10 +292,10 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def select_dice(roll_list: list, drop_sign: str, keep_sign: str, drop_keep_value: int) -> list:
         """
         ...
-        :param roll_list:
-        :param drop_sign:
-        :param keep_sign:
-        :param drop_keep_value:
+        :param list roll_list:
+        :param str drop_sign:
+        :param str keep_sign:
+        :param int drop_keep_value:
         :return:
         """
         if drop_sign:
@@ -282,9 +308,9 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def analyze_roll(roll_list: list, challenge_sign: str, challenge_value: int) -> int:
         """
         ...
-        :param roll_list:
-        :param challenge_sign:
-        :param challenge_value:
+        :param list roll_list:
+        :param str challenge_sign:
+        :param int challenge_value:
         :return:
         """
         roll_result: int = 0
@@ -306,7 +332,6 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         This method handles errors exclusive to the roll Command.
         :param commands.Context ctx: the context from which the command was made
         :param Exception error: the error raised by some method called to fulfill a roll request
-        :return: None
         """
         command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         error = getattr(error, "original", error)

@@ -24,10 +24,10 @@ class Quoter(commands.Cog, Exceptioner):
     async def quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None] = None) -> None:
         """
         ...
-        :param ctx:
-        :param text:
-        :param author:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str text:
+        :param Union[discord.Member, str, None] author:
         """
         text_author: str = await self.handle_author(author, anonymous_default="An Anonymous Genius")
         await self.handle_quote(ctx, text, text_author, "The Words of ", ColorConstant.DEEP_BLUE)
@@ -37,25 +37,25 @@ class Quoter(commands.Cog, Exceptioner):
                           author: Union[discord.Member, str, None] = None) -> None:
         """
         ...
-        :param ctx:
-        :param text:
-        :param author:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str text:
+        :param Union[discord.Member, str, None] author:
         """
         text_author: str = await self.handle_author(author, anonymous_default="A True Legend")
         await self.handle_quote(ctx, text, text_author, "The Masterpiece of ", ColorConstant.HEAVENLY_YELLOW)
         Quote.create_quote_with(ctx.guild.id, text, text_author)
 
     async def handle_quote(self, ctx: commands.Context, text: str, author: Union[discord.Member, str, None],
-                           title_without_author: str, color: ColorConstant):
+                           title_without_author: str, color: ColorConstant) -> None:
         """
         ...
-        :param ctx:
-        :param text:
-        :param author:
-        :param title_without_author:
-        :param color:
-        :return:
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param str text:
+        :param Union[discord.Member, str, None] author:
+        :param str title_without_author:
+        :param ColorConstant color:
         """
         current_guild_id: int = ctx.guild.id
         quotation_channel_id: Union[int, None] = Guild.get_quotation_channel_by(current_guild_id)
@@ -69,12 +69,12 @@ class Quoter(commands.Cog, Exceptioner):
         await current_channel.send(embed=quote_response)
 
     @staticmethod
-    async def handle_author(author: Union[discord.Member, str, None], anonymous_default: str):
+    async def handle_author(author: Union[discord.Member, str, None], anonymous_default: str) -> str:
         """
         ...
-        :param author:
-        :param anonymous_default:
-        :return:
+        :param Union[discord.Member, str, None] author:
+        :param str anonymous_default:
+        :return str:
         """
         if author:
             if isinstance(author, discord.Member):
@@ -90,8 +90,8 @@ class Quoter(commands.Cog, Exceptioner):
     async def yoink(self, ctx: commands.Context) -> None:
         """
         This method retrieves a random Quote formed by the calling Guild in the database.
-        :param ctx:
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
         """
         current_guild_id: int = ctx.guild.id
         maximum: int = Quote.count_quotes(current_guild_id) - 1
@@ -102,25 +102,3 @@ class Quoter(commands.Cog, Exceptioner):
             color=ColorConstant.HOT_PINK
         )
         await ctx.send(embed=yoink_response)
-
-    @yoink.error
-    async def yoink_error(self, ctx: commands.Context, error: Exception) -> None:
-        """
-        This method handles errors exclusive to the yoink Command.
-        :param commands.Context ctx: the context from which the command was made
-        :param Exception error: the error raised by some method called to fulfill a yoink request
-        :return: None
-        """
-        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
-        error = getattr(error, "original", error)
-        error_name: str = await self.compose_error_name(error.__class__.__name__)
-        error_description: Union[str, None] = None
-        if isinstance(error, commands.CheckFailure):
-            error_name: str = 'No Server Quotes'
-            error_description = 'Your server has no quotes.'
-        elif not isinstance(error, discord.DiscordException):
-            error_description = f'The error is a non-Discord error. It has the following message: {error}. ' \
-                                f'It should be added and handled properly as soon as possible.'
-        if error_description:
-            error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
-            await ctx.send(embed=error_embed)

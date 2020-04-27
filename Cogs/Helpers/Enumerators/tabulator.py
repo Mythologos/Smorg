@@ -1,10 +1,12 @@
 """
 ...
 """
+
 from __future__ import annotations
 
 from aenum import Enum, NamedConstant
 from math import floor, ceil, sqrt
+from typing import Union
 
 
 class ComparisonOperator(NamedConstant):
@@ -21,10 +23,11 @@ class ComparisonOperator(NamedConstant):
     async def compare_by_value(comparison_value: int, item_a: int, item_b: int) -> bool:
         """
         ...
-        :param comparison_value:
-        :param item_a:
-        :param item_b:
-        :return:
+
+        :param int comparison_value:
+        :param int item_a:
+        :param int item_b:
+        :return bool:
         """
         if comparison_value == ComparisonOperator.LESS_THAN:
             comparison_boolean = item_a < item_b
@@ -62,10 +65,11 @@ class MathematicalOperator(Enum, init='value symbol precedence associativity'):
     async def get_by_symbol(given_symbol: str) -> MathematicalOperator:
         """
         ...
-        :param given_symbol:
-        :return:
+
+        :param str given_symbol:
+        :return MathematicalOperator:
         """
-        desired_operator = None
+        desired_operator: Union[MathematicalOperator, None] = None
         for operation in MathematicalOperator.__members__.values():
             if operation.symbol == given_symbol:
                 desired_operator = operation
@@ -77,10 +81,11 @@ class MathematicalOperator(Enum, init='value symbol precedence associativity'):
                                  comparison_value: int) -> bool:
         """
         ...
-        :param symbol_one:
-        :param symbol_two:
-        :param comparison_value:
-        :return:
+
+        :param MathematicalOperator symbol_one:
+        :param MathematicalOperator symbol_two:
+        :param int comparison_value:
+        :return bool:
         """
         first_operator = await MathematicalOperator.get_by_symbol(symbol_one)
         second_operator = await MathematicalOperator.get_by_symbol(symbol_two)
@@ -89,12 +94,13 @@ class MathematicalOperator(Enum, init='value symbol precedence associativity'):
         )
 
     @staticmethod
-    async def compare_associativity(symbol, associativity):
+    async def compare_associativity(symbol: MathematicalOperator, associativity: OperatorAssociativity) -> bool:
         """
         ...
-        :param symbol:
-        :param associativity:
-        :return:
+
+        :param MathematicalOperator symbol:
+        :param OperatorAssociativity associativity:
+        :return bool:
         """
         associativity_indicator: bool = False
         relevant_operator = await MathematicalOperator.get_by_symbol(symbol)
@@ -103,13 +109,15 @@ class MathematicalOperator(Enum, init='value symbol precedence associativity'):
         return associativity_indicator
 
     @staticmethod
-    async def evaluate_operator(associated_value, first_operand, second_operand):
+    async def evaluate_operator(associated_value: int, first_operand: Union[int, float],
+                                second_operand: Union[int, float]) -> Union[int, float]:
         """
         ...
-        :param associated_value:
-        :param first_operand:
-        :param second_operand:
-        :return:
+
+        :param int associated_value:
+        :param Union[int, float] first_operand:
+        :param Union[int, float] second_operand:
+        :return Union[int, float]:
         """
         if associated_value == MathematicalOperator.ADDITION.value:
             evaluated_value = first_operand + second_operand
@@ -136,11 +144,12 @@ class MathematicalFunction(Enum, init='value representation'):
     ABSOLUTE_VALUE = (3, 'abs')
 
     @staticmethod
-    async def get_by_name(given_name):
+    async def get_by_name(given_name: str) -> MathematicalFunction:
         """
         ...
-        :param given_name:
-        :return:
+
+        :param str given_name:
+        :return MathematicalFunction:
         """
         desired_function = None
         for function in MathematicalFunction.__members__.values():
@@ -150,12 +159,13 @@ class MathematicalFunction(Enum, init='value representation'):
         return desired_function
 
     @staticmethod
-    async def evaluate_function(associated_value, first_operand):
+    async def evaluate_function(associated_value: int, first_operand: Union[int, float]) -> Union[int, float]:
         """
         ...
-        :param associated_value:
-        :param first_operand:
-        :return:
+
+        :param int associated_value:
+        :param Union[int, float] first_operand:
+        :return Union[int, float]:
         """
         if associated_value == MathematicalFunction.SQUARE_ROOT.value:
             evaluated_value = sqrt(first_operand)

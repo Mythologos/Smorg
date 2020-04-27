@@ -2,9 +2,8 @@
 ...
 """
 
-from discord import Embed, TextChannel
+import discord
 from discord.ext import commands
-from typing import Union
 
 from Cogs.Helpers.exceptioner import *
 from Cogs.Helpers.Enumerators.universalist import StaticText
@@ -18,55 +17,58 @@ class Hearer(commands.Cog, Exceptioner):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         self.passable_errors: tuple = (
-            commands.CommandNotFound, commands.CheckFailure, DuplicateOperator, ImproperFunction, MissingParenthesis,
+            commands.CommandNotFound, DuplicateOperator, ImproperFunction, MissingParenthesis,
             InvalidRecipient, MissingReminder, InvalidRoll, InvalidSequence
         )
         self.reset_database_on_start = True
+        self.say_hello = False
 
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         """
         ...
-        :return:
         """
         if self.reset_database_on_start:
             BaseAddition.reset_database()
         for guild in self.bot.guilds:
             await self.signal_ready(guild)
 
-    async def signal_ready(self, guild: discord.Guild):
+    async def signal_ready(self, guild: discord.Guild) -> None:
         """
         ...
-        :param guild:
-        :return:
+
+        :param discord.Guild guild:
         """
         if Guild.exists_with(guild.id):
             channel_id: int = Guild.get_reminder_channel_by(guild.id)
-            ready_channel: TextChannel = self.bot.get_channel(channel_id)
-            await ready_channel.send(StaticText.REGULAR_ON_READY_TEXT)
+            ready_channel: discord.TextChannel = self.bot.get_channel(channel_id)
+            if self.say_hello:
+                await ready_channel.send(StaticText.REGULAR_ON_READY_TEXT)
         elif guild.text_channels:
             general_channels: list = [channel for channel in guild.text_channels if channel.name == 'general']
             if general_channels or len(guild.text_channels) > 0:
-                default_channel_id: Union[int, None] = general_channels[0].id
+                default_channel_id: int = general_channels[0].id
             else:
                 default_channel_id = guild.text_channels[0].id
             Guild.create_guild_with(guild.id, default_channel_id)
             ready_channel = self.bot.get_channel(default_channel_id)
-            await ready_channel.send(StaticText.NEW_ON_READY_TEXT)
+            if self.say_hello:
+                await ready_channel.send(StaticText.NEW_ON_READY_TEXT)
         else:
             Guild.create_guild_with(guild.id, None)
             guild_owner: discord.Member = guild.owner
             if not guild_owner.dm_channel:
                 await self.bot.get_user(guild_owner.id).create_dm()
             ready_channel = guild_owner.dm_channel
-            await ready_channel.send(StaticText.ERROR_ON_READY_TEXT)
+            if self.say_hello:
+                await ready_channel.send(StaticText.ERROR_ON_READY_TEXT)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
         """
         ...
-        :param guild:
-        :return:
+
+        :param discord.Guild guild:
         """
         await self.signal_ready(guild)
 
@@ -74,8 +76,8 @@ class Hearer(commands.Cog, Exceptioner):
     async def on_guild_remove(self, guild: discord.Guild) -> None:
         """
         ...
-        :param guild:
-        :return:
+
+        :param discord.Guild guild:
         """
         Guild.delete_guild_with(guild.id)
 
@@ -83,9 +85,9 @@ class Hearer(commands.Cog, Exceptioner):
     async def on_command_error(self, ctx: commands.Context, error: Exception) -> None:
         """
         This method handles all non-Cog-exclusive Discord errors, creating and outputting a suitable Embed.
-        :param commands.Context ctx: the context from which the command was made
-        :param Exception error: the error raised by some method called to fulfill a request
-        :return: None
+
+        :param commands.Context ctx: the context from which the command was made.
+        :param Exception error: the error raised by some method called to fulfill a request.
         """
         error = getattr(error, "original", error)  # unwraps CommandInvoke errors
         if not isinstance(error, self.passable_errors) and isinstance(error, discord.DiscordException):
@@ -127,10 +129,20 @@ class Hearer(commands.Cog, Exceptioner):
                     error_description = 'The given year is invalid.'
                 else:
                     error_description = 'Something about your input could not be processed.'
+            elif isinstance(error, commands.CheckFailure):
+                if isinstance(error, commands.BotMissingPermissions):
+                    error_description = 'Smorg does not have permission to do something it wanted to do on this server.'
+                elif isinstance(error, commands.MissingPermissions):
+                    error_description = 'You do not have permission to perform that operation in this Guild.'
+                elif ctx.command.name == 'yoink':
+                    error_name = 'No Guild Quotes'
+                    error_description = 'There were no quotes from which your Guild could extract a random quote.'
+                else:
+                    error_description = 'Smorg failed a necessary check in performing the desired operation.'
             elif isinstance(error, commands.ConversionError):
                 error_description = 'There was an invalid conversion in processing your command.'
             else:
                 error_name = 'Miscellaneous Error'
                 error_description = f'The error type is: {error} A better error message will be supplied soon.'
-            error_embed: Embed = await self.initialize_error_embed(command_name, error_name, error_description)
+            error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)

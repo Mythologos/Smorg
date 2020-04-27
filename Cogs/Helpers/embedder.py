@@ -2,7 +2,7 @@
 ...
 """
 
-import discord
+from discord import TextChannel, Embed
 from typing import Any, Callable, Iterable, List, Union
 
 from Cogs.Helpers.exceptioner import EmptyEmbed
@@ -14,25 +14,25 @@ class Embedder:
     ...
     """
     @staticmethod
-    async def embed(destination_channel: discord.TextChannel, sorted_data: List[Any], initialize_embed: Callable,
+    async def embed(destination_channel: TextChannel, sorted_data: List[Any], initialize_embed: Callable,
                     initialize_field: Callable, embed_items: Union[dict, None] = None,
                     field_items: Union[dict, None] = None) -> None:
         """
         ...
-        :param destination_channel:
-        :param sorted_data:
-        :param initialize_embed:
-        :param initialize_field:
-        :param embed_items:
-        :param field_items:
-        :return:
+
+        :param TextChannel destination_channel:
+        :param List[Any] sorted_data:
+        :param Callable initialize_embed:
+        :param Callable initialize_field:
+        :param Union[dict, None] embed_items:
+        :param Union[dict, None] field_items:
         """
         if not embed_items:
             embed_items = {}
         if not field_items:
             field_items = {}
         enumerated_data: enumerate = enumerate(sorted_data)
-        data_embed: discord.Embed = await initialize_embed(**embed_items)
+        data_embed: Embed = await initialize_embed(**embed_items)
         for counter, contents in enumerated_data:
             embed_items.update({'page_number': (counter // DiscordConstant.MAX_EMBED_FIELDS) + 1})
             if field_items and 'counter' in field_items:
@@ -51,19 +51,20 @@ class Embedder:
         await destination_channel.send(embed=data_embed)
 
     @staticmethod
-    async def initialize_itemized_embed(items: str, color: ColorConstant, page_number: int = 1) -> discord.Embed:
+    async def initialize_itemized_embed(items: str, color: ColorConstant, page_number: int = 1) -> Embed:
         """
         ...
-        :param items:
-        :param color:
-        :param page_number:
-        :return:
+
+        :param str items:
+        :param ColorConstant color:
+        :param int page_number:
+        :return Embed:
         """
         if page_number == 1:
             desc: str = f'The {items} supported by Smorg include:'
         else:
             desc = f'Further {items} that Smorg supports consist of:'
-        itemized_embed: discord.Embed = discord.Embed(
+        itemized_embed: Embed = Embed(
             title=f"Smorg's {items.title()}, Page {page_number}",
             description=desc,
             color=color
@@ -72,20 +73,21 @@ class Embedder:
 
     @staticmethod
     async def initialize_authored_embed(item_author: str, items: str, color: ColorConstant, page_number: int = 1) \
-            -> discord.Embed:
+            -> Embed:
         """
         ...
-        :param item_author:
-        :param items:
-        :param color:
-        :param page_number:
-        :return:
+
+        :param str item_author:
+        :param str items:
+        :param ColorConstant color:
+        :param int page_number:
+        :return Embed:
         """
         if page_number == 1:
             desc: str = f'{items.title()} by {item_author} include:'
         else:
             desc = f'Further {items} by {item_author} consist of:'
-        authored_embed: discord.Embed = discord.Embed(
+        authored_embed: Embed = Embed(
             title=f"The {items.title()} of {item_author}, Page {page_number}",
             description=desc,
             color=color

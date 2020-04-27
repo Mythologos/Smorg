@@ -15,11 +15,11 @@ class Condenser:
                                      split_separator: str = " ") -> None:
         """
         ...
-        :param destination_channel:
-        :param message:
-        :param maximum_length:
-        :param split_separator:
-        :return:
+
+        :param TextChannel destination_channel:
+        :param str message:
+        :param int maximum_length:
+        :param str split_separator:
         """
         if len(message) <= maximum_length:
             await destination_channel.send(message)
@@ -37,10 +37,11 @@ class Condenser:
     async def condense(self, message: str, split_separator: str, maximum_length: int) -> list:
         """
         ...
-        :param message:
-        :param split_separator:
-        :param maximum_length:
-        :return:
+
+        :param str message:
+        :param str split_separator:
+        :param int maximum_length:
+        :return list:
         """
         if await self.is_efficient_separator(message, split_separator, maximum_length):
             compact_messages: list = await self.guided_condense(message, split_separator, maximum_length)
@@ -59,10 +60,11 @@ class Condenser:
     async def is_efficient_separator(message: str, split_separator: str, maximum_length: int) -> bool:
         """
         ...
-        :param message:
-        :param split_separator:
-        :param maximum_length:
-        :return:
+
+        :param str message:
+        :param str split_separator:
+        :param int maximum_length:
+        :return bool:
         """
         first_index: int = 0
         separator_is_efficient: bool = True
@@ -78,10 +80,11 @@ class Condenser:
     async def guided_condense(message: str, split_separator: str, maximum_length: int) -> list:
         """
         ...
-        :param message:
-        :param split_separator:
-        :param maximum_length:
-        :return:
+
+        :param str message:
+        :param str split_separator:
+        :param int maximum_length:
+        :return list:
         """
         compact_messages: list = []
         message_units: list = message.split(split_separator)
@@ -102,9 +105,10 @@ class Condenser:
     async def automated_condense(message: str, maximum_length: int) -> list:
         """
         ...
-        :param message:
-        :param maximum_length:
-        :return:
+
+        :param str message:
+        :param int maximum_length:
+        :return list:
         """
         compact_messages: list = []
         total_length: int = len(message)
