@@ -97,8 +97,8 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
         :param Optional[Union[discord.Member, discord.Role]] mentionable: a Member or Role which will be mentioned.
         by reminders; if not filled, it is assumed that the author of the message is the desired Member.
         """
-        mention: str = mentionable.mention if mentionable else ctx.message.author.mention
-        reminder_name: str = mentionable.name if mentionable else ctx.message.author.name
+        mention: str = mentionable.mention if mentionable else ctx.author.mention
+        reminder_name: str = mentionable.name if mentionable else ctx.author.name
         reminder_list: list = Reminder.get_reminders_by(ctx.guild.id, mention)
         embed_items: dict = {
             "item_author": reminder_name,

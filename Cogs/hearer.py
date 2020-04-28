@@ -1,5 +1,6 @@
 """
-...
+This module holds the hearer Cog. It is in charge of Smorg's listeners--or, at least, those that have required
+a manual implementation up until this point.
 """
 
 import discord
@@ -12,7 +13,7 @@ from smorgasDB import BaseAddition, Guild
 
 class Hearer(commands.Cog, Exceptioner):
     """
-    ...
+    This class does not center around a command; rather, it centers around the listener functions pertinent to Smorg.
     """
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
@@ -26,7 +27,9 @@ class Hearer(commands.Cog, Exceptioner):
     @commands.Cog.listener()
     async def on_ready(self) -> None:
         """
-        ...
+        This method fires when Smorg is starting up, performing appropriate initialization behavior.
+        It is set to restart the database if one flag is ticked and also to signal to every server that it is in
+        that it is ready to run.
         """
         if self.reset_database_on_start:
             BaseAddition.reset_database()
@@ -35,9 +38,10 @@ class Hearer(commands.Cog, Exceptioner):
 
     async def signal_ready(self, guild: discord.Guild) -> None:
         """
-        ...
+        This method informs each server that Smorg is online. If Smorg does not recognize a certain server,
+        that server also has information about it stored in Smorg's database.
 
-        :param discord.Guild guild:
+        :param discord.Guild guild: a Discord Guild of which Smorg is a member.
         """
         if Guild.exists_with(guild.id):
             channel_id: int = Guild.get_reminder_channel_by(guild.id)
@@ -66,18 +70,19 @@ class Hearer(commands.Cog, Exceptioner):
     @commands.Cog.listener()
     async def on_guild_join(self, guild: discord.Guild) -> None:
         """
-        ...
+        This method occurs when Smorg joins a Guild. Upon joining, it signals its presence as per the signal_ready()
+        method.
 
-        :param discord.Guild guild:
+        :param discord.Guild guild: a Discord Guild which Smorg has just joined.
         """
         await self.signal_ready(guild)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild: discord.Guild) -> None:
         """
-        ...
+        This method occurs when Smorg leaves a Guild. Upon leaving, it deletes all information it has on that Guild.
 
-        :param discord.Guild guild:
+        :param discord.Guild guild: a Discord Guild which Smorg has just left.
         """
         Guild.delete_guild_with(guild.id)
 

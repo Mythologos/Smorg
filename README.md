@@ -1,9 +1,7 @@
 # Smorg
-**Last Updated:** 04/24/2020 (MM/DD/YYYY)
+**Last Updated:** 04/28/2020 (MM/DD/YYYY)
 
-Hello! Welcome to Smorg, a Discord bot with a variety of useful functions.
-
-This description is a work-in-progress! Thank you for visiting this repository.
+Hello! Welcome to Smorg, a Discord bot with a variety of useful functions. It is being worked on as a personal project for the author to improve his programming prowess. It has been publicized as a resource and reference for other programmers in building their own Discord bots.
 
 **Current Functionality:**
 (TODO)
@@ -18,8 +16,11 @@ This description is a work-in-progress! Thank you for visiting this repository.
 7. Implement a test suite to assure that features don't break as I tinker with, optimize, and abstract older methods.
 8. Synthesize database methods to make database processing sleeker.
 9. Add more character sets for encoder to translate between.
-10. Condense the universal error-handling in hearer.py by using a dictionary to relate errors and error descriptions.
-11. Add multilingual support for Smorg commands (storing aliases in polyglot.py?).
-12. Find a better way to access dictionary constants, especially for encoder.py's character set translations.
-13. Change the to_target_language methods in the encoder Cog to be flexible to the from_language argument.
-14. Differentiate some nomenclature (e.g. discord.Guild vs. Guild database table) to help improve import optimization.
+10. Condense the universal error-handling in `hearer.py` by using a dictionary to relate errors and error descriptions.
+11. Add multilingual support for Smorg commands (storing aliases in `polyglot.py`?).
+12. Find a better way to access dictionary constants, especially for `encoder.py`'s character set translations.
+13. Change the to_target_language methods in the `encoder` Cog to be flexible to the from_language argument.
+14. Differentiate some nomenclature (e.g. `discord.Guild` vs. Guild database table) to help improve import optimization.
+15. Add more extensive type hints with typing's data structures (e.g. `List`, `Tuple`).
+16. If reasonable, shift some of the `display` Command's functionality to the `support` Command, as some (but not all) of `display`'s uses are more like non-command helper Embeds.
+17. Have the anonymous value of an `author` for quotes be alterable per Guild.

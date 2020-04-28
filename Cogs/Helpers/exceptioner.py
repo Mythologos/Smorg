@@ -1,5 +1,6 @@
 """
-...
+This module contains various custom errors for Smorg and the Exceptioner mix-in.
+The latter item helps to produce error Embeds to be posted on Discord.
 """
 
 from discord import Embed
@@ -11,17 +12,17 @@ from Cogs.Helpers.Enumerators.universalist import ColorConstant
 
 class Exceptioner:
     """
-    ...
+    This class is a mix-in that helps various Cogs to compose error embeds.
     """
     @staticmethod
     async def initialize_error_embed(command_name: str, error_name: str, error_description: str) -> Embed:
         """
-        ...
+        This method composes an embed to display an error based on certain identifying attributes.
 
-        :param str command_name:
-        :param str error_name:
-        :param str error_description:
-        :return Embed:
+        :param str command_name: the name of the command for which an error is being raised.
+        :param str error_name: the name of the error that is being raised.
+        :param str error_description: the description of the error that is being raised.
+        :return Embed: a completed Discord Embed containing the above elements.
         """
         return Embed(
             title=f'Error ({command_name}): {error_name}',
@@ -32,10 +33,12 @@ class Exceptioner:
     @staticmethod
     async def compose_error_name(class_name: str) -> str:
         """
-        ...
+        This method helps to make an error's name more reasonable for presentation.
+        For error names that are taken from the __name__ field, this function adds spaces
+        between individual characters in accordance with exceptions' camel case.
 
-        :param str class_name:
-        :return str:
+        :param str class_name: the name of an exception.
+        :return str: the name of an exception with its component words appropriately spaced.
         """
         spaced_class_name: str = ""
         for index, character in enumerate(class_name):
@@ -47,7 +50,8 @@ class Exceptioner:
 
 class DuplicateOperator(UserInputError):
     """
-    ...
+    This exception indicates that multiple operators appear consecutively in an illegal manner
+    in a mathematical expression.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -55,7 +59,7 @@ class DuplicateOperator(UserInputError):
 
 class ImproperFunction(UserInputError):
     """
-    ...
+    This exception indicates that a mathematical function does not have parentheses surrounding its argument.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -63,7 +67,8 @@ class ImproperFunction(UserInputError):
 
 class MissingParenthesis(UserInputError):
     """
-    ...
+    This exception indicates that a mathematical expression is missing a parenthesis where one is required
+    (e.g. to balance another).
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -71,7 +76,7 @@ class MissingParenthesis(UserInputError):
 
 class InvalidRecipient(UserInputError):
     """
-    ...
+    The exception indicates that a given recipient was not recognized.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -79,7 +84,7 @@ class InvalidRecipient(UserInputError):
 
 class InvalidDay(UserInputError):
     """
-    ...
+    The exception indicates that a given day is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -87,7 +92,7 @@ class InvalidDay(UserInputError):
 
 class InvalidHour(UserInputError):
     """
-    ...
+    The exception indicates that a given hour is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -95,7 +100,7 @@ class InvalidHour(UserInputError):
 
 class InvalidMinute(UserInputError):
     """
-    ...
+    The exception indicates that a given minute is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -103,7 +108,7 @@ class InvalidMinute(UserInputError):
 
 class InvalidMonth(UserInputError):
     """
-    ...
+    The exception indicates that a given month is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -111,7 +116,7 @@ class InvalidMonth(UserInputError):
 
 class InvalidTimeZone(UserInputError):
     """
-    ...
+    This exception indicates that a given time zone is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -119,7 +124,7 @@ class InvalidTimeZone(UserInputError):
 
 class InvalidYear(UserInputError):
     """
-    ...
+    This exception indicates that a given year is not valid in processing datetime objects.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -127,7 +132,7 @@ class InvalidYear(UserInputError):
 
 class EmptyEmbed(UserInputError):
     """
-    ...
+    This exception indicates that an embed contains no content and will not be outputted.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -135,7 +140,10 @@ class EmptyEmbed(UserInputError):
 
 class MissingSubcommand(UserInputError):
     """
-    ...
+    This exception indicates that a Command that required a subcommand was not given one.
+    Subcommand depth indicates how many subcommand levels deep that subcommand was.
+    For example, the translate Command has two levels of subcommands--the language that Smorg translates from
+    and the language that Smorg translates to.
     """
     def __init__(self, subcommand_depth: int = 1, message: Union[str, None] = None, *args):
         self.subcommand_depth: int = subcommand_depth
@@ -144,7 +152,7 @@ class MissingSubcommand(UserInputError):
 
 class MissingReminder(UserInputError):
     """
-    ...
+    This exception indicates that a reminder with given attributes was not found.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -152,7 +160,7 @@ class MissingReminder(UserInputError):
 
 class InvalidRoll(UserInputError):
     """
-    ...
+    This exception indicates that a user's given roll is invalid, as not all of the inputted characters were accepted.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
@@ -160,7 +168,7 @@ class InvalidRoll(UserInputError):
 
 class InvalidSequence(UserInputError):
     """
-    ...
+    This exception indicates that there is an invalid sequence of mathematical characters within a calculation.
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)

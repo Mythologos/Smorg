@@ -1,5 +1,6 @@
 """
-...
+This module contains the helper Cog, which consists of various utility functions for Smorg's usage.
+This includes the support function (aliased as "help"), the observe function, and the purge function.
 """
 
 from datetime import datetime
@@ -14,7 +15,10 @@ from smorgasDB import Guild
 
 class Helper(Chronologist, commands.Cog, Embedder):
     """
-    ...
+    This class aids in providing users with basic bot utilities. It does so through three functions.
+    The first is support, Smorg's help Command (accessed by the "help" keyword).
+    The second is observe, which switches the prefix that a Guild's Commands must be preceded by.
+    The third is purge, which deletes a certain number of previous messages and/or messages between designated times.
     """
     def __init__(self, bot):
         self.bot = bot
@@ -23,7 +27,8 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @commands.command(name='help', description=HelpDescription.SUPPORT)
     async def support(self, ctx: commands.Context) -> None:
         """
-        ...
+        This method uses the embed() function to display a list of Smorg's public commands.
+        It is this bot's basic help display.
 
         :param commands.Context ctx: the context from which the command was made.
         """
@@ -38,11 +43,11 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @staticmethod
     async def initialize_support_field(command: commands.Command, current_prefix: str) -> tuple:
         """
-        ...
+        This method creates the main attributes of a field for an Embed object to display Command information.
 
-        :param commands.Command command:
-        :param str current_prefix:
-        :return tuple:
+        :param commands.Command command: a given Command belonging to Smorg.
+        :param str current_prefix: the prefix that Smorg uses for the given Guild.
+        :return tuple: two strings and a Boolean for the three keyword arguments of an Embed field.
         """
         name: str = f"{current_prefix}{command.name}"
         description: str = f"{command.description}"
@@ -52,10 +57,10 @@ class Helper(Chronologist, commands.Cog, Embedder):
     @commands.command(description=HelpDescription.OBSERVE)
     async def observe(self, ctx: commands.Context, new_prefix: str) -> None:
         """
-        ...
+        This method alters the prefix that Smorg uses for a given Guild.
 
         :param commands.Context ctx: the context from which the command was made.
-        :param str new_prefix:
+        :param str new_prefix: the new prefix that Smorg will use to identify a certain Guild's Command calls.
         """
         Guild.update_prefix(ctx.guild.id, new_prefix)
         await ctx.send(f"You've updated your Guild's prefix to '{new_prefix}'.")
@@ -64,12 +69,19 @@ class Helper(Chronologist, commands.Cog, Embedder):
     async def purge(self, ctx: commands.Context, message_count: Optional[int], from_time: Optional[str],
                     to_time: Optional[str]) -> None:
         """
-        ...
+        This method deletes messages based on a given set of parameters.
+        If nothing is given, the previous message is deleted.
+        If a number is given, that number of previous messages are deleted.
+        If a time or times are given, the messages deleted are based on those times;
+        two times means that all times between such times will be deleted so long as
+        a message count is not given.
+
+        Times should be written as they are designated in the recaller.py module.
 
         :param commands.Context ctx: the context from which the command was made.
-        :param Optional[int] message_count:
-        :param Optional[str] from_time:
-        :param Optional[str] to_time:
+        :param Optional[int] message_count: a number of messages to be deleted (or an upper limit).
+        :param Optional[str] from_time: the time after which messages should be deleted.
+        :param Optional[str] to_time: the time before which messages should be deleted.
         """
         additional_validators: tuple = (self.validate_past_datetime,)
         datetime_defaults: dict = {'default_minute': None, 'default_hour': None}
@@ -97,7 +109,7 @@ class Helper(Chronologist, commands.Cog, Embedder):
             history_args["limit"] = message_count
         delete_count: int = 0
         await ctx.message.delete()
-        async for message in ctx.message.channel.history(**history_args):
+        async for message in ctx.channel.history(**history_args):
             await message.delete()
             delete_count += 1
         else:

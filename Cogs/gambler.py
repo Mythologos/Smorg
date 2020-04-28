@@ -56,7 +56,7 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
                 )
         else:
             gamble_channel_id: int = Guild.get_gamble_channel_by(ctx.guild.id)
-            current_channel: discord.TextChannel = self.bot.get_channel(gamble_channel_id) or ctx.message.channel
+            current_channel: discord.TextChannel = self.bot.get_channel(gamble_channel_id) or ctx.channel
             await self.send_roll(ctx, roll, flat_tokens, verbose_dice, roll_result, description, current_channel)
 
     async def handle_roll(self, roll: str) -> tuple:
@@ -105,12 +105,12 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         and the sorted result of each die.
 
         :param str die_roll: a die roll having been parsed out by the parse_roll() method.
-        :return tuple: the result of evaluate_roll(), which is a collection of three different pieces of information
+        :return tuple: the result of evaluate_dice(), which is a collection of three different pieces of information
         about a roll--the unsorted die rolls, the sorted die rolls, and the sum of the die results.
         """
         parsed_dice: dict = await self.parse_dice(die_roll)
         processed_dice: dict = await self.process_dice(parsed_dice)
-        return await self.evaluate_roll(processed_dice)
+        return await self.evaluate_dice(processed_dice)
 
     async def send_roll(self, ctx: commands.Context, roll: str, flat_tokens: list, verbose_dice: list, roll_result: int,
                         description: Union[str, None], destination_channel: discord.TextChannel) -> None:
@@ -128,7 +128,7 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
         :param Union[str, None] description: a description of the roll's purpose, if desired.
         :param discord.TextChannel destination_channel: the location where the roll results will be outputted.
         """
-        introduction_message: str = f"{ctx.message.author.mention}\n" \
+        introduction_message: str = f"{ctx.author.mention}\n" \
                                     f"Initial Roll: {roll}\n" \
                                     f"Reason: {description}"
         await self.send_condensed_message(destination_channel, introduction_message, DiscordConstant.MAX_MESSAGE_LENGTH)
@@ -197,10 +197,10 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def parse_roll(raw_roll: str) -> list:
         """
-        ...
+        This method uses a re.Pattern to parse a roll and outputs all matches as a list of tuples.
 
-        :param str raw_roll:
-        :return list:
+        :param str raw_roll: the base dice roll performed.
+        :return list: a collection of tuples that contain pattern matches of one of the five groups in roll_pattern.
         """
         roll_pattern: Pattern = re.compile(r'(?:(?P<roll>[\d]+[dD][\d]+(?:[dDkK][\d]+)?(?:!)?(?:[><][+-]?[\d]+)?)|'
                                            r'(?P<regular_operator>[+\-*/^])|'
@@ -212,10 +212,10 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def parse_dice(raw_dice: str) -> dict:
         """
-        ...
+        This method uses a re.Pattern to parse a dice roll and outputs all segments of a match as a dictionary.
 
-        :param str raw_dice:
-        :return dict:
+        :param str raw_dice: the base dice being rolled.
+        :return dict: a mapping of named portions of the Pattern to the items that they matched in raw_dice
         """
         dice_pattern: Pattern = re.compile(r'(?P<number_of_dice>[\d]+)[dD]'
                                            r'(?P<die_size>[\d]+)'
@@ -229,10 +229,11 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def process_dice(matched_dice: dict) -> dict:
         """
-        ...
+        This method extracts important information from dice matched in parse_dice() and
+        converts values to types that other functions would find more useful.
 
-        :param dict matched_dice:
-        :return dict:
+        :param dict matched_dice: a dictionary containing the fields outputted by the parse_dice() function.
+        :return dict: a dictionary containing a simplification and type-shifting of the fields in matched_dice.
         """
         number_of_dice: int = int(matched_dice['number_of_dice'])
         die_size: int = int(matched_dice['die_size'])
@@ -249,12 +250,14 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
             'challenge_value': challenge_value,
         }
 
-    async def evaluate_roll(self, processed_roll: dict) -> tuple:
+    async def evaluate_dice(self, processed_roll: dict) -> tuple:
         """
-        ...
+        This method evaluates the result of a roll in terms of its individual results and its summed result.
+        It does so by using helper methods.
 
-        :param dict processed_roll:
-        :return tuple:
+        :param dict processed_roll: a mapping of labeled values put into data types in accordance with process_dice().
+        :return tuple: a collection of the dice's summed result, its unsorted individual results,
+        and its sorted individual results.
         """
         roll_results: list = await self.roll_dice(
             processed_roll['number_of_dice'], processed_roll['die_size'], processed_roll['explosion_sign']
@@ -272,12 +275,14 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def roll_dice(number_of_dice: int, die_size: int, explosion_sign: str) -> list:
         """
-        ...
+        This method actually rolls dice with a random algorithm based on a given dice size, number of dice,
+        and an indication of whether or not the dice should explode.
 
-        :param int number_of_dice:
-        :param int die_size:
-        :param str explosion_sign:
-        :return list:
+        :param int number_of_dice: the number of dice to be rolled (e.g. the 3 in 3d6).
+        :param int die_size: the size of the dice to be rolled (e.g. the 6 in 3d6).
+        :param str explosion_sign: a designation of whether dice explode (i.e. an extra die is added when
+        a die results in the maximum amount for its size).
+        :return list: a collection of the individual results of the roll.
         """
         roll_list: list = []
         roll_index: int = 0
@@ -291,12 +296,16 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def select_dice(roll_list: list, drop_sign: str, keep_sign: str, drop_keep_value: int) -> list:
         """
-        ...
-        :param list roll_list:
-        :param str drop_sign:
-        :param str keep_sign:
-        :param int drop_keep_value:
-        :return:
+        This method truncates dice depending upon the values of drop_sign and keep_sign.
+        A die can only use drop or keep and not both; moreover, each of these signs play by different rules.
+        Drop removes the lowest values from roll_list, whereas keep only keeps a certain number of values.
+        This difference comes into play when an effect causes the number of dice to change, such as an explosion.
+
+        :param list roll_list: a sorted list of die results.
+        :param str drop_sign: an indication of whether the drop behavior should be used.
+        :param str keep_sign: an indication of whether the keep behavior should be used.
+        :param int drop_keep_value: the number of dice that should be dropped or kept.
+        :return: a list of sorted die results with the designated drop-keep behavior applied to it.
         """
         if drop_sign:
             del roll_list[(len(roll_list) - drop_keep_value):]
@@ -307,11 +316,16 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     @staticmethod
     async def analyze_roll(roll_list: list, challenge_sign: str, challenge_value: int) -> int:
         """
-        ...
-        :param list roll_list:
-        :param str challenge_sign:
-        :param int challenge_value:
-        :return:
+        This method sums a roll based on one of two rule sets.
+        First, it could sum them normally and output the result.
+        Second, if a challenge_sign and challenge_value exist, then the number of individual die rolls meeting or
+        exceeding challenge_value is counted and returned.
+
+        :param list roll_list: a collection of die roll results.
+        :param str challenge_sign: an indication of whether challenge die behavior should be used.
+        :param int challenge_value: the value which dice must meet or exceed to be counted as a success
+        in challenge die behavior.
+        :return int: the summed result of the dice in accordance with the designated rule set.
         """
         roll_result: int = 0
         if challenge_sign:
@@ -330,6 +344,7 @@ class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):
     async def roll_error(self, ctx: commands.Context, error: Exception) -> None:
         """
         This method handles errors exclusive to the roll Command.
+
         :param commands.Context ctx: the context from which the command was made
         :param Exception error: the error raised by some method called to fulfill a roll request
         """
