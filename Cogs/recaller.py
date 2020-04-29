@@ -68,7 +68,6 @@ class Recaller(commands.Cog, Chronologist, Exceptioner):
         It should be of the format: "HH:MM PP TZ; DD MONTH YY", where all components but the hour are optional
         and defaults, barring the minute being 0 and the time zone being UTC, are based on the given time zone.
         :param Optional[str] new_message: new, replacement text to provide a reminder with context.
-
         """
         current_guild_id = ctx.guild.id
         old_datetime: datetime = await self.handle_time(old_reminder_time)

@@ -1,5 +1,8 @@
 """
-...
+This module contains the YardShunter class. It implements the shunting yard algorithm, created by
+Dr. Edsger Dijkstra, for use in Smorg.
+
+Shunting Yard algorithm: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 """
 
 from typing import Union
@@ -11,7 +14,11 @@ from Cogs.Helpers.Enumerators.tabulator import ComparisonOperator, MathematicalF
 
 class YardShunter:
     """
-    ...
+    This class revolves around the implementation of the shunting yard algorithm.
+    To perform this algorithm multiple times throughout Smorg's lifetime, it assures that its stacks
+    are empty by using the flush_stacks() function. Input is simplified and converted appropriately
+    in the consolidate_tokens() function. It is processed by the core algorithm in the process_input() function.
+    Finally, the results are evaluated in the evaluate_input() function.
     """
     def __init__(self):
         self.operator_stack: list = []
@@ -23,10 +30,14 @@ class YardShunter:
 
     async def shunt_yard(self, flat_tokens: list) -> Union[float, int]:
         """
-        ...
+        This method is the main method for the full process of the shunting yard algorithm.
+        it performs all of the steps necessary for the shunting yard algorithm in their appropriate order,
+        using the flush_stacks() function to assure that the function can be performed multiple times
+        with different inputs throughout Smorg's lifetime.
 
-        :param list flat_tokens:
-        :return Union[float, int]:
+        :param list flat_tokens: a one-dimensional list of numerical, symbolic, and functional tokens
+        accepted by Smorg's parsing algorithms (e.g. those in gambler).
+        :return Union[float, int]: the value resulting from the mathematical calculations designated by the tokens.
         """
         await self.flush_stacks()
         complete_tokens: list = await self.consolidate_tokens(flat_tokens)
@@ -44,10 +55,13 @@ class YardShunter:
 
     async def consolidate_tokens(self, flattened_tokens: list) -> list:
         """
-        ...
+        This method converts numerical tokens to their proper types,
+        converts numbers to their negative counterparts based on the placement of '-' signs,
+        and helps for the algorithm to catch more specific kinds of errors.
 
-        :param flattened_tokens:
-        :return:
+        :param list flattened_tokens: a one-dimensional collection of mathematical tokens.
+        :return list: a collection of tokens with numbers converted to integers
+        and negative numbers more properly designated as such.
         """
         index: int = 0
         previous_is_operator: bool = False
@@ -58,7 +72,7 @@ class YardShunter:
                 flattened_tokens[index] = int(flattened_tokens[index])
                 previous_is_operator = False
             elif current_token in self.current_operators:
-                if current_token == '-' and next_token:
+                if current_token == '-' and next_token:  # this section helps to handle negative numbers vs. subtraction
                     if next_token.isdigit():
                         flattened_tokens[index] = int(current_token + next_token)
                         del flattened_tokens[index + 1], next_token
@@ -81,9 +95,12 @@ class YardShunter:
 
     async def process_input(self, complete_tokens: list) -> None:
         """
-        ...
+        This method performs the shunting-yard algorithm. This implementation used the pseudo-code written
+        at the following location to build this algorithm:
+        https://en.wikipedia.org/wiki/Shunting-yard_algorithm#The_algorithm_in_detail
 
-        :param complete_tokens:
+        :param list complete_tokens: a list of tokens containing valid operators, appropriately-typed numbers,
+        and functions.
         """
         index: int = 0
         while index < len(complete_tokens):
@@ -127,14 +144,15 @@ class YardShunter:
 
     async def evaluate_input(self) -> Union[float, int]:
         """
-        ...
+        This method evaluates the input produced by the shunting yard algorithm,
+        calculating a final result if the input is, in fact, valid.
 
-        :return Union[float, int]:
+        :return Union[float, int]: the final result of the calculations produced by the shunting yard algorithm.
         """
         output_stack: list = []
         for output in self.output_queue:
             if output in self.current_operators:
-                if len(output_stack) > 1:
+                if len(output_stack) > 1:  # currently only handles two-operand operators
                     second_operand: int = output_stack.pop(0)
                     first_operand: int = output_stack.pop(0)
                     relevant_operator: MathematicalOperator = await MathematicalOperator.get_by_symbol(output)
@@ -146,7 +164,7 @@ class YardShunter:
                     raise InvalidSequence
             elif output in self.current_functions:
                 if output_stack:
-                    first_operand: int = output_stack.pop(0)
+                    first_operand: int = output_stack.pop(0)  # currently only hands one-operand functions
                     relevant_function: MathematicalFunction = await MathematicalFunction.get_by_name(output)
                     operation_result: Union[int, float] = await MathematicalFunction.evaluate_function(
                         relevant_function.value, first_operand

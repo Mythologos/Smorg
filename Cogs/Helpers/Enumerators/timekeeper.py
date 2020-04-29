@@ -1,7 +1,8 @@
 """
-...
+This module consists of various enumerations and groups of constants relating to time.
+This mainly includes classes like TimeZone which delve into what aliases relate to each UTC timezone offset
+and sets of aliases or constants.
 """
-# note: enum names dictate military time zone name, if it exists
 
 from __future__ import annotations
 
@@ -11,7 +12,11 @@ from typing import Union
 
 class TimeZone(Enum, init='value aliases'):
     """
-    ...
+    This enumeration contains various objects that link time zone aliases to their UTC offsets.
+    It also makes them comparable.
+
+    The name of each item in the enumeration is based on the military abbreviation for each one.
+    The EXTRA item is the exception to this, as I could not find its abbreviation.
     """
     A = 1, ("BST", "CET", "MET", "MEZ", "WAT", "WETDST")
     B = 2, ("BDST", "CEST", "CETDST", "EET", "IST", "MEST", "MESZ", "METDST", "SAST")
@@ -92,9 +97,9 @@ class TimeZone(Enum, init='value aliases'):
     @staticmethod
     def get_lowest_zone_value() -> int:
         """
-        ...
+        This method gets the lowest value of a UTC time zone offset in the TimeZone enumeration.
 
-        :return int:
+        :return int: the lowest value of a UTC time zone offset in the TimeZone enumeration.
         """
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         lowest_zone_value = sorted_zones_by_enum[0].value
@@ -103,9 +108,9 @@ class TimeZone(Enum, init='value aliases'):
     @staticmethod
     def get_highest_zone_value() -> int:
         """
-        ...
+        This method gets the highest value of a UTC time zone offset in the TimeZone enumeration.
 
-        :return int:
+        :return int: the highest value of a UTC time zone offset in the TimeZone enumeration.
         """
         sorted_zones_by_enum = sorted(TimeZone.__members__.values(), key=lambda full_entry: full_entry.value)
         highest_zone_value = sorted_zones_by_enum[-1].value
@@ -114,9 +119,9 @@ class TimeZone(Enum, init='value aliases'):
     @classmethod
     def list_time_zones(cls) -> list:
         """
-        ...
+        This method composes and returns a complete list of TimeZone objects from this enumeration.
 
-        :return list:
+        :return list: a complete list of TimeZone objects.
         """
         time_zone_list: list = []
         for i in range(cls.get_lowest_zone_value(), cls.get_highest_zone_value() + 1):
@@ -126,7 +131,7 @@ class TimeZone(Enum, init='value aliases'):
 
 class DateConstant(NamedConstant):
     """
-    ...
+    This class contains various constant values for dates that may be used in multiple locations.
     """
     FIRST_DAY_OF_MONTH = 1
     LEAP_YEAR_MODULO = 4
@@ -134,7 +139,7 @@ class DateConstant(NamedConstant):
 
 class TimeConstant(NamedConstant):
     """
-    ...
+    This class contains various constant values for times that may be used in multiple locations.
     """
     START_MINUTE = 0
     END_MINUTE = 59
@@ -146,7 +151,7 @@ class TimeConstant(NamedConstant):
 
 class MonthAliases(NamedConstant):
     """
-    ...
+    This class tallies various accepted names or indicators for months in textual input.
     """
     JANUARY = ('January', 'Jan', '1')
     FEBRUARY = ('February', 'Feb', '2')
@@ -164,7 +169,9 @@ class MonthAliases(NamedConstant):
 
 class MonthConstant(Enum, init='value number_of_days'):
     """
-    ...
+    This enumeration contains various constant values for times that may be used in multiple locations.
+    It also lists of the number of days that each month has.
+    Since it is different in a leap year, February is listed in two different ways (with two different names).
     """
     JANUARY = 1, 31
     FEBRUARY = 2, 28
@@ -183,7 +190,7 @@ class MonthConstant(Enum, init='value number_of_days'):
 
 class PeriodConstant:
     """
-    ...
+    This class contains various constant values for periods of the day that may be used in multiple locations.
     """
     SINE_MERIDIEM = 0  # "without a midday," referring to how there's no period separation in a twenty-four hour clock
     ANTE_MERIDIEM = 1

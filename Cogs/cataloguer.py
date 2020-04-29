@@ -260,6 +260,7 @@ class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):
 
     @dice.error
     @display.error
+    @functions.error
     @operators.error
     @reminders.error
     @quotes.error

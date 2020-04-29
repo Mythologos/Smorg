@@ -132,6 +132,12 @@ class Hearer(commands.Cog, Exceptioner):
                     error_description = 'The given time zone is invalid.'
                 elif isinstance(error, InvalidYear):
                     error_description = 'The given year is invalid.'
+                elif isinstance(error, InvalidComparison):
+                    error_description = 'A comparison operator that was used is invalid.'
+                elif isinstance(error, InvalidOperator):
+                    error_description = 'An operator that was applied was invalid.'
+                elif isinstance(error, InvalidFunction):
+                    error_description = 'A function that was applied was invalid.'
                 else:
                     error_description = 'Something about your input could not be processed.'
             elif isinstance(error, commands.CheckFailure):

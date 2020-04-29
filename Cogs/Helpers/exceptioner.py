@@ -172,3 +172,27 @@ class InvalidSequence(UserInputError):
     """
     def __init__(self, message: Union[str, None] = None, *args):
         super().__init__(message=message, *args)
+
+
+class InvalidFunction(UserInputError):
+    """
+    This exception indicates that there is an invalid function in a calculation.
+    """
+    def __init__(self, message: Union[str, None] = None, *args):
+        super().__init__(message=message, *args)
+
+
+class InvalidOperator(UserInputError):
+    """
+    This exception indicates that there is an invalid operator in a calculation.
+    """
+    def __init__(self, message: Union[str, None] = None, *args):
+        super().__init__(message=message, *args)
+
+
+class InvalidComparison(UserInputError):
+    """
+    This exception indicates that there is an invalid comparison operator in use.
+    """
+    def __init__(self, message: Union[str, None] = None, *args):
+        super().__init__(message=message, *args)
