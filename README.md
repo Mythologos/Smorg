@@ -1,9 +1,15 @@
 # Smorg
 **Last Updated:** 04/28/2020 (MM/DD/YYYY)
 
+## Introduction
+
 Hello! Welcome to Smorg, a [Discord](https://discordapp.com/) bot with a variety of useful functions built with [discord.py](https://discordpy.readthedocs.io/en/latest/index.html). It is being worked on as a personal project for the author to improve his programming prowess. It has been publicized as a resource and reference for other programmers in building their own Discord bots.
 
-**Current Functionality:**
+While this bot is displayed in a public repository, it is currently intended for a select group of servers while it continues to grow and improve. I have not provided instructions on setting up Smorg as a result, and I ask that you do not currently use Smorg as more than as referential material.
+
+## Functionality
+
+Smorg can currently perform the following tasks:
 1. The **help** command displays a help menu as a Discord embed. As more commands are added, the embed can generate more fields automatically and create further embeds as necessary.
 2. The **govern** command allows members of a Discord guild to allocate certain operations that Smorg can perform to specific channels. The subcommands that relate to this operation include: *gamble*, *reminder*, and *quotation*.
 3. The **display** command uses embeds to visualize various information about Smorg. The subcommands *reminders* and *quotes* present information about Smorg's current state relative to the guild. Meanwhile, the subcommands *dice*, *functions*, *operators*, and *zones* present general information about Smorg's processes.
@@ -18,7 +24,9 @@ Hello! Welcome to Smorg, a [Discord](https://discordapp.com/) bot with a variety
 12. The **revise** command lets the user specify a reminder and then supply either a new time, a new message, or both. Smorg then changes the reminder to meet these specifications.
 13. The **forget** command permits the user to delete a reminder by specifying it.
 
-**Future To-Do List (in no particular order):**
+## Future Goals:
+
+As this is a personal project and I end up having progressively more ideas as I learn more about what's possible and optimal, there's still a lot left to do! The below list is for my own reference, as Smorg is currently not a collaborative project. However, if you have suggestions about Smorg, feel free to let me know!
 1. Create an easier way to write morse code as periods and dashes for `encoder.py`.
 2. Create a way to convert morse code into sound files that can be uploaded and played.
 3. Investigate asynchronous database options (e.g. [asyncpg](https://github.com/MagicStack/asyncpg), [asyncpgsa](https://github.com/CanopyTax/asyncpgsa), [aiopg](https://github.com/aio-libs/aiopg/), [GINO](https://github.com/python-gino/gino), others?) and implement asynchronous solutions to mesh with the asynchronous foundation of a discord bot.
