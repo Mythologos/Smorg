@@ -1,7 +1,7 @@
 """
-This is the initialization file for Smorg. It initializes an AutoShardedBot instance with command prefixes
-determined by the database method get_prefix(). It removes the default help command for Discord bots.
-Then, it adds each Cog that the bot currently supports and starts the bot with its corresponding bot key.
+This file defines the Smorg class, inserting all Cogs into one AutoShardedBot instance.
+It removes the default help command and inserts the bot's Discord key.
+By having it as a class, it can be more formally created and run at separate times and in multiple instances.
 """
 
 from discord.ext.commands import AutoShardedBot
@@ -17,15 +17,14 @@ from Cogs.recaller import Recaller
 from secretbord import bot_key
 from smorgasDB import Guild
 
-smorg = AutoShardedBot(command_prefix=Guild.get_prefix)
-smorg.remove_command('help')
-smorg.add_cog(Arranger(smorg))
-smorg.add_cog(Cataloguer(smorg))
-smorg.add_cog(Hearer(smorg))
-smorg.add_cog(Helper(smorg))
-smorg.add_cog(Quoter(smorg))
-smorg.add_cog(Recaller(smorg))
-smorg.add_cog(Gambler(smorg))
-smorg.add_cog(Encoder(smorg))
 
-smorg.run(bot_key)
+class Smorg:
+    def __init__(self):
+        self.bot = AutoShardedBot(command_prefix=Guild.get_prefix)
+        self.bot.remove_command('help')
+
+        for cog in [Arranger, Cataloguer, Encoder, Gambler, Hearer, Helper, Quoter, Recaller]:
+            self.bot.add_cog(cog(self.bot))
+
+    def run(self):
+        self.bot.run(bot_key)
