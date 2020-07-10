@@ -8,14 +8,14 @@ from datetime import datetime
 from discord.ext import commands
 from typing import Optional, Union
 
-from Cogs.Helpers.chronologist import Chronologist
-from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import EmptyEmbed, Exceptioner, MissingSubcommand
-from Cogs.Helpers.Enumerators.croupier import RollMechanic
-from Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
-from Cogs.Helpers.Enumerators.timekeeper import TimeZone
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
-from smorgasDB import Quote, Reminder
+from Bot.Cogs.Helpers.chronologist import Chronologist
+from Bot.Cogs.Helpers.embedder import Embedder
+from Bot.Cogs.Helpers.exceptioner import EmptyEmbed, Exceptioner, MissingSubcommand
+from Bot.Cogs.Helpers.Enumerators.croupier import RollMechanic
+from Bot.Cogs.Helpers.Enumerators.tabulator import MathematicalOperator, MathematicalFunction
+from Bot.Cogs.Helpers.Enumerators.timekeeper import TimeZone
+from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from Bot.smorgasDB import Quote, Reminder
 
 
 class Cataloguer(commands.Cog, Chronologist, Embedder, Exceptioner):

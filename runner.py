@@ -1,4 +1,4 @@
-from smorgasbord import Smorg
+from Bot.smorgasbord import Smorg
 
 
 def main():

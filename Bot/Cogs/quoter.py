@@ -8,10 +8,10 @@ from discord.ext import commands
 from random import randint
 from typing import Union
 
-from Cogs.Helpers.checker import Checker
-from Cogs.Helpers.exceptioner import Exceptioner
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
-from smorgasDB import Guild, Quote
+from Bot.Cogs.Helpers.checker import Checker
+from Bot.Cogs.Helpers.exceptioner import Exceptioner
+from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from Bot.smorgasDB import Guild, Quote
 
 
 class Quoter(commands.Cog, Exceptioner):

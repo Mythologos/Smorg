@@ -13,7 +13,7 @@ from aenum import Enum, NamedConstant
 from math import floor, ceil, sqrt
 from typing import Union
 
-from Cogs.Helpers.exceptioner import InvalidComparison, InvalidFunction, InvalidOperator
+from Bot.Cogs.Helpers.exceptioner import InvalidComparison, InvalidFunction, InvalidOperator
 
 
 class ComparisonOperator(NamedConstant):

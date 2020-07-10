@@ -11,15 +11,15 @@ from discord.ext import commands
 from random import randint
 from typing import Pattern, Union
 
-from Cogs.Helpers.condenser import Condenser
-from Cogs.Helpers.embedder import Embedder
-from Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
+from Bot.Cogs.Helpers.condenser import Condenser
+from Bot.Cogs.Helpers.embedder import Embedder
+from Bot.Cogs.Helpers.exceptioner import DuplicateOperator, Exceptioner, ImproperFunction, InvalidRecipient, InvalidRoll, \
     MissingParenthesis, InvalidSequence
-from Cogs.Helpers.yard_shunter import YardShunter
-from Cogs.Helpers.Enumerators.croupier import MatchContent
-from Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant, \
+from Bot.Cogs.Helpers.yard_shunter import YardShunter
+from Bot.Cogs.Helpers.Enumerators.croupier import MatchContent
+from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant, HelpDescription, MessageConstant, \
     StaticText
-from smorgasDB import Guild
+from Bot.smorgasDB import Guild
 
 
 class Gambler(commands.Cog, Condenser, Embedder, Exceptioner):

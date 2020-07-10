@@ -10,10 +10,10 @@ from discord.ext import commands, tasks
 from sqlalchemy.exc import DataError
 from typing import Optional, Union
 
-from Cogs.Helpers.chronologist import Chronologist
-from Cogs.Helpers.exceptioner import Exceptioner, MissingReminder
-from Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription, StaticText
-from smorgasDB import Guild, Reminder
+from Bot.Cogs.Helpers.chronologist import Chronologist
+from Bot.Cogs.Helpers.exceptioner import Exceptioner, MissingReminder
+from Bot.Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription, StaticText
+from Bot.smorgasDB import Guild, Reminder
 
 
 class Recaller(commands.Cog, Chronologist, Exceptioner):

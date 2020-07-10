@@ -7,9 +7,9 @@ import re
 import datetime
 from typing import Callable, Pattern, Tuple, Union
 
-from Cogs.Helpers.Enumerators.timekeeper import DateConstant, MonthAliases, MonthConstant, PeriodConstant,\
+from Bot.Cogs.Helpers.Enumerators.timekeeper import DateConstant, MonthAliases, MonthConstant, PeriodConstant,\
     TimeConstant, TimeZone
-from Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
+from Bot.Cogs.Helpers.exceptioner import InvalidDay, InvalidHour, InvalidMinute, InvalidMonth, InvalidTimeZone, InvalidYear
 
 
 class Chronologist:

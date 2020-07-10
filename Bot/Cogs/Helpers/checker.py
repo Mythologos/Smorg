@@ -4,7 +4,7 @@ This module contains the checker Cog. It is a mix-in Cog that consists of checks
 
 from discord.ext.commands import Context
 
-from smorgasDB import Quote
+from Bot.smorgasDB import Quote
 
 
 class Checker:
