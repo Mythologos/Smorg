@@ -11,7 +11,7 @@ from ..Bot.smorgasDB import BaseAddition
 async def smorg_bot():
     # Setup:
     test_smorg_bot: Smorg = Smorg()
-    dpytest.configure(test_smorg_bot)
+    dpytest.configure(test_smorg_bot.bot)
     universal_test_guild = dpytest.backend.make_guild("Test Guild")
     dpytest.backend.make_text_channel("general", universal_test_guild)
     dpytest.backend.make_text_channel("other_general", universal_test_guild)
