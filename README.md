@@ -1,5 +1,5 @@
 # Smorg
-**Last Updated:** 07/09/2020 (MM/DD/YYYY)
+**Last Updated:** 07/21/2020 (MM/DD/YYYY)
 
 ## Introduction
 

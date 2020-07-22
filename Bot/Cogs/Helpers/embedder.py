@@ -5,8 +5,8 @@ This module contains the Embedder class, a widely-used mix-in that helps various
 from discord import TextChannel, Embed
 from typing import Any, Callable, Iterable, List, Union
 
-from Bot.Cogs.Helpers.exceptioner import EmptyEmbed
-from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant, DiscordConstant
+from .exceptioner import EmptyEmbed
+from .Enumerators.universalist import ColorConstant, DiscordConstant
 
 
 class Embedder:

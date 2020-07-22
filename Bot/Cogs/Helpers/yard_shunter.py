@@ -7,9 +7,8 @@ Shunting Yard algorithm: https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
 from typing import Union
 
-from Bot.Cogs.Helpers.exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis, InvalidSequence
-from Bot.Cogs.Helpers.Enumerators.tabulator import ComparisonOperator, MathematicalFunction, MathematicalOperator,\
-    OperatorAssociativity
+from .exceptioner import DuplicateOperator, ImproperFunction, MissingParenthesis, InvalidSequence
+from .Enumerators.tabulator import ComparisonOperator, MathematicalFunction, MathematicalOperator, OperatorAssociativity
 
 
 class YardShunter:

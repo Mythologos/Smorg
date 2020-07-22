@@ -6,9 +6,9 @@ a manual implementation up until this point.
 import discord
 from discord.ext import commands
 
-from Bot.Cogs.Helpers.exceptioner import *
-from Bot.Cogs.Helpers.Enumerators.universalist import StaticText
-from Bot.smorgasDB import BaseAddition, Guild
+from .Helpers.exceptioner import *
+from .Helpers.Enumerators.universalist import StaticText
+from ..smorgasDB import BaseAddition, Guild
 
 
 class Hearer(commands.Cog, Exceptioner):

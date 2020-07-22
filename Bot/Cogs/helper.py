@@ -7,10 +7,10 @@ from datetime import datetime
 from discord.ext import commands
 from typing import Optional
 
-from Bot.Cogs.Helpers.chronologist import Chronologist
-from Bot.Cogs.Helpers.embedder import Embedder
-from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant, HelpDescription
-from Bot.smorgasDB import Guild
+from .Helpers.chronologist import Chronologist
+from .Helpers.embedder import Embedder
+from .Helpers.Enumerators.universalist import ColorConstant, HelpDescription
+from ..smorgasDB import Guild
 
 
 class Helper(Chronologist, commands.Cog, Embedder):

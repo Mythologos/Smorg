@@ -6,16 +6,16 @@ By having it as a class, it can be more formally created and run at separate tim
 
 from discord.ext.commands import AutoShardedBot
 
-from Bot.Cogs.arranger import Arranger
-from Bot.Cogs.cataloguer import Cataloguer
-from Bot.Cogs.encoder import Encoder
-from Bot.Cogs.gambler import Gambler
-from Bot.Cogs.hearer import Hearer
-from Bot.Cogs.helper import Helper
-from Bot.Cogs.quoter import Quoter
-from Bot.Cogs.recaller import Recaller
-from Bot.secretbord import bot_key
-from Bot.smorgasDB import Guild
+from .Cogs.arranger import Arranger
+from .Cogs.cataloguer import Cataloguer
+from .Cogs.encoder import Encoder
+from .Cogs.gambler import Gambler
+from .Cogs.hearer import Hearer
+from .Cogs.helper import Helper
+from .Cogs.quoter import Quoter
+from .Cogs.recaller import Recaller
+from .secretbord import bot_key
+from .smorgasDB import Guild
 
 
 class Smorg:

@@ -8,9 +8,9 @@ import discord
 from discord.ext import commands
 from typing import Callable
 
-from Bot.smorgasDB import Guild
-from Bot.Cogs.Helpers.exceptioner import MissingSubcommand
-from Bot.Cogs.Helpers.Enumerators.universalist import HelpDescription, StaticText
+from ..smorgasDB import Guild
+from .Helpers.exceptioner import MissingSubcommand
+from .Helpers.Enumerators.universalist import HelpDescription, StaticText
 
 
 class Arranger(commands.Cog):

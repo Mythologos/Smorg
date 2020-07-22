@@ -17,8 +17,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship, query
 from typing import Callable, Union
 
-from Bot import secretbord
-from Bot.Cogs.Helpers.Enumerators.universalist import DiscordConstant
+from . import secretbord
+from .Cogs.Helpers.Enumerators.universalist import DiscordConstant
 
 
 engine = sqlalchemy.create_engine(

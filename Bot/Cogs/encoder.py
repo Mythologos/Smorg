@@ -7,10 +7,10 @@ The morse code in the encoder Cog is based on: http://ascii-table.com/morse-code
 
 from discord.ext import commands
 
-from Bot.Cogs.Helpers.condenser import Condenser
-from Bot.Cogs.Helpers.exceptioner import MissingSubcommand
-from Bot.Cogs.Helpers.Enumerators.polyglot import AlphabetDictionary
-from Bot.Cogs.Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
+from .Helpers.condenser import Condenser
+from .Helpers.exceptioner import MissingSubcommand
+from .Helpers.Enumerators.polyglot import AlphabetDictionary
+from .Helpers.Enumerators.universalist import DiscordConstant, HelpDescription
 
 
 class Encoder(commands.Cog, Condenser):

@@ -5,7 +5,7 @@ that do not exceed message limits and wrap nicely into multiple messages.
 
 from discord import TextChannel
 
-from Bot.Cogs.Helpers.Enumerators.universalist import MessageConstant
+from .Enumerators.universalist import MessageConstant
 
 
 class Condenser:

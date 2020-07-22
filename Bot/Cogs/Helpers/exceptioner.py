@@ -7,7 +7,7 @@ from discord import Embed
 from discord.ext.commands import UserInputError
 from typing import Union
 
-from Bot.Cogs.Helpers.Enumerators.universalist import ColorConstant
+from .Enumerators.universalist import ColorConstant
 
 
 class Exceptioner:
