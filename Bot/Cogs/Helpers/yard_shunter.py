@@ -63,26 +63,27 @@ class YardShunter:
         and negative numbers more properly designated as such.
         """
         index: int = 0
-        previous_is_operator: bool = False
         while index < len(flattened_tokens):
+            # The approach here is a "sliding window" on up to three items in the list.
+            # This was chosen because individual characters in an equation are often impacted significantly
+            # by the characters around it.
+            previous_token = flattened_tokens[index - 1] if index > 0 else None
             current_token = flattened_tokens[index]
             next_token = flattened_tokens[index + 1] if (index + 1 < len(flattened_tokens)) else None
             if current_token.isdigit():
                 flattened_tokens[index] = int(flattened_tokens[index])
-                previous_is_operator = False
             elif current_token in self.current_operators:
                 if current_token == '-' and next_token:  # this section helps to handle negative numbers vs. subtraction
                     if next_token.isdigit():
-                        flattened_tokens[index] = int(current_token + next_token)
-                        del flattened_tokens[index + 1], next_token
+                        if not isinstance(previous_token, int) and previous_token != ")":
+                            flattened_tokens[index] = int(current_token + next_token)
+                            del flattened_tokens[index + 1], next_token
                     elif next_token not in self.current_operators:
                         flattened_tokens[index] = -1
                         flattened_tokens.insert(1, '*')
                     else:
                         raise DuplicateOperator
-                elif not previous_is_operator:
-                    previous_is_operator = True
-                else:
+                elif previous_token in self.current_operators:
                     raise DuplicateOperator
             elif current_token in self.current_functions:
                 if next_token in self.grouping_operators:

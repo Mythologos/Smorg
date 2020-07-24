@@ -100,7 +100,7 @@ class Hearer(commands.Cog, Exceptioner):
             error_name: str = await self.compose_error_name(error.__class__.__name__)
             if isinstance(error, commands.UserInputError):
                 if isinstance(error, MissingSubcommand):
-                    error_description: str = f'You did not supply a subcommand {error.subcommand_depth} ' \
+                    error_description: str = f'You did not supply a valid subcommand {error.subcommand_depth} ' \
                                              f'level{"s" if error.subcommand_depth > 1 else ""} deep.'
                 elif isinstance(error, commands.MissingRequiredArgument):
                     error_description = 'You supplied too few arguments to this command.'
