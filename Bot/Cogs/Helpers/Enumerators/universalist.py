@@ -50,6 +50,7 @@ class HelpDescription(NamedConstant):
              "the number of the instance of the channel as an argument."
     IMMORTALIZE = "This command embeds a quote and stores it for posterity's sake. " \
                   "It takes a quote and, optionally, an author as arguments."
+    LOG = "[WIP!]"
     OBSERVE = "This command allows a Guild to change the prefix to which the bot will respond."
     PURGE = "This command deletes a specified number of messages prior to the given command."
     QUOTE = "This command embeds a quote. It takes a quote and, optionally, an author as arguments. " \
@@ -99,3 +100,4 @@ class StaticText(NamedConstant):
     REVISED_REMINDER_NOTIFICATION = "Your reminder revision has been successfully processed!"
     FORGOTTEN_REMINDER_NOTIFICATION = "Your reminder deletion has been successfully processed!"
     LIST_TRUNCATION_TEXT = "[...]"
+    LOG_DEFAULT_TEXT = "Your log has successfully been created. It has been attached here."
