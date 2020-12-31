@@ -1,9 +1,8 @@
-
 import os
 import re
 
 from datetime import datetime
-from typing import Union
+from typing import List, Union
 
 from discord import File, Member, TextChannel, User
 from discord.ext import commands
@@ -19,42 +18,45 @@ class Logger(commands.Cog):
         self.markdown_to_rtf = FormatDictionary.MARKDOWN_TO_RTF.__getattribute__('_value_')
 
     @commands.command(description=HelpDescription.LOG)
-    async def log(self, ctx: commands.Context, channel: TextChannel) -> None:
+    async def log(self, ctx: commands.Context, channel: TextChannel, cast_list: List) -> None:
+        # TODO: determine how to handle cast_list
+
         temporary_file_name: str = f"temporary_file_{channel.id}_{datetime.now().microsecond}"
 
+        # The try-finally block doesn't do error handling, but it assures that if there is an error,
+        # the temporary file created is always deleted.
         try:
             with open(temporary_file_name, mode="wb") as temporary_file:
-                previous_message_author: Union[User, Member, None] = None
-                current_message_text: str = ""
+                current_message_author: Union[User, Member, None] = None
                 temporary_file.write(r"{\rtf1\ansi\deff0{\fonttbl{\f0 Times New Roman;}}\f0\fs24".encode("utf-8"))
 
                 async for message in channel.history(oldest_first=True):
-                    # RTF? :
-                    # https://interoperability.blob.core.windows.net/files/Archive_References/%5bMSFT-RTF%5d.pdf
+                    current_message_text: str = ""
+                    # RTF: https://interoperability.blob.core.windows.net/files/Archive_References/%5bMSFT-RTF%5d.pdf
                     # See also: RTF Pocket Guide
 
-                    print(rf"{message.content}")
-                    current_message_text = rf"{self.convert_markdown_to_rtf(message.content)}\line\line "
+                    # Logger sets up a post-message divider when the message is not first and
+                    # the message is by a different author than the previous existing author.
+                    if current_message_author and current_message_author != message.author:
+                        temporary_file.write(r"{{\pard\qc ---\line\par}}".encode("utf-8"))
+
+                    # Logger adds text denoting the author if the author is new.
+                    if current_message_author is None or message.author != current_message_author:
+                        current_message_author = message.author
+                        current_message_text = rf"{{\b {current_message_author}}}: "
+
+                    current_message_text += rf"{{\pard\ql {self.convert_markdown_to_rtf(message.content)}\line\par}}"
                     print(current_message_text)
                     temporary_file.write(current_message_text.encode("utf-8"))
 
-                    if previous_message_author is None or message.author != previous_message_author:
-                        previous_message_author = message.author
-
-                    # Process:
-                    # (1) Check the sender of the current message.
-                    # (1a) If they're the same as the previous sender, continue.
-                    # (1b) If they're not the same as the previous sender, denote them as the previous sender.
-                    # (2) Format the message appropriately, removing any extraneous information or characters if necessary.
-                    # Use the given information (options, character-user links) to do this accordingly.
-                    # (3) Put the message in the file. Proceed.
                 temporary_file.write("}".encode("utf-8"))
 
             with open(temporary_file_name, mode="rb") as temporary_file:
                 # Upload the file to Discord.
                 print(temporary_file.read())
                 temporary_file.seek(0, 0)
-                await ctx.send(StaticText.LOG_DEFAULT_TEXT, file=File(temporary_file, filename=f"log_{channel.name}.rtf"))
+                await ctx.send(StaticText.LOG_DEFAULT_TEXT,
+                               file=File(temporary_file, filename=f"log_{channel.name}.rtf"))
         finally:
             # Finally, destroy the file locally.
             os.remove(temporary_file_name)
@@ -73,8 +75,5 @@ class Logger(commands.Cog):
             while (revised_message := re.sub(group_pattern, replace_pattern, current_message, 1)) != current_message:
                 if revised_message:
                     current_message = revised_message
-
-        if markdown_message == current_message:
-            current_message = f"{{{current_message}}}"
 
         return current_message
