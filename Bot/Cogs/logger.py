@@ -34,7 +34,7 @@ class Logger(commands.Cog):
                     # See also: RTF Pocket Guide
 
                     print(rf"{message.content}")
-                    current_message_text = rf"{self.convert_markdown_to_rtf(message.content)}\line\line"
+                    current_message_text = rf"{self.convert_markdown_to_rtf(message.content)}\line\line "
                     print(current_message_text)
                     temporary_file.write(current_message_text.encode("utf-8"))
 
@@ -63,7 +63,7 @@ class Logger(commands.Cog):
         # to consider: how to relate users and characters; do I want to have a "general log" and an "RP log" option
 
     def convert_markdown_to_rtf(self, markdown_message: str) -> str:
-        current_message: str = markdown_message
+        current_message: str = markdown_message.replace("\n", "\\line ")
         for key, value in self.markdown_to_rtf.items():
             # We generate the patterns for the given key-value pair.
             group_pattern: str = rf"(?P<first>{key})(?P<between>.+)(?P<second>{key})"
@@ -78,5 +78,3 @@ class Logger(commands.Cog):
             current_message = f"{{{current_message}}}"
 
         return current_message
-
-# TODO: handle the issue of (2) line breaks in a message.

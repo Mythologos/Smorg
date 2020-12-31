@@ -157,3 +157,4 @@ class Hearer(commands.Cog, Exceptioner):
                 error_description = f'The error type is: {error} A better error message will be supplied soon.'
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)
+
