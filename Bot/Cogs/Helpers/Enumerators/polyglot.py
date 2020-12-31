@@ -1,6 +1,7 @@
 """
 This module contains items related to translation between multiple languages.
-Currently, it only contains AlphabetDictionary, which is used with the encoder Cog.
+Currently, it contains AlphabetDictionary, which is used with the encoder Cog,
+and FormatDictionary, which is used with the logger Cog.
 """
 
 from aenum import NamedConstant
@@ -117,4 +118,19 @@ class AlphabetDictionary(NamedConstant):
         '=': '− • • • −',
         '[ERROR]': '• • • • • • • •',
         ' ': '  /  '
+    }
+
+
+class FormatDictionary(NamedConstant):
+    """
+    This Class contains NamedConstant dictionaries that list how one set of characters correlate to another.
+    It is used by the logger Cog to translate between certain formatting standards.
+    """
+    MARKDOWN_TO_RTF = {
+        r'__': r'\\ul',             # underline
+        r'~~': r'\\strike',         # strikethrough
+        r'\*\*\*': r'\\b\\i',       # bold and italic
+        r'\*\*': r'\\b',            # bold
+        r'\*': r'\\i',              # italics 1
+        r'_': r'\\i',               # italics 2
     }

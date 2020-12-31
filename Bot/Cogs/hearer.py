@@ -95,8 +95,8 @@ class Hearer(commands.Cog, Exceptioner):
         :param Exception error: the error raised by some method called to fulfill a request.
         """
         error = getattr(error, "original", error)  # unwraps CommandInvoke errors
+        command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
         if not isinstance(error, self.passable_errors) and isinstance(error, discord.DiscordException):
-            command_name: str = getattr(ctx.command.root_parent, "name", ctx.command.name).title()
             error_name: str = await self.compose_error_name(error.__class__.__name__)
             if isinstance(error, commands.UserInputError):
                 if isinstance(error, MissingSubcommand):

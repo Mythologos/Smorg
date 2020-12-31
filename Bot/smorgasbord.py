@@ -12,6 +12,7 @@ from .Cogs.encoder import Encoder
 from .Cogs.gambler import Gambler
 from .Cogs.hearer import Hearer
 from .Cogs.helper import Helper
+from .Cogs.logger import Logger
 from .Cogs.quoter import Quoter
 from .Cogs.recaller import Recaller
 from .secretbord import bot_key
@@ -23,7 +24,7 @@ class Smorg:
         self.bot = AutoShardedBot(command_prefix=Guild.get_prefix)
         self.bot.remove_command('help')
 
-        for cog in [Arranger, Cataloguer, Encoder, Gambler, Hearer, Helper, Quoter, Recaller]:
+        for cog in [Arranger, Cataloguer, Encoder, Gambler, Hearer, Helper, Logger, Quoter, Recaller]:
             self.bot.add_cog(cog(self.bot))
 
     def run(self):
