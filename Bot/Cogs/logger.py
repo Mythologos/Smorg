@@ -16,7 +16,8 @@ class Logger(commands.Cog):
     def __init__(self, bot: commands.AutoShardedBot):
         self.bot = bot
         #  See the encoder class for a discussion of this idiom.
-        self.markdown_to_rtf = FormatDictionary.MARKDOWN_TO_RTF.__getattribute__('_value_')
+        self.markdown_to_rtf_groups = FormatDictionary.MARKDOWN_TO_RTF_GROUPS.__getattribute__('_value_')
+        self.markdown_to_rtf_characters = FormatDictionary.MARKDOWN_TO_RTF_CHARACTERS.__getattribute__('_value_')
 
     @commands.command(description=HelpDescription.LOG)
     async def log(self, ctx: commands.Context, channel: TextChannel, member_list: Greedy[Member],
@@ -55,15 +56,12 @@ class Logger(commands.Cog):
                         current_message_text = rf"{{\b {self.convert_author_to_nickname(current_message_author, member_list, nickname_list)}}}: "
 
                     current_message_text += rf"{{\pard\ql {self.convert_markdown_to_rtf(message.content)}\line\par}}"
-                    print(current_message_text)
                     temporary_file.write(current_message_text.encode("utf-8"))
 
                 temporary_file.write("}".encode("utf-8"))
 
             with open(temporary_file_name, mode="rb") as temporary_file:
                 # Upload the file to Discord.
-                print(temporary_file.read())
-                temporary_file.seek(0, 0)
                 await ctx.send(StaticText.LOG_DEFAULT_TEXT,
                                file=File(temporary_file, filename=f"log_{channel.name}.rtf"))
         finally:
@@ -74,8 +72,11 @@ class Logger(commands.Cog):
         # to consider: how to relate users and characters; do I want to have a "general log" and an "RP log" option
 
     def convert_markdown_to_rtf(self, markdown_message: str) -> str:
-        current_message: str = markdown_message.replace("\n", "\\line ")
-        for key, value in self.markdown_to_rtf.items():
+        current_message: str = markdown_message
+        for key, value in self.markdown_to_rtf_characters.items():
+            current_message = current_message.replace(key, value)
+
+        for key, value in self.markdown_to_rtf_groups.items():
             # We generate the patterns for the given key-value pair.
             group_pattern: str = rf"(?P<first>{key})(?P<between>.+?)(?P<second>{key})"
             replace_pattern: str = rf"{{{value} \g<between>}}"
