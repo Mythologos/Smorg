@@ -143,9 +143,10 @@ class FormatDictionary(NamedConstant):
         '\u201D': '\\rdblquote ',   # right double quote
         '\u2018': '\\lquote ',      # left single quote
         '\u2019': '\\rquote ',      # right single quote
-        '\u00e1': '\'e1 ',          # a with acute
-        '\u00e9': '\'e9 ',          # e with acute
-        '\u00ed': '\'ed ',          # i with acute
-        '\u00f3': '\'f3 ',          # o with acute
-        '\u00fa': '\'fa ',          # u with acute
+        '\u2026': r'{\'85}',        # ellipsis
+        '\u00e1': r'{\'e1}',        # a with acute
+        '\u00e9': r'{\'e9}',        # e with acute
+        '\u00ed': r'{\'ed}',        # i with acute
+        '\u00f3': r'{\'f3}',        # o with acute
+        '\u00fa': r'{\'fa}',        # u with acute
     }
