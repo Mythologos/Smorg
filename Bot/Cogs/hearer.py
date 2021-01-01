@@ -105,6 +105,7 @@ class Hearer(commands.Cog, Exceptioner):
                 elif isinstance(error, commands.MissingRequiredArgument):
                     error_description = 'You supplied too few arguments to this command.'
                 elif isinstance(error, commands.TooManyArguments):
+                    print(error)
                     error_description = 'You supplied too many arguments to this command.'
                 elif isinstance(error, commands.BadArgument):
                     error_description = 'One of your arguments (likely a Discord-related item) is invalid.'
@@ -154,7 +155,6 @@ class Hearer(commands.Cog, Exceptioner):
                 error_description = 'There was an invalid conversion in processing your command.'
             else:
                 error_name = 'Miscellaneous Error'
-                error_description = f'The error type is: {error} A better error message will be supplied soon.'
+                error_description = f'The error type is: {error}. A better error message will be supplied soon.'
             error_embed: discord.Embed = await self.initialize_error_embed(command_name, error_name, error_description)
             await ctx.send(embed=error_embed)
-

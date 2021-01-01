@@ -6,6 +6,7 @@ from typing import List, Union
 
 from discord import File, Member, TextChannel, User
 from discord.ext import commands
+from discord.ext.commands import Greedy, TooManyArguments
 
 from .Helpers.Enumerators.universalist import HelpDescription, StaticText
 from .Helpers.Enumerators.polyglot import FormatDictionary
@@ -18,8 +19,16 @@ class Logger(commands.Cog):
         self.markdown_to_rtf = FormatDictionary.MARKDOWN_TO_RTF.__getattribute__('_value_')
 
     @commands.command(description=HelpDescription.LOG)
-    async def log(self, ctx: commands.Context, channel: TextChannel, cast_list: List) -> None:
-        # TODO: determine how to handle cast_list
+    async def log(self, ctx: commands.Context, channel: TextChannel, member_list: Greedy[Member],
+                  *nickname_list) -> None:
+        if len(member_list) != len(nickname_list):
+            raise TooManyArguments
+
+        # TODO: make custom exceptions to support this functionality
+        # if len(member_list) > len(nickname_list):
+            # raise TooManyArguments(message="There are more members given than nicknames.")
+        # elif len(nickname_list) > len(member_list):
+            # raise TooManyArguments(message="There are more nicknames given than members.")
 
         temporary_file_name: str = f"temporary_file_{channel.id}_{datetime.now().microsecond}"
 
@@ -43,7 +52,7 @@ class Logger(commands.Cog):
                     # Logger adds text denoting the author if the author is new.
                     if current_message_author is None or message.author != current_message_author:
                         current_message_author = message.author
-                        current_message_text = rf"{{\b {current_message_author}}}: "
+                        current_message_text = rf"{{\b {self.convert_author_to_nickname(current_message_author, member_list, nickname_list)}}}: "
 
                     current_message_text += rf"{{\pard\ql {self.convert_markdown_to_rtf(message.content)}\line\par}}"
                     print(current_message_text)
@@ -68,7 +77,7 @@ class Logger(commands.Cog):
         current_message: str = markdown_message.replace("\n", "\\line ")
         for key, value in self.markdown_to_rtf.items():
             # We generate the patterns for the given key-value pair.
-            group_pattern: str = rf"(?P<first>{key})(?P<between>.+)(?P<second>{key})"
+            group_pattern: str = rf"(?P<first>{key})(?P<between>.+?)(?P<second>{key})"
             replace_pattern: str = rf"{{{value} \g<between>}}"
 
             # We iterate over the message to replace accordingly, stopping when no further matches are found.
@@ -77,3 +86,12 @@ class Logger(commands.Cog):
                     current_message = revised_message
 
         return current_message
+
+    @staticmethod
+    def convert_author_to_nickname(current_message_author: Member, member_list: List[Member], nickname_list) -> str:
+        found_nickname: str = current_message_author.name
+        for index, member in enumerate(member_list):
+            if current_message_author == member:
+                found_nickname = nickname_list[index]
+        return found_nickname
+
