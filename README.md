@@ -1,5 +1,5 @@
 # Smorg
-**Last Updated:** 07/23/2020 (MM/DD/YYYY)
+**Last Updated:** 01/02/2021 (MM/DD/YYYY)
 
 ## Introduction
 
@@ -23,6 +23,7 @@ Smorg can currently perform the following tasks:
 11. The **remind** command allows the user to choose a role and schedule a time at which Smorg will ping that role. It can also include an optional message. 
 12. The **revise** command lets the user specify a reminder and then supply either a new time, a new message, or both. Smorg then changes the reminder to meet these specifications.
 13. The **forget** command permits the user to delete a reminder by specifying it.
+14. The **log** command expedites the creation of an RTF file containing the text of some channel. It can also pair users and nicknames to personalize formatting.
 
 ## Future Goals:
 
@@ -48,3 +49,5 @@ As this is a personal project and I end up having progressively more ideas as I 
 19. Allow for `consolidate_tokens()` to do more pre-processing in `yard_shunter.py` and shorten the function (if any of this is deemed beneficial).
 20. Change `OperatorAssociativity` to hold integers, if possible, instead of strings.
 21. Integrate color more flexibly in commands. Make a tool or command that allows a user to specify a color; Smorg returns this color against various Discord UI backgrounds (e.g. light vs. dark).
+22. Add options for `Logger` to format text.
+23. Add more flexible user-nickname relationships in `Logger` that may vary nicknames between certain quantities of posts by a given user.
