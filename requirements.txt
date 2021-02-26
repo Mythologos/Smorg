@@ -1,5 +1,5 @@
 aenum==2.2.6
-aiohttp==3.7.3
+aiohttp==3.7.4
 discord.py==1.5.1
 dpytest==0.0.22
 psycopg2==2.8.6
